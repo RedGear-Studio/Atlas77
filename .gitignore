@@ -1,0 +1,10 @@
+*/target
+/target
+.VSCodeCounter
+.idea
+nextReadme.md
+ListLibs.txt
+*.lock
+.vscode
+*.c
+*.out

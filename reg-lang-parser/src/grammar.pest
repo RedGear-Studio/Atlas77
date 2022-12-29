@@ -1,0 +1,27 @@
+// Need to be refactor a lot... to be able to create a real AST (for now it's just a lot of arrays => not really useful)
+// TODO!: Add parenthesis support, exponentiation, and more operators like
+file = _{ SOI ~ input ~ EOI }
+input = _{ term }
+WHITESPACE = _{" " | "\n" | "\t" }
+
+dot = { ^"." }
+digit = { '0'..'9' }
+int = @{ ^"-"? ~ digit+ }
+float = @{ ^"-"? ~ digit+ ~ dot ~ digit* }
+number = _{ float | int }
+term_operator = _{ add | sub }
+factor_operator = _{ mul | div | modulo }
+    add = { "+" }
+    mul = { "*" }
+    div = { "/" }
+    pow = { "^" }
+    modulo = { "%" }
+    sub = { "-" }
+
+term = { (factor | exponent | atom) ~ (term_operator ~ (factor | atom))* }
+factor = { atom ~ (factor_operator ~ atom)+ }
+exponent = { atom ~ pow ~ atom }
+lparen = _{ ^"(" }
+rparen = _{ ^")" }
+parenthesis = { lparen ~ term ~ rparen }
+atom = _{ number | parenthesis }
