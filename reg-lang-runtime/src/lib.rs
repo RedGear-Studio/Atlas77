@@ -15,7 +15,9 @@ use tools::{
 };
 use types::{
     number::{
-        base_number::Arithmetics,
+        base_number::{
+            Arithmetics, Numbers
+        },
         float::float64::Float64,
         int::int64::Int64
     },
@@ -34,44 +36,44 @@ pub fn run(instructions: Vec<Instructions>) {
             },
             Instructions::Add => {
                 let add = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")),
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
                     Operator::Add
-                );
+                ).to_types();
                 runtime_stack.stack.push(add);
             },
             Instructions::Sub => {
                 let sub = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")),
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
                     Operator::Sub
-                );
+                ).to_types();
                 runtime_stack.stack.push(sub);
 
             },
             Instructions::Mod => {
                 let modulo = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")),
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
                     Operator::Mod
-                );
+                ).to_types();
                 runtime_stack.stack.push(modulo);
             },
             Instructions::Div => {
                 let div = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")),
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
                     Operator::Div
-                );
+                ).to_types();
                 runtime_stack.stack.push(div);
             },
             Instructions::Mul => {
                 let right = &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number"));
                 let mul = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")),
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
                     Operator::Mul
-                );
+                ).to_types();
                 runtime_stack.stack.push(mul);
             },
             Instructions::Print => {
@@ -84,8 +86,7 @@ pub fn run(instructions: Vec<Instructions>) {
     }
 }
 
-fn operation<T>(right: &T, left: &T, operator: Operator) -> T
-where T: Arithmetics<T> {
+fn operation(right: &Numbers, left: &Numbers, operator: Operator) -> Numbers {
     match operator {
         Operator::Add => {
             return left.add(right);

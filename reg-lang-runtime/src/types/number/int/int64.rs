@@ -24,23 +24,23 @@ use crate::types::number::{
 /// A 64-bit unsigned integer.
 pub struct Int64(pub i64);
 
-impl Arithmetics<Int64> for Int64 {
-    fn add(self, other: Self) -> Self {
+impl Arithmetics for Int64 {
+    fn add(&self, other: &Self) -> Self {
         return Int64(self.0 + other.0);
     }
 
-    fn sub(self, other: Self) -> Self {
+    fn sub(&self, other: &Self) -> Self {
         if self.0 < other.0 {
             panic!("Unsigned Int Error: Cannot subtract a larger number from a smaller one. \"{} - {}\"", self.0, other.0);
         }
         return Int64(self.0 - other.0);
     }
 
-    fn mul(self, other: Self) -> Self {
+    fn mul(&self, other: &Self) -> Self {
         return Int64(self.0 * other.0);
     }
 
-    fn div(self, other: Self) -> Self {
+    fn div(&self, other: &Self) -> Self {
         match other {
             Int64(0) => panic!("Number Error: Cannot divide by zero. \"{} / {}\"", self.0, '0'),
             _ => {
@@ -49,11 +49,11 @@ impl Arithmetics<Int64> for Int64 {
         }
     }
 
-    fn rem(self, other: Self) -> Self {
+    fn rem(&self, other: &Self) -> Self {
         return Int64(self.0 % other.0);
     }
 
-    fn pow(self, other: Self) -> Self {
+    fn pow(&self, other: &Self) -> Self {
         return Int64(self.0.pow(other.0 as u32));
     }
 }

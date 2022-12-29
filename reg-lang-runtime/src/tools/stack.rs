@@ -1,6 +1,7 @@
-use crate::types::{number::base_number::Arithmetics, types::Types};
-
-use super::number::Number;
+use crate::types::{
+    number::base_number::Arithmetics,
+    types::Types
+};
 
 #[derive(Debug, Clone)]
 pub struct RuntimeStack {

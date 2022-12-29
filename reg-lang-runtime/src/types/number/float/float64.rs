@@ -24,26 +24,26 @@ use crate::types::number::{
 /// A 64-bit unsigned integer.
 pub struct Float64(pub f64);
 
-impl Arithmetics<Float64> for Float64 {
-    fn add(self, other: Self) -> Self {
+impl Arithmetics for Float64 {
+    fn add(&self, other: &Self) -> Self {
         return Float64(self.0 + other.0);
     }
 
-    fn sub(self, other: Self) -> Self {
+    fn sub(&self, other: &Self) -> Self {
         if self.0 < other.0 {
             panic!("Unsigned Int Error: Cannot subtract a larger number from a smaller one. \"{} - {}\"", self.0, other.0);
         }
         return Float64(self.0 - other.0);
     }
 
-    fn mul(self, other: Self) -> Self {
+    fn mul(&self, other: &Self) -> Self {
         return Float64(self.0 * other.0);
     }
 
-    fn div(self, other: Self) -> Self {
+    fn div(&self, other: &Self) -> Self {
         match other {
             Float64(f) => {
-                if f == 0.0 {
+                if *f == 0.0 {
                     panic!("Number Error: Cannot divide by zero. \"{} / {}\"", self.0, '0');
                 } else {
                     return Float64(self.0 / other.0);
@@ -52,11 +52,11 @@ impl Arithmetics<Float64> for Float64 {
         }
     }
 
-    fn rem(self, other: Self) -> Self {
+    fn rem(&self, other: &Self) -> Self {
         return Float64(self.0 as f64 % other.0 as f64);
     }
 
-    fn pow(self, other: Self) -> Self {
+    fn pow(&self, other: &Self) -> Self {
         return Float64(self.0.powf(other.0));
     }
 }
