@@ -1,12 +1,5 @@
-use super::numbers::{
-    int::Int,
-    float::Float,
-    uint::UInt,
-    base_number::{
-        Arithmetics,
-        Numbers
-    }
-};
+use super::numbers::{ int::Int, float::Float, uint::UInt, base_number::{Numbers}};
+
 #[derive(Debug, Clone)]
 /// enum Types is used to store all the types of the language in one place.
 pub enum Types {

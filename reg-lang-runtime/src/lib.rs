@@ -1,43 +1,20 @@
-#![allow(unused)]
 
 pub mod types;
 pub mod instructions;
 pub mod tools;
 
-
-#[macro_use]
 use core::panic;
-use std::process::Output;
 use crate::instructions::set::Instructions;
-use tools::{
-    stack::RuntimeStack,
-    operators::Operator,
-};
-use types::{
-    numbers::{
-        base_number::{
-            Arithmetics, Numbers
-        },
-        float::Float,
-        int::Int,
-        uint::UInt,
-    },
-    types::Types,
-};
+use tools::{stack::RuntimeStack, operators::Operator,};
+use types::{numbers::{base_number::{Arithmetics, Numbers}, float::Float, int::Int, uint::UInt,}, types::Types};
 
 pub fn run(instructions: Vec<Instructions>) {
     let mut runtime_stack = RuntimeStack::new();
     for instruction in instructions {
         match instruction {
-            Instructions::LoadInt(i) => {
-                runtime_stack.stack.push(Types::IntTypes(Int(i)));
-            },
-            Instructions::LoadFloat(f) => {
-                runtime_stack.stack.push(Types::FloatTypes(Float(f)));
-            },
-            Instructions::LoadUInt(u) => {
-                runtime_stack.stack.push(Types::UIntTypes(UInt(u)));
-            },
+            Instructions::LoadInt(i) => runtime_stack.stack.push(Types::IntTypes(Int(i))),
+            Instructions::LoadFloat(f) => runtime_stack.stack.push(Types::FloatTypes(Float(f))),
+            Instructions::LoadUInt(u) => runtime_stack.stack.push(Types::UIntTypes(UInt(u))),
             Instructions::Add => {
                 let add = operation(
                     &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
@@ -90,23 +67,11 @@ pub fn run(instructions: Vec<Instructions>) {
 
 fn operation(right: &Numbers, left: &Numbers, operator: Operator) -> Numbers {
     match operator {
-        Operator::Add => {
-            return left.add(right);
-        },
-        Operator::Mul => {
-            return left.mul(right);
-        },
-        Operator::Mod => {
-            return left.rem(right);
-        },
-        Operator::Sub => {
-            return left.sub(right);
-        },
-        Operator::Div => {
-            return left.div(right);
-        },
-        _ => {
-            panic!("Not a valid operator !")
-        }
+        Operator::Add => left.add(right),
+        Operator::Mul => left.mul(right),
+        Operator::Mod => left.rem(right),
+        Operator::Sub => left.sub(right),
+        Operator::Div => left.div(right),
+        _ => panic!("Not a valid operator !")
     }
 }

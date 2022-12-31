@@ -1,9 +1,4 @@
-use crate::types::numbers::{
-    base_number::{
-        Arithmetics,
-        Casting,
-    }
-};
+use crate::types::numbers::{base_number::{Arithmetics}};
 
 #[derive(Clone, Debug)]
 /// A 64-bit unsigned integer.
@@ -11,15 +6,15 @@ pub struct Float(pub f64);
 
 impl Arithmetics for Float {
     fn add(&self, other: &Self) -> Self {
-        return Float(self.0 + other.0);
+        Float(self.0 + other.0)
     }
 
     fn sub(&self, other: &Self) -> Self {
-        return Float(self.0 - other.0);
+        Float(self.0 - other.0)
     }
 
     fn mul(&self, other: &Self) -> Self {
-        return Float(self.0 * other.0);
+        Float(self.0 * other.0)
     }
 
     fn div(&self, other: &Self) -> Self {
@@ -35,10 +30,10 @@ impl Arithmetics for Float {
     }
 
     fn rem(&self, other: &Self) -> Self {
-        return Float(self.0 as f64 % other.0 as f64);
+        Float(self.0 as f64 % other.0 as f64)
     }
 
     fn pow(&self, other: &Self) -> Self {
-        return Float(self.0.powf(other.0));
+        Float(self.0.powf(other.0))
     }
 }

@@ -1,11 +1,4 @@
-use crate::types::{
-    numbers::{
-        float::Float,
-        int::Int,
-        uint::UInt,
-    },
-    types::Types
-};
+use crate::types::{numbers::{float::Float, int::Int, uint::UInt}, types::Types};
 
 pub trait Arithmetics {
     /// Performs addition on two numbers.

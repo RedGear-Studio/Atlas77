@@ -31,24 +31,12 @@ impl RegLangStack {
         match op {
             Expr::Literal(oper) => {
                 match oper.as_str() {
-                    "+" => {
-                        return BinOp::new(Box::new(left), Operator::Add, Box::new(right));
-                    },
-                    "-" => {
-                        return BinOp::new(Box::new(left), Operator::Sub, Box::new(right));
-                    },
-                    "*" => {
-                        return BinOp::new(Box::new(left), Operator::Mul, Box::new(right));
-                    },
-                    "/" => {
-                        return BinOp::new(Box::new(left), Operator::Div, Box::new(right));
-                    },
-                    "%" => {
-                        return BinOp::new(Box::new(left), Operator::Mod, Box::new(right));
-                    },
-                    "^" => {
-                        return BinOp::new(Box::new(left), Operator::Pow, Box::new(right));
-                    },
+                    "+" => BinOp::new(Box::new(left), Operator::Add, Box::new(right)),
+                    "-" => BinOp::new(Box::new(left), Operator::Sub, Box::new(right)),
+                    "*" => BinOp::new(Box::new(left), Operator::Mul, Box::new(right)),
+                    "/" => BinOp::new(Box::new(left), Operator::Div, Box::new(right)),
+                    "%" => BinOp::new(Box::new(left), Operator::Mod, Box::new(right)),
+                    "^" => BinOp::new(Box::new(left), Operator::Pow, Box::new(right)),
                     _ => {
                         panic!("Not a valid operator");
                     }
@@ -136,5 +124,5 @@ pub fn parse(input: &str) -> RegLangStack {
             }
         }
     }
-    return reg_lang_stack;
+    reg_lang_stack
 }
