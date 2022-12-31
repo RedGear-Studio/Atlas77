@@ -22,8 +22,8 @@ pub fn generate_bytecode(expr: &Expr, instructions: &mut Vec<Instructions>) {
                 }
             }
         }
-        Expr::Float(float) => instructions.push(Instructions::LoadFloat64(float.value)),
-        Expr::Integer(integer) => instructions.push(Instructions::LoadInt64(integer.value)),
+        Expr::Float(float) => instructions.push(Instructions::LoadFloat(float.value)),
+        Expr::Integer(integer) => instructions.push(Instructions::LoadInt(integer.value)),
         _ => {
             println!("WTF BRO ? What u doin' ?");
         }

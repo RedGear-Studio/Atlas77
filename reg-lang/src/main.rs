@@ -10,7 +10,7 @@ use reg_lang_runtime::{run,
 };
 
 fn main() {
-    let ask = "20.24242 % 2.231";
+    let ask = "20.0 + 2.0 * 2.0 / 4.0";
     println!("calc: {}", ask);
     let parser = parse(ask);
     println!("AST: {:?}", parser);

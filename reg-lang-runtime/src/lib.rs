@@ -14,12 +14,13 @@ use tools::{
     operators::Operator,
 };
 use types::{
-    number::{
+    numbers::{
         base_number::{
             Arithmetics, Numbers
         },
-        float::float64::Float64,
-        int::int64::Int64
+        float::Float,
+        int::Int,
+        uint::UInt,
     },
     types::Types,
 };
@@ -28,50 +29,51 @@ pub fn run(instructions: Vec<Instructions>) {
     let mut runtime_stack = RuntimeStack::new();
     for instruction in instructions {
         match instruction {
-            Instructions::LoadInt64(i) => {
-                runtime_stack.stack.push(Types::Int64(Int64(i)));
+            Instructions::LoadInt(i) => {
+                runtime_stack.stack.push(Types::IntTypes(Int(i)));
             },
-            Instructions::LoadFloat64(f) => {
-                runtime_stack.stack.push(Types::Float64(Float64(f)));
+            Instructions::LoadFloat(f) => {
+                runtime_stack.stack.push(Types::FloatTypes(Float(f)));
+            },
+            Instructions::LoadUInt(u) => {
+                runtime_stack.stack.push(Types::UIntTypes(UInt(u)));
             },
             Instructions::Add => {
                 let add = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
                     &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
                     Operator::Add
                 ).to_types();
                 runtime_stack.stack.push(add);
             },
             Instructions::Sub => {
                 let sub = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
                     &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
                     Operator::Sub
                 ).to_types();
                 runtime_stack.stack.push(sub);
-
             },
             Instructions::Mod => {
-                let modulo = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
+                let rem = operation(
                     &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
                     Operator::Mod
                 ).to_types();
-                runtime_stack.stack.push(modulo);
+                runtime_stack.stack.push(rem);
             },
             Instructions::Div => {
                 let div = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
                     &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
                     Operator::Div
                 ).to_types();
                 runtime_stack.stack.push(div);
             },
             Instructions::Mul => {
-                let right = &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number"));
                 let mul = operation(
-                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
                     &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Right member is not a Number")).to_numbers(),
+                    &runtime_stack.stack.pop().unwrap_or_else(|| panic!("Left member is not a Number")).to_numbers(),
                     Operator::Mul
                 ).to_types();
                 runtime_stack.stack.push(mul);

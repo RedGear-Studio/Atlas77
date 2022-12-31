@@ -2,16 +2,9 @@
 #[derive(Debug, Clone)]
 pub enum Instructions {
     // Load instructions
-    LoadInt64(i64),
-    LoadInt32(i32),
-    LoadInt16(i16),
-    LoadInt8(i8),
-    LoadUInt64(u64),
-    LoadUInt32(u32),
-    LoadUInt16(u16),
-    LoadUInt8(u8),
-    LoadFloat64(f64),
-    LoadFloat32(f32),
+    LoadInt(i64),
+    LoadUInt(u64),
+    LoadFloat(f64),
     // Convert instructions
     ConvertToNumber(NumberType),
     // Arithmetics operators

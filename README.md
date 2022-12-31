@@ -23,7 +23,6 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
 
 
 
@@ -181,7 +180,7 @@ We appreciate any and all contributions, and we are excited to see what the comm
 <!-- LICENSE -->
 ## License
 
-Distributed under the GPL-3.0 License. See `LICENSE.txt` for more information.
+Distributed under the GPL-3.0 License. See [`LICENSE`](https://github.com/RedGear-Studio/Reg-Lang/blob/main/LICENSE) for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -209,6 +208,3 @@ Project Link: [https://github.com/RedGear-Studio/Reg-Lang](https://github.com/Re
 [issues-url]: https://github.com/RedGear-Studio/Reg-Lang/issues
 [license-shield]: https://img.shields.io/github/license/RedGear-Studio/Reg-Lang.svg?style=for-the-badge
 [license-url]: https://github.com/RedGear-Studio/Reg-Lang/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/linkedin_username
-<!-- [product-screenshot]: images/screenshot.png -->
