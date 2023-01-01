@@ -3,9 +3,9 @@
 /// 
 /// [`OpCode` ~ `Register`+ ~ `Value`*]
 /// 
-/// - OpCode is 8 bit long
-/// - Register is 8 bit long (max 255 registers)
-/// - Value is 64 bit long (max 2^64 values)
+/// - OpCode is 8 bits long
+/// - Register is 8 bits long (max 255 registers)
+/// - Value is 64 bits long (max 2^64 values)
 pub enum Instructions {
     // Arithmetics operators
     Add, // Add two values

@@ -2,8 +2,6 @@
 use instructions::Instructions;
 use reg_lang_parser::{RegLangAST, ast::{expr::Expr, bin_op::Operator}};
 pub mod instructions;
-pub mod tools;
-use tools::split::*;
 
 #[derive(Debug, Clone)]
 pub struct TrackRegister {
