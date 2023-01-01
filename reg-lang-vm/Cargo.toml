@@ -1,5 +1,5 @@
 [package]
-name = "reg-lang-runtime"
+name = "reg-lang-vm"
 version = "0.1.0"
 edition = "2021"
 

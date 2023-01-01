@@ -1,24 +1,13 @@
 #![allow(unused)]
 
-use std::process::exit;
-use reg_lang_parser::*;
-use reg_lang_compiler::{
-    generate_bytecode,
-};
-use reg_lang_runtime::{run,
-    instructions::set::Instructions,
-};
+use std::vec;
 
+use reg_lang_parser::parse;
+use reg_lang_compiler::compile;
 fn main() {
-    let ask = "20.0 + 2.0 * 2.0 / 4.0";
-    println!("calc: {}", ask);
-    let parser = parse(ask);
-    println!("AST: {:?}", parser);
-
-    let mut instructions: Vec<Instructions> = vec![];
-    generate_bytecode(&parser.stack[0], &mut instructions);
-    instructions.push(Instructions::Print);
-    println!("Bytecode: {:?}", instructions);
-    
-    run(instructions);
+    let ast = parse("1 + 2 * 5");
+    println!("{:?}", ast);
+    let mut instructions: Vec<u8> = vec![];
+    compile(&mut instructions, &ast.ast[0]);
+    println!("{:?}", instructions);
 }

@@ -1,12 +1,9 @@
-use crate::ast::{
-    bin_op::*,
-    float::*,
-    integer::*,
-};
+use crate::ast::{bin_op::*};
 #[derive(Debug, Clone)]
 pub enum Expr {
-    BinOp(BinOp),
-    Float(Float),
-    Integer(Integer),
+    BinOpExpr(BinOp),
     Literal(String),
+    Integer(i64),
+    Float(f64),
+    UInteger(u64),
 }

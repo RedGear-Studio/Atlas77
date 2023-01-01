@@ -7,4 +7,3 @@ edition = "2021"
 
 [dependencies]
 reg-lang-parser = { path = "../reg-lang-parser" }
-reg-lang-runtime = { path = "../reg-lang-runtime" }

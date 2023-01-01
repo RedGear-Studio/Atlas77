@@ -1,7 +1,7 @@
 [workspace]
-members = [
+members = [ 
     "reg-lang",
-    "reg-lang-runtime",
-    "reg-lang-runtime",
-    "reg-lang-compiler"
+    "reg-lang-parser",
+    "reg-lang-compiler",
+    "reg-lang-vm",
 ]
