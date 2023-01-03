@@ -37,8 +37,7 @@ impl RegLangVM {
     pub fn run_once(&mut self) {
         self.execute_instruction();
     }
-
-
+    /// 
     fn execute_instruction(&mut self) -> bool {
         if self.program_counter >= self.program.len() {
             return false;
@@ -51,7 +50,7 @@ impl RegLangVM {
             },
             OpCode::HLT => {
                 println!("HLT encountered");
-                return false
+                return false;
             },
             OpCode::ADD => {
                 let register1 = self.next_8_bits() as usize;
@@ -131,31 +130,27 @@ impl RegLangVM {
             }
             _ => {
                 println!("Unknown opcode encountered");
-                return false
+                return false;
             }
         }
-        true
+        return true;
     }
+    /// Decodes the current byte and return the corresponding OpCode
     fn decode_opcode(&mut self) -> OpCode {
         let opcode = self.program[self.program_counter];
         self.program_counter += 1;
         OpCode::from(opcode)
     }
+    /// Returns the next 8 bits of the program
     fn next_8_bits(&mut self) -> u8 {
         let result = self.program[self.program_counter];
         self.program_counter += 1;
-        return result;
+        result
     }
-    
+    /// Returns the next 16 bits of the program
     fn next_16_bits(&mut self) -> u16 {
         let result = ((self.program[self.program_counter] as u16) << 8) | self.program[self.program_counter + 1] as u16;
         self.program_counter += 2;
-        return result;
+        result
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
 }

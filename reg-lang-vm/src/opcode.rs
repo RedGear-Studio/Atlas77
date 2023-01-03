@@ -1,4 +1,5 @@
 #[repr(u8)]
+/// OpCode enum for the VM
 pub enum OpCode {
     /// Stop the program
     HLT,
@@ -36,25 +37,26 @@ pub enum OpCode {
     ILG,
 }
 impl From<u8> for OpCode {
+    /// Convert a `u8` to an `OpCode` variant
     fn from(v: u8) -> Self {
         match v {
-            0 => return OpCode::HLT,
-            1 => return OpCode::LOAD,
-            2 => return OpCode::ADD,
-            3 => return OpCode::MUL,
-            4 => return OpCode::SUB,
-            5 => return OpCode::DIV,
-            6 => return OpCode::JMP,
-            7 => return OpCode::JMPF,
-            8 => return OpCode::JMPB,
-            9 => return OpCode::EQ,
-            10 => return OpCode::NEQ,
-            11 => return OpCode::GT,
-            12 => return OpCode::LT,
-            13 => return OpCode::GTE,
-            14 => return OpCode::LTE,
-            15 => return OpCode::JMPE,
-            _ => return OpCode::ILG,
+            0 => OpCode::HLT,
+            1 => OpCode::LOAD,
+            2 => OpCode::ADD,
+            3 => OpCode::MUL,
+            4 => OpCode::SUB,
+            5 => OpCode::DIV,
+            6 => OpCode::JMP,
+            7 => OpCode::JMPF,
+            8 => OpCode::JMPB,
+            9 => OpCode::EQ,
+            10 => OpCode::NEQ,
+            11 => OpCode::GT,
+            12 => OpCode::LT,
+            13 => OpCode::GTE,
+            14 => OpCode::LTE,
+            15 => OpCode::JMPE,
+            _ => OpCode::ILG,
         }
     }
 }
