@@ -1,63 +1,335 @@
 #![allow(unused)]
-use instructions::Instructions;
-use reg_lang_parser::{RegLangAST, ast::{expr::Expr, bin_op::Operator}};
-pub mod instructions;
 
-#[derive(Debug, Clone)]
-pub struct TrackRegister {
-    pub uregister: u16,
-    pub iregister: u16,
-    pub fregister: u16,
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
+
+use pest::Parser;
+use reg_byte::OpCode;
+
+#[derive(Parser)]
+#[grammar = "grammar.pest"]
+struct RegParser;
+#[derive(Debug)]
+pub struct RegCompiler {
+    pub program: Vec<u8>,
+    pub program_counter: usize,
 }
 
-pub fn compile(instructions: &mut Vec<u8>, ast: &Expr) {
-    let mut track_register = TrackRegister {
-        uregister: 0,
-        iregister: 0,
-        fregister: 0,
+pub fn compile() -> RegCompiler {
+    let mut compiler = RegCompiler {
+        program: vec![],
+        program_counter: 0,
     };
-    generate_regbyte(instructions, ast, &mut track_register);
-}
-
-fn generate_regbyte(instructions: &mut Vec<u8>, ast: &Expr, track: &mut TrackRegister) {
-    match ast {
-        Expr::BinOpExpr(bin_op) => {
-            generate_regbyte(instructions, &bin_op.left, track);
-            generate_regbyte(instructions, &bin_op.right, track);
-            match bin_op.op {
-                Operator::Add => instructions.push(Instructions::Add.to_u8()),
-                Operator::Sub => instructions.push(Instructions::Sub.to_u8()),
-                Operator::Mul => instructions.push(Instructions::Mul.to_u8()),
-                Operator::Div => instructions.push(Instructions::Div.to_u8()),
-                Operator::Mod => instructions.push(Instructions::Rem.to_u8()),
-                Operator::Pow => instructions.push(Instructions::Pow.to_u8()),
-                _ => panic!("Not a valid operator")
+    let mut program = RegParser::parse(Rule::program, "STORE $0 #5 STORE $1 #10 STORE $2 #1 STORE $3 #16 LT $0 $1 ADD $0 $2 $0 JMPE $3 HLT").unwrap_or_else(|e| panic!("{}", e));
+    for expr in program.into_iter() {
+        match expr.as_rule() {
+            Rule::program => {
+                for instruction in expr.into_inner() {
+                    match instruction.as_rule() {
+                        Rule::STORE => {
+                            println!("STORE");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::STORE as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    Rule::NUMBERS => {
+                                        let number = args.as_str().replace("#", "").parse::<u16>().unwrap();
+                                        println!("Number: {}", number);
+                                        compiler.program.push((number >> 8) as u8);
+                                        compiler.program.push((number & 0xFF) as u8);
+                                    }
+                                    _ => {
+                                        panic!("Invalid rule (STORE)");
+                                    }
+                                }
+                            }
+                        },
+                        Rule::ADD => {
+                            println!("ADD");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::ADD as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (ADD)");
+                                    }
+                                }
+                            }
+                        },
+                        Rule::MUL => {
+                            println!("MUL");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::MUL as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (MUL)");
+                                    }
+                                }
+                            }
+                        },
+                        Rule::DIV => {
+                            println!("DIV");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::DIV as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (DIV)");
+                                    }
+                                }
+                            }
+                        },
+                        Rule::SUB => {
+                            println!("SUB");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::SUB as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (SUB)");
+                                    }
+                                }
+                            }
+                        },
+                        Rule::JMP => {
+                            println!("JMP");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::JMP as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (JMP)");
+                                    }
+                                }
+                            }
+                        },
+                        Rule::JMPB => {
+                            println!("JMPB");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::JMPB as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (JMPB)");
+                                    }
+                                }
+                            }
+                        },
+                        Rule::JMPF => {
+                            println!("JMPF");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::JMPF as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (JMPF)");
+                                    }
+                                }
+                            }
+                        },
+                        Rule::EQ => {
+                            println!("EQ");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::EQ as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (EQ)");
+                                    }
+                                }
+                            }
+                            compiler.program.push(0);
+                        },
+                        Rule::NEQ => {
+                            println!("NEQ");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::NEQ as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (NEQ)");
+                                    }
+                                }
+                            }
+                            compiler.program.push(0);
+                        },
+                        Rule::GT => {
+                            println!("GT");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::GT as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (GT)");
+                                    }
+                                }
+                            }
+                            compiler.program.push(0);
+                        },
+                        Rule::LT => {
+                            println!("LT");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::LT as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (LT)");
+                                    }
+                                }
+                            }
+                            compiler.program.push(0);
+                        },
+                        Rule::GTE => {
+                            println!("GTE");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::GTE as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (GTE)");
+                                    }
+                                }
+                            }
+                            compiler.program.push(0);
+                        },
+                        Rule::LTE => {
+                            println!("LTE");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::LTE as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (LTE)");
+                                    }
+                                }
+                            }
+                            compiler.program.push(0);
+                        },
+                        Rule::LTE => {
+                            println!("LTE");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::LTE as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (LTE)");
+                                    }
+                                }
+                            }
+                            compiler.program.push(0);
+                        },
+                        Rule::JMPE => {
+                            println!("JMPE");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::JMPE as u8);
+                            for args in instruction.into_inner() {
+                                match args.as_rule() {
+                                    Rule::REGISTER => {
+                                        let register = args.as_str().replace("$", "");
+                                        println!("Register: {}", register);
+                                        compiler.program.push(register.parse::<u8>().unwrap());
+                                    },
+                                    _ => {
+                                        panic!("Invalid rule (JMPE)");
+                                    }
+                                }
+                            }
+                        },
+                        Rule::HLT => {
+                            println!("HLT");
+                            compiler.program_counter += 1;
+                            compiler.program.push(OpCode::HLT as u8);
+                        },
+                        Rule::EOI => {
+                            println!("End of input");
+                        } 
+                        _ => {
+                            panic!("Invalid rule (instruction)");
+                        }
+                    }
+                }
             }
-        },
-        Expr::Float(f) => {
-            instructions.push(Instructions::StoreF.to_u8());
-            instructions.push(track.fregister as u8);
-            for byte in f.to_le_bytes().iter() {
-                instructions.push(*byte);
+            _ => {
+                panic!("Invalid rule (program)");
             }
-            track.fregister += 1;
-        },
-        Expr::Integer(i) => {
-            instructions.push(Instructions::StoreI.to_u8());
-            instructions.push(track.iregister as u8);
-            for byte in i.to_le_bytes().iter() {
-                instructions.push(*byte);
-            }
-            track.iregister += 1;
-        },
-        Expr::UInteger(u) => {
-            instructions.push(Instructions::StoreU.to_u8());
-            instructions.push(track.uregister as u8);
-            for byte in u.to_le_bytes().iter() {
-                instructions.push(*byte);
-            }
-            track.uregister += 1;
-        },
-        _ => panic!("WTF BRO ? What u doing ?")
+        }
     }
+    return compiler;
 }

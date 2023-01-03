@@ -1,10 +1,11 @@
+#![allow(unused)]
 #[repr(u8)]
 /// OpCode enum for the VM
 pub enum OpCode {
     /// Stop the program
     HLT,
     /// Load a number into a register `LOAD REGISTER NUMBER`
-    LOAD,
+    STORE,
     /// Add two registers and store the result in a third register `ADD REGISTER1 REGISTER2 REGISTER3`
     ADD,
     /// Multiply two registers and store the result in a third register `MUL REGISTER1 REGISTER2 REGISTER3`
@@ -13,11 +14,11 @@ pub enum OpCode {
     SUB,
     /// Divide two registers and store the result in a third register `DIV REGISTER1 REGISTER2 REGISTER3` and store the remainder in the remainder register
     DIV,
-    /// Jump to a register `JMP REGISTER`
+    /// Jump to a byte in the program (based on a value stored in a register) `JMP REGISTER`
     JMP,
-    /// Jump forward to a certain amount of bytes `JMPF NUMBER`
+    /// Jump forward to a certain amount of bytes (based on a value stored in a register) `JMPF NUMBER`
     JMPF,
-    /// Jump backward to a certain amount of bytes `JMPB NUMBER`
+    /// Jump backward to a certain amount of bytes (based on a value stored in a register) `JMPB NUMBER`
     JMPB,
     /// Equal to `EQ REGISTER1 REGISTER`
     EQ,
@@ -31,7 +32,7 @@ pub enum OpCode {
     GTE,
     /// Less than or equal to `LTE REGISTER1 REGISTER2`
     LTE,
-    /// Jump if equal to `JMPE REGISTER1 REGISTER2`
+    /// Jump to the byte stored in the register1 if the last comparison was true `JMPE REGISTER1`
     JMPE,
     /// Illegal opcode
     ILG,
@@ -41,7 +42,7 @@ impl From<u8> for OpCode {
     fn from(v: u8) -> Self {
         match v {
             0 => OpCode::HLT,
-            1 => OpCode::LOAD,
+            1 => OpCode::STORE,
             2 => OpCode::ADD,
             3 => OpCode::MUL,
             4 => OpCode::SUB,

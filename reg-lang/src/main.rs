@@ -2,12 +2,13 @@
 
 use std::vec;
 
-use reg_lang_parser::parse;
 use reg_lang_compiler::compile;
+use reg_lang_vm::RegLangVM;
 fn main() {
-    let ast = parse("1 + 2 * 5");
-    println!("{:?}", ast);
-    let mut instructions: Vec<u8> = vec![];
-    compile(&mut instructions, &ast.ast[0]);
-    println!("{:?}", instructions);
+    let compiler = compile();
+    let bytecode = compiler.program;
+    let pc = compiler.program_counter;
+    let mut vm = RegLangVM::new(bytecode);
+    vm.run();
+    println!("VM {:?}", vm);
 }

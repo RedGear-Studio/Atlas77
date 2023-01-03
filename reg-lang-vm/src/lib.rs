@@ -1,6 +1,5 @@
 #![allow(unused, dead_code)]
-pub mod opcode;
-use opcode::*;
+use reg_byte::OpCode;
 
 #[derive(Debug)]
 pub struct RegLangVM {
@@ -27,6 +26,7 @@ impl RegLangVM {
     }
     /// Loops as long as instructions can be executed.
     pub fn run(&mut self) {
+        println!("Running program: {:?} ({} bytes)", self.program, self.program.len());
         let mut is_done = false;
         while !is_done {
             is_done = self.execute_instruction();
@@ -39,87 +39,102 @@ impl RegLangVM {
     }
     /// 
     fn execute_instruction(&mut self) -> bool {
+        println!("Executing instruction at {}: ", self.program_counter);
         if self.program_counter >= self.program.len() {
-            return false;
+            return true;
         }
         match self.decode_opcode() {
-            OpCode::LOAD => {
+            OpCode::STORE => {
                 let register = self.next_8_bits() as usize;
                 let number = self.next_16_bits() as u32;
                 self.registers[register] = number as i32;
+                println!("STORE: {} -> {}", number, register);
             },
             OpCode::HLT => {
                 println!("HLT encountered");
-                return false;
+                return true;
             },
             OpCode::ADD => {
                 let register1 = self.next_8_bits() as usize;
                 let register2 = self.next_8_bits() as usize;
                 self.registers[self.next_8_bits() as usize] = self.registers[register1] + self.registers[register2];
+                println!("ADD: {} + {} -> {}", self.registers[register1], self.registers[register2], register1);
             },
             OpCode::MUL => {
                 let register1 = self.next_8_bits() as usize;
                 let register2 = self.next_8_bits() as usize;
                 self.registers[self.next_8_bits() as usize] = self.registers[register1] * self.registers[register2];
+                println!("MUL: {} * {} -> {}", self.registers[register1], self.registers[register2], register1);
             },
             OpCode::SUB => {
                 let register1 = self.next_8_bits() as usize;
                 let register2 = self.next_8_bits() as usize;
                 self.registers[self.next_8_bits() as usize] = self.registers[register1] - self.registers[register2];
+                println!("SUB: {} - {} -> {}", self.registers[register1], self.registers[register2], register1);
             },
             OpCode::DIV => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
                 self.registers[self.next_8_bits() as usize] = register1 / register2;
                 self.remainder = (register1 % register2) as u32;
+                println!("DIV: {} / {} -> {}", register1, register2, register1);
             },
             OpCode::JMP => {
                 let value = self.registers[self.next_8_bits() as usize];
                 self.program_counter = value as usize;
+                println!("JMP: {}", value);
             },
             OpCode::JMPF => {
                 let value = self.registers[self.next_8_bits() as usize];
                 self.program_counter += value as usize;
+                println!("JMPF: {}", value);
             },
             OpCode::JMPB => {
                 let value = self.registers[self.next_8_bits() as usize];
                 self.program_counter -= value as usize;
+                println!("JMPB: {}", value);
             },
             OpCode::EQ => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
                 self.equal_flag = register1 == register2;
                 self.next_8_bits();
+                println!("EQ: {} == {} -> {}", register1, register2, self.equal_flag);
             },
             OpCode::NEQ => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
                 self.equal_flag = register1 != register2;
                 self.next_8_bits();
+                println!("NEQ: {} != {} -> {}", register1, register2, self.equal_flag);
             },
             OpCode::GT => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
                 self.equal_flag = register1 > register2;
                 self.next_8_bits();
+                println!("GT: {} > {} -> {}", register1, register2, self.equal_flag);
             },
             OpCode::LT => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
                 self.equal_flag = register1 < register2;
                 self.next_8_bits();
+                println!("LT: {} < {} -> {}", register1, register2, self.equal_flag);
             },
             OpCode::GTE => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
                 self.equal_flag = register1 >= register2;
                 self.next_8_bits();
+                println!("GTE: {} >= {} -> {}", register1, register2, self.equal_flag);
             },
             OpCode::LTE => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
                 self.equal_flag = register1 <= register2;
                 self.next_8_bits();
+                println!("LTE: {} <= {} -> {}", register1, register2, self.equal_flag);
             },
             OpCode::JMPE => {
                 let register = self.next_8_bits() as usize;
@@ -127,13 +142,14 @@ impl RegLangVM {
                 if self.equal_flag {
                     self.program_counter = target as usize;
                 }
+                println!("JMPE: {} -> {}", register, target);
             }
             _ => {
                 println!("Unknown opcode encountered");
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
     /// Decodes the current byte and return the corresponding OpCode
     fn decode_opcode(&mut self) -> OpCode {

@@ -6,5 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reg-lang-parser = { path = "../reg-lang-parser" }
 reg-lang-compiler = { path = "../reg-lang-compiler" }
+reg-lang-vm = { path = "../reg-lang-vm" }

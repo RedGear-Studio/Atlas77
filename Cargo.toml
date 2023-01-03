@@ -1,7 +1,6 @@
 [workspace]
 members = [ 
     "reg-lang",
-    "reg-lang-parser",
     "reg-lang-compiler",
     "reg-lang-vm",
 ]
