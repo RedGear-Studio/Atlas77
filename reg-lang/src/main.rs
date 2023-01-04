@@ -1,24 +1,40 @@
 #![allow(unused)]
 
-use std::process::exit;
-use reg_lang_parser::*;
-use reg_lang_compiler::{
-    generate_bytecode,
-};
-use reg_lang_runtime::{run,
-    instructions::set::Instructions,
-};
+use std::vec;
+use std::fs::File;
+use std::io::Write;
+use std::io::{self, Read};
+use std::num::ParseIntError;
+use std::path::Path;
 
+use reg_lang_compiler::compile;
+use reg_lang_vm::RegLangVM;
 fn main() {
-    let ask = "20.0 + 2.0 * 2.0 / 4.0";
-    println!("calc: {}", ask);
-    let parser = parse(ask);
-    println!("AST: {:?}", parser);
+    run_console();
+}
 
-    let mut instructions: Vec<Instructions> = vec![];
-    generate_bytecode(&parser.stack[0], &mut instructions);
-    instructions.push(Instructions::Print);
-    println!("Bytecode: {:?}", instructions);
-    
-    run(instructions);
+fn run_console() {
+    println!("Welcome to the RegLang console!");
+    println!("Enter your instructions or type exit to leave.");
+    println!("(Note: this is a work in progress, so not all instructions are implemented yet.");
+    loop {
+        let mut buffer = String::new();
+        let stdin = std::io::stdin();
+        print!("RegLang > ");
+        std::io::stdout().flush().expect("Unable to flush stdout.");
+
+        stdin.read_line(&mut buffer).expect("Unable to read line.");
+        let buffer = buffer.trim();
+
+        match buffer {
+            "exit" => {
+                println!("Exiting...");
+                break;
+            },
+            _ => {
+                let mut vm = RegLangVM::new(compile(buffer).program);
+                vm.run();
+            }
+        }
+    }
 }
