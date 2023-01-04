@@ -22,7 +22,7 @@ ARITHMETIC = _{ ADD | SUB | MUL | DIV }
 
 JUMPS = _{ JMP | JMPF | JMPB }
     JMP = { "JMP" ~ REGISTER }
-    JMPF = { "JPMF" ~ REGISTER }
+    JMPF = { "JMPF" ~ REGISTER }
     JMPB = { "JMPB" ~ REGISTER }
 
 COMPARISON = _{ EQ | NEQ | GT | LT | GTE | LTE | JMPE }

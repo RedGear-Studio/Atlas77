@@ -16,31 +16,28 @@ pub struct RegCompiler {
     pub program_counter: usize,
 }
 
-pub fn compile() -> RegCompiler {
+pub fn compile(input :&str) -> RegCompiler {
     let mut compiler = RegCompiler {
         program: vec![],
         program_counter: 0,
     };
-    let mut program = RegParser::parse(Rule::program, "STORE $0 #5 STORE $1 #10 STORE $2 #1 STORE $3 #16 LT $0 $1 ADD $0 $2 $0 JMPE $3 HLT").unwrap_or_else(|e| panic!("{}", e));
+    let mut program = RegParser::parse(Rule::program, input).unwrap_or_else(|e| panic!("{}", e));
     for expr in program.into_iter() {
         match expr.as_rule() {
             Rule::program => {
                 for instruction in expr.into_inner() {
                     match instruction.as_rule() {
                         Rule::STORE => {
-                            println!("STORE");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::STORE as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     Rule::NUMBERS => {
                                         let number = args.as_str().replace("#", "").parse::<u16>().unwrap();
-                                        println!("Number: {}", number);
                                         compiler.program.push((number >> 8) as u8);
                                         compiler.program.push((number & 0xFF) as u8);
                                     }
@@ -51,14 +48,12 @@ pub fn compile() -> RegCompiler {
                             }
                         },
                         Rule::ADD => {
-                            println!("ADD");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::ADD as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -68,14 +63,12 @@ pub fn compile() -> RegCompiler {
                             }
                         },
                         Rule::MUL => {
-                            println!("MUL");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::MUL as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -85,14 +78,12 @@ pub fn compile() -> RegCompiler {
                             }
                         },
                         Rule::DIV => {
-                            println!("DIV");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::DIV as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -102,14 +93,12 @@ pub fn compile() -> RegCompiler {
                             }
                         },
                         Rule::SUB => {
-                            println!("SUB");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::SUB as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -119,14 +108,12 @@ pub fn compile() -> RegCompiler {
                             }
                         },
                         Rule::JMP => {
-                            println!("JMP");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::JMP as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -136,14 +123,12 @@ pub fn compile() -> RegCompiler {
                             }
                         },
                         Rule::JMPB => {
-                            println!("JMPB");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::JMPB as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -153,14 +138,12 @@ pub fn compile() -> RegCompiler {
                             }
                         },
                         Rule::JMPF => {
-                            println!("JMPF");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::JMPF as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -170,14 +153,12 @@ pub fn compile() -> RegCompiler {
                             }
                         },
                         Rule::EQ => {
-                            println!("EQ");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::EQ as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -188,14 +169,12 @@ pub fn compile() -> RegCompiler {
                             compiler.program.push(0);
                         },
                         Rule::NEQ => {
-                            println!("NEQ");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::NEQ as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -206,14 +185,12 @@ pub fn compile() -> RegCompiler {
                             compiler.program.push(0);
                         },
                         Rule::GT => {
-                            println!("GT");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::GT as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -224,14 +201,12 @@ pub fn compile() -> RegCompiler {
                             compiler.program.push(0);
                         },
                         Rule::LT => {
-                            println!("LT");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::LT as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -242,14 +217,12 @@ pub fn compile() -> RegCompiler {
                             compiler.program.push(0);
                         },
                         Rule::GTE => {
-                            println!("GTE");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::GTE as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -260,14 +233,12 @@ pub fn compile() -> RegCompiler {
                             compiler.program.push(0);
                         },
                         Rule::LTE => {
-                            println!("LTE");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::LTE as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -278,14 +249,12 @@ pub fn compile() -> RegCompiler {
                             compiler.program.push(0);
                         },
                         Rule::LTE => {
-                            println!("LTE");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::LTE as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -296,14 +265,12 @@ pub fn compile() -> RegCompiler {
                             compiler.program.push(0);
                         },
                         Rule::JMPE => {
-                            println!("JMPE");
-                            compiler.program_counter += 1;
+                           compiler.program_counter += 1;
                             compiler.program.push(OpCode::JMPE as u8);
                             for args in instruction.into_inner() {
                                 match args.as_rule() {
                                     Rule::REGISTER => {
                                         let register = args.as_str().replace("$", "");
-                                        println!("Register: {}", register);
                                         compiler.program.push(register.parse::<u8>().unwrap());
                                     },
                                     _ => {
@@ -313,12 +280,10 @@ pub fn compile() -> RegCompiler {
                             }
                         },
                         Rule::HLT => {
-                            println!("HLT");
                             compiler.program_counter += 1;
                             compiler.program.push(OpCode::HLT as u8);
                         },
                         Rule::EOI => {
-                            println!("End of input");
                         } 
                         _ => {
                             panic!("Invalid rule (instruction)");
