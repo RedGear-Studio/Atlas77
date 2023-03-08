@@ -1,6 +1,20 @@
-[workspace]
-members = [ 
-    "reg-lang",
-    "reg-lang-compiler",
-    "reg-lang-vm",
-]
+[package]
+name = "Reg-Lang"
+version = "0.0.1-alpha"
+authors = ["Julien Higginson <J.H.Gipson62@gmail.com>"]
+description = "A simple, fast and experimental VM for Reg-Lang."
+license = "GPL-3.0 license"
+repository = "https://github.com/RedGear-Studio/Reg-Lang"
+
+[dependencies]
+nom = "^4.0"
+clap = { version = "2.32", features = ["yaml"] }
+log = "0.4"
+env_logger = "0.5.13"
+byteorder = "1"
+uuid = { version = "0.7", features = ["v4"] }
+chrono = "0.4"
+num_cpus = "1.0"
+bincode = "1.0.1"
+serde = "1.0.80"
+serde_derive = "1.0.80"

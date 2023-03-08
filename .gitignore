@@ -1,3 +1,7 @@
 /target
 *.lock
 .vscode
+*.c
+CHANGELOG.md
+/src/bin/*
+*/repl/*

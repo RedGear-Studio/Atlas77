@@ -125,8 +125,36 @@ To get a local copy up and running follow these simple example steps.
 
 <!-- USAGE EXAMPLES -->
 ## Usage
+> Reg-Byte usage not the upcoming Reg-Lang syntax
 
-> There is no documentation for the moment. The language is still in early phase of development.
+**If/Else:**
+```ocaml
+STORE $0 #5
+STORE $1 #10
+EQ $0 $1
+STORE $2 #24
+JMPE $2
+STORE $4 #10
+JMPF $4
+STORE $3 #20
+STORE $5 #4
+JMPF $5
+STORE $3 #10
+HLT
+```
+
+**While loop:**
+```ocaml
+STORE $0 #5
+STORE $1 #10
+STORE $2 #1
+STORE $3 #17
+LT $0 $1
+ADD $0 $2 $0
+JMPE $3
+HLT
+```
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -135,28 +163,24 @@ To get a local copy up and running follow these simple example steps.
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] To be simple to help learning programmation with, and in a second hand, to be robust enough to power complex software.
-> Maybe ? (lmao yes obviously)
+### Upcoming features:
 
-- [ ] Both interpreted and compiled.
-> The interpreter is nearly ready to go!
+- Simple enough to make learning programming easy, yet robust enough to run complex software.
+- Statically typed with type inference
+- Live Programming (you can make changes while the program is running).
+- A new, simpler type of Debugger for the programmer (based on the Lisp one).
+- Add and remove Native/C/Rust libraries at runtime with the LCF pattern and FFI.
+- Two types of compilation `executable` (.exe for Windows) and `.rbg` (all platform)
+  - The first compile the Rust VM with the program already inside => Lot of optimisation (we can remove all the useless instruction from the VM loop)
+  - The second compile to a binary file who contains all the instruction of the program. A .rbg can be read on any platform who got the standard VM.
 
-- [ ] Dymanicaly and statically typed (You can choose the one you want).
-> Need to check again if we keep that or not
+### Current and in development features:
 
-> There gonna be a `Any` Type, so the Dynamic typing can be used with that
-
-- [ ] Live programming.
-> A prototype for that is being written... just need to w8 a bit.
-
-- [ ] To provide a new type of asynchronous operations.
-> No real idea for now...
-
-- [ ] New type of Debugger, more simpler for the programmer.
-> Ideas but nothing more...
-
-- [ ] Lot of librairies to help building complex software such as a Math, Science, Game Engine ones for example.
-> The prototype is nearly finished... just need to w8 a bit.
+- Basic arithmetic with one register for the remainder of a division.
+- Support for three numeric types : `Int`, `Float`, `UInt` (all in 64 bits)
+- Comparison with one register to store the result
+- Bytecode compiled
+- Register-based Interpreter.
 
 See the [open issues](https://github.com/RedGear-Studio/Reg-Lang/issues) for a full list of proposed features (and known issues).
 

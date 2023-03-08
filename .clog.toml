@@ -1,0 +1,4 @@
+[clog]
+repository = "https://github.com/RedGear-Studio/Reg-Lang"
+changelog = "CHANGELOG.md"
+from-latest-tag = true
