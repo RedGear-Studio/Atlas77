@@ -1,7 +1,7 @@
 use std::ops::Add;
 
 /// A cute 64-bit register that stores binary data. UwU
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Register {
     /// The value stored in the register.
     pub value: u64,
