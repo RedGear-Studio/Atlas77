@@ -1,6 +1,10 @@
-use crate::instructions::OpCode;
+pub mod register;
+pub mod event;
 
-use super::register::Register;
+use reg_byte::OpCode;
+
+use crate::register::Register;
+use crate::event::VMEvent;
 
 /// Virtual machine struct that will execute bytecode
 pub struct VM {
@@ -16,7 +20,7 @@ pub struct VM {
     /// Program counter that tracks which byte is being executed
     pc: usize,
     /// Contains the read-only section data
-    data: Vec<u8>,
+    pub data: Vec<u64>,
 }
 
 impl VM {
@@ -34,21 +38,22 @@ impl VM {
     pub fn run(&mut self) {
         loop {
             match self.execute_instruction() {
-                Some(0) => {
+                Some(VMEvent::IllegalOpCode) => {
                     println!("Illegal opcode");
                     break;
                 },
-                Some(1) => {
+                Some(VMEvent::OutOfBound) => {
                     println!("Program counter out of bounds");
                     break;
                 },
-                Some(2) => {
+                Some(VMEvent::InvalidRegister) => {
                     println!("Invalid register");
                     break;
                 },
+                Some(VMEvent::HaltEncountered) => {
+                    break;
+                }
                 None => (),
-                _ => (),
-                
             }
         }
     }
@@ -57,9 +62,9 @@ impl VM {
     /// - `0` for illegal opcode
     /// - `1` for program counter out of bounds
     /// - `2` for invalid register
-    pub fn execute_instruction(&mut self) -> Option<u8> {
+    pub fn execute_instruction(&mut self) -> Option<VMEvent> {
         if self.pc >= self.program.len() {
-            return Some(1);
+            return Some(VMEvent::OutOfBound);
         }
         match self.decode_opcode() {
             OpCode::MOV => {
@@ -96,10 +101,11 @@ impl VM {
             },
             OpCode::PRT => {
                 let register = self.registers[self.next_8_bits() as usize];
+                self.pc += 2;
                 if self.uwu_flag {
                     println!("UwU {}", register.value);
                 } else {
-                    println!("{}", register.value);
+                    println!("\nPRT: {}", register.value);
                 }
             },
             OpCode::UWU => {
@@ -107,10 +113,10 @@ impl VM {
             },
             OpCode::HLT => {
                 println!("HLT instruction encountered, exiting...");
-                return Some(0);
+                return Some(VMEvent::HaltEncountered);
             },
             _ => {
-                panic!("Unknown OpCode");
+                return Some(VMEvent::IllegalOpCode);
             }
         }
         return None;

@@ -36,7 +36,7 @@
 <h3 align="center">Reg Lang</h3>
 
   <p align="center">
-     Experimental language build with Rust to make it fast and robust 
+    A simple, fast and experimental VM for Reg-Lang.
     <br />
     <!-- <a href="https://github.com/RedGear-Studio/Reg-Lang"><strong>Explore the docs »</strong></a>
     <br />
@@ -51,154 +51,65 @@
   </p>
 </div>
 
+# Reg-Lang
 
+This is a simple virtual machine (VM), for the Reg-Lang language, that can execute bytecode instructions. It has 64 registers, each capable of storing 64 bits of binary data, and can execute eight different opcodes: MOV, ADD, JMP, CMP, JMC, PRT, UWU, and HLT.
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+# How to Use
 
+To use the VM, you will need to write a program in bytecode format. The bytecode is a sequence of instructions encoded as bytes, where each byte corresponds to an opcode or a value to be loaded into a register.
 
+Here is an example program that loads the value 42 into register 0, adds the value 23 to it, and prints the result:
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
+```rs
+// Load 42 into register 0
+MOV $0 42 //42 will be store in the .data section, so it's gonna be replaced by a pointer to where it's stored
 
-<!-- [![Product Name Screen Shot][product-screenshot]](https://example.com) -->
+// Load 23 into register 1
+MOV $1 23
 
+// Add register 0 and register 1, and store the result in register 2
+ADD $0 $1 $2
 
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-### Built With
-
-- [Rustlang](https://www.rust-lang.org/)
-- [Pest.rs](https://pest.rs) (The Elegant Parser)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- GETTING STARTED -->
-## Getting Started
-
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
-
-### Prerequisites
-
-- The compiler and runtime of this language. For now there is no version available, but you can clone this repository and compile yourself !
-
-### Installation
-
-1. Clone the repo
-   ```sh
-   git clone https://github.com/RedGear-Studio/Reg-Lang.git
-   ```
-2. Later...
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- USAGE EXAMPLES -->
-## Usage
-> Reg-Byte usage not the upcoming Reg-Lang syntax
-
-**If/Else:**
-```ocaml
-STORE $0 #5
-STORE $1 #10
-EQ $0 $1
-STORE $2 #24
-JMPE $2
-STORE $4 #10
-JMPF $4
-STORE $3 #20
-STORE $5 #4
-JMPF $5
-STORE $3 #10
-HLT
+// Print the value in register 2
+PRT $2
+/// Note: all the instructions are in 32 bits, so PRT $2 is in reality : PRT $2 0 0
 ```
+To run this program, you can create a new instance of the VM, set its program property to the bytecode sequence, and call the run method:
 
-**While loop:**
-```ocaml
-STORE $0 #5
-STORE $1 #10
-STORE $2 #1
-STORE $3 #17
-LT $0 $1
-ADD $0 $2 $0
-JMPE $3
-HLT
+```rust
+use reg_lang_vm::VM;
+
+fn main() {
+    let mut vm = VM::new();
+    vm.program = vec![
+        0x00, 0x00, 0x2a, 0x00,
+        0x00, 0x01, 0x17, 0x00,
+        0x01, 0x00, 0x01, 0x02,
+        0x05, 0x02, 0x00, 0x00,
+    ];
+    vm.run();
+}
 ```
+This will output:
 
+``> 65``
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+# OpCodes
 
+    `MOV`: Loads a value from the .data section into a register.
+    `ADD`: Adds the value in one register to the value in another register and stores the result in a third register.
+    `JMP`: Jumps to the address stored in a register.
+    `CMP`: Compares the values in two registers and sets a flag based on the result (greater-than, less-than, or equal).
+    `JMC`: Jumps to an address if a specified flag is set (e.g. jumps if the previous comparison result was greater-than).
+    `PRT`: Prints the value in a register to the console or output stream.
+    `UWU`: Change the uwu_flag to print the value in a register in a more uwu way.
+    `HLT`: Halts the program.
 
-
-<!-- ROADMAP -->
-## Roadmap
-
-### Upcoming features:
-
-- Simple enough to make learning programming easy, yet robust enough to run complex software.
-- Statically typed with type inference
-- Live Programming (you can make changes while the program is running).
-- A new, simpler type of Debugger for the programmer (based on the Lisp one).
-- Add and remove Native/C/Rust libraries at runtime with the LCF pattern and FFI.
-- Two types of compilation `executable` (.exe for Windows) and `.rbg` (all platform)
-  - The first compile the Rust VM with the program already inside => Lot of optimisation (we can remove all the useless instruction from the VM loop)
-  - The second compile to a binary file who contains all the instruction of the program. A .rbg can be read on any platform who got the standard VM.
-
-### Current and in development features:
-
-- Basic arithmetic with one register for the remainder of a division.
-- Support for three numeric types : `Int`, `Float`, `UInt` (all in 64 bits)
-- Comparison with one register to store the result
-- Bytecode compiled
-- Register-based Interpreter.
-
-See the [open issues](https://github.com/RedGear-Studio/Reg-Lang/issues) for a full list of proposed features (and known issues).
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-You can help us improve this project by proposing changes through our [Discord server](https://discord.gg/zQfaTBAXg4) or the [Issues section](https://github.com/Gipson62/Reg-lang/issues) of our GitHub page. We welcome all suggestions and encourage you to submit [pull requests](https://github.com/Gipson62/Reg-lang/pulls) if you have developed content to contribute.
-
-Our [Discord server](https://discord.gg/zQfaTBAXg4) is a place where contributors can discuss ideas and collaborate on the project. The [Issues section](https://github.com/Gipson62/Reg-lang/issues) on GitHub is where people can report bugs or propose new features for the project.
-
-We appreciate any and all contributions, and we are excited to see what the community can come up with to help us improve our experimental language
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
+  ## Incoming OpCodes
+    
+    `ADF`: Adds the value in one register to the value in another register and stores the result in a third register but both of the register will be treat as Float
+    `CST`: Cast a register to one number type to another (like Float -> Int or Int -> UInt) (Because a Register just store bits and nothing else)
 
 
 <!-- LICENSE -->

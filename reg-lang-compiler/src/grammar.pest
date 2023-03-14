@@ -1,0 +1,32 @@
+program = { SOI ~ EXPR+ ~ EOI }
+
+WHITESPACE = _{ "\n" | " " | "\t" }
+
+DIGIT = _{ '0'..'9' }
+
+REGISTER_SIGN = _{ ^"$" }
+REGISTER = @{ REGISTER_SIGN ~ DIGIT+ }
+
+NUMBER_SIGN = _{ ^"#" }
+NUMBERS = @{ NUMBER_SIGN ~ DIGIT+ }
+
+EXPR = _{ MOV | ARITHMETIC | JUMPS | COMPARISON | HLT | PRINT | ILG }
+
+MOV = { "MOV" ~ REGISTER ~ NUMBERS }
+
+ARITHMETIC = _{ ADD }
+    ADD = { "ADD" ~ REGISTER ~ REGISTER ~ REGISTER }
+
+JUMPS = _{ JMP | JMC }
+    JMP = { "JMP" ~ REGISTER }
+    JMC = { "JMC" ~ REGISTER ~ FLAG }
+    
+FLAG = { "GT" | "LT" | "EQ" }
+
+COMPARISON = { "CMP" ~ REGISTER ~ REGISTER }
+
+PRINT = { "PRT" ~ REGISTER }
+
+HLT = { "HLT" }
+
+ILG = { "ILG" }
