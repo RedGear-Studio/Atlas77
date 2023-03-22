@@ -3,10 +3,15 @@ pub mod event;
 
 use reg_byte::OpCode;
 
-use crate::register::Register;
-use crate::event::VMEvent;
+use crate::{
+    register::Register,
+    event::VMEvent
+};
+
+use std::f64;
 
 /// Virtual machine struct that will execute bytecode
+#[derive(Debug)]
 pub struct VM {
     /// An array of 64 registers, each capable of storing 64 bits of binary data.
     pub registers: [Register; 64],
@@ -17,6 +22,9 @@ pub struct VM {
     uwu_flag: bool,
     /// The program's bytecode instructions.
     pub program: Vec<u8>,
+    /// The stack that is used for the `PUSH` and `POP` instructions
+    /// 
+    pub stack: Vec<u64>,
     /// Program counter that tracks which byte is being executed
     pc: usize,
     /// Contains the read-only section data
@@ -30,6 +38,7 @@ impl VM {
             cmp_flag: 0,
             uwu_flag: false,
             program: Vec::new(),
+            stack: Vec::new(),
             pc: 0,
             data: Vec::new(),
         }
@@ -73,9 +82,52 @@ impl VM {
                 self.registers[register] = Register { value: self.data[reference] as u64 };
             },
             OpCode::ADD => {
-                let register1 = self.registers[self.next_8_bits() as usize];
-                let register2 = self.registers[self.next_8_bits() as usize];
-                self.registers[self.next_8_bits() as usize] = register1 + register2;
+                let value1 = self.registers[self.next_8_bits() as usize].value as i64;
+                let value2 = self.registers[self.next_8_bits() as usize].value as i64;
+                let result = value1 + value2;
+                self.registers[self.next_8_bits() as usize] = Register{value: result as u64};
+            },
+            OpCode::SUB => {
+                let value1 = self.registers[self.next_8_bits() as usize].value as i64;
+                let value2 = self.registers[self.next_8_bits() as usize].value as i64;
+                let result = value1 - value2;
+                self.registers[self.next_8_bits() as usize] = Register{value: result as u64};
+            },
+            OpCode::MUL => {
+                let value1 = self.registers[self.next_8_bits() as usize].value as i64;
+                let value2 = self.registers[self.next_8_bits() as usize].value as i64;
+                let result = value1 * value2;
+                self.registers[self.next_8_bits() as usize] = Register{value: result as u64};
+            },
+            OpCode::DIV => {
+                let value1 = self.registers[self.next_8_bits() as usize].value as i64;
+                let value2 = self.registers[self.next_8_bits() as usize].value as i64;
+                let result = value1 / value2;
+                self.registers[self.next_8_bits() as usize] = Register{value: result as u64};
+            },
+            OpCode::ADF => {
+                let value1 = f64::from_bits(self.registers[self.next_8_bits() as usize].value);
+                let value2 = f64::from_bits(self.registers[self.next_8_bits() as usize].value);
+                let result = value1 + value2;
+                self.registers[self.next_8_bits() as usize] = Register { value: result.to_bits() };
+            },
+            OpCode::SBF => {
+                let value1 = f64::from_bits(self.registers[self.next_8_bits() as usize].value);
+                let value2 = f64::from_bits(self.registers[self.next_8_bits() as usize].value);
+                let result = value1 - value2;
+                self.registers[self.next_8_bits() as usize] = Register { value: result.to_bits() };
+            },
+            OpCode::MLF => {
+                let value1 = f64::from_bits(self.registers[self.next_8_bits() as usize].value);
+                let value2 = f64::from_bits(self.registers[self.next_8_bits() as usize].value);
+                let result = value1 * value2;
+                self.registers[self.next_8_bits() as usize] = Register { value: result.to_bits() };
+            },
+            OpCode::DVF => {
+                let value1 = f64::from_bits(self.registers[self.next_8_bits() as usize].value);
+                let value2 = f64::from_bits(self.registers[self.next_8_bits() as usize].value);
+                let result = value1 / value2;
+                self.registers[self.next_8_bits() as usize] = Register { value: result.to_bits() };
             },
             OpCode::JMP => {
                 let register = self.registers[self.next_8_bits() as usize];
@@ -101,11 +153,73 @@ impl VM {
             },
             OpCode::PRT => {
                 let register = self.registers[self.next_8_bits() as usize];
-                self.pc += 2;
-                if self.uwu_flag {
-                    println!("UwU {}", register.value);
+                let types = self.next_8_bits();
+                self.next_8_bits();
+                if types == 0 {
+                    println!("{}", register.value);
+                } else if types == 1 {
+                    println!("{}", f64::from_bits(register.value));
+                } else if types == 2 {
+                    println!("{}", register.value as i64);
                 } else {
-                    println!("\nPRT: {}", register.value);
+                    return Some(VMEvent::InvalidRegister);
+                }
+            },
+            // Cast the value in a register to a type from a type `CST REGISTER TYPE_FROM TYPE_TO`
+            // 0 for u64, 1 for f64 and 2 for i64
+            OpCode::CST => {
+                let register = self.next_8_bits() as usize;
+                let type_from = self.next_8_bits();
+                let type_to = self.next_8_bits();
+                match type_from {
+                    0 => {
+                        match type_to {
+                            1 => {
+                                let value = self.registers[register].value as f64;
+                                self.registers[register] = Register { value: value.to_bits() };
+                            },
+                            2 => {
+                                let value = self.registers[register].value as i64;
+                                self.registers[register] = Register { value: value as u64 };
+                            },
+                            _ => {
+                                return Some(VMEvent::InvalidRegister);
+                            }
+                        }
+                    },
+                    1 => {
+                        match type_to {
+                            0 => {
+                                let value = f64::from_bits(self.registers[register].value);
+                                self.registers[register] = Register { value: value as u64 };
+                            },
+                            2 => {
+                                let value = f64::from_bits(self.registers[register].value) as i64;
+                                self.registers[register] = Register { value: value as u64 };
+                            },
+                            _ => {
+                                return Some(VMEvent::InvalidRegister);
+                            }
+                        }
+                    },
+                    2 => {
+                        match type_to {
+                            0 => {
+                                let value = self.registers[register].value as i64;
+                                self.registers[register] = Register { value: value as u64 };
+                            },
+                            1 => {
+                                let value = self.registers[register].value as i64;
+                                self.registers[register] = Register { value: (value as f64).to_bits()};
+                            },
+                            _ => {
+                                return Some(VMEvent::InvalidRegister);
+                            }
+                        }
+                    },
+                    _ => {
+                        return Some(VMEvent::InvalidRegister);
+                    }
                 }
             },
             OpCode::UWU => {
@@ -117,7 +231,7 @@ impl VM {
             },
             _ => {
                 return Some(VMEvent::IllegalOpCode);
-            }
+            },
         }
         return None;
     }

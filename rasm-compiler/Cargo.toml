@@ -1,9 +1,9 @@
 [package]
-name = "reg-lang-compiler"
-version = "0.0.1"
+name = "rasm-compiler"
+version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 pest = "2.1.3"
 pest_derive = "2.1.3"
-reg-byte = { path = "../reg-byte" }
+reg-byte = {path = "../reg-byte"}
