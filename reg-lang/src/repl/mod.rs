@@ -29,7 +29,7 @@ impl REPL {
 
             stdin.read_line(&mut buffer).expect("ERROR: Unable to read line from user");
             let buffer = buffer.trim();
-            let mut compiler = RegCompiler::new();
+            let mut compiler = RASMCompiler::new();
 
             self.command_buffer.push(buffer.to_string());
 

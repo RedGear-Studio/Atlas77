@@ -3,5 +3,6 @@ members = [
     "reg-lang",
     "reg-lang-compiler",
     "reg-lang-vm",
-    "reg-byte"
+    "reg-byte",
+    "rasm-compiler"
 ]
