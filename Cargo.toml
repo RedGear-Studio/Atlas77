@@ -1,8 +1,13 @@
-[workspace]
-members = [ 
-    "reg-lang",
-    "reg-lang-compiler",
-    "reg-lang-vm",
-    "reg-byte",
-    "rasm-compiler"
-]
+[package]
+name = "reg-lang"
+version = "0.0.1-alpha"
+authors = ["Higginson Julien <j.h.gipson62@gmail.com>"]
+homepage = "https://redgear.tk/Language.html"
+repository = "https://github.com/RedGear-Studio/Reg-Lang"
+description = "A simple, fast and experimental language named RegLang."
+readme = "README.md"
+edition = "2021"
+license = "GPL-3.0"
+categories = ["language"]
+
+[dependencies]
