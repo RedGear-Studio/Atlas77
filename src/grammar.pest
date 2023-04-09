@@ -1,0 +1,45 @@
+program = { SOI ~ (statement ~ ";")* ~ EOI }
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+
+statement = { variable_declaration | assignment | print_statement | if_statement | while_loop }
+variable_declaration = { "let" ~ identifier ~ ":" ~ type ~ ("=" ~ expression)? }
+assignment = { identifier ~ "=" ~ expression }
+print_statement = { "print" ~ expression }
+if_statement = { "if" ~ expression ~ "then" ~ (statement ~ ";")* ~ ("else" ~ (if_statement | statement ~ ";"))? ~ "end" }
+while_loop = { "while" ~ expression ~ "do" ~ (statement ~ ";")* ~ "end" }
+
+expression = { literal | binary_expression | identifier | unary_expression | function_call }
+
+binary_expression = { ^"(" ~ expression ~ operator ~ expression ~ ^")"}
+unary_expression = { unary_operator ~ expression }
+
+unary_operator = { "-" }
+
+operator = { add | sub | mul | div | mod | eq | neq | lt | lte | gt | gte }
+add = _{ ^"+" }
+sub = _{ ^"-" }
+mul = _{ ^"*" }
+div = _{ ^"/" }
+mod = _{ ^"%" }
+eq = _{ ^"==" }
+neq = _{ ^"!=" }
+lt = _{ ^"<" }
+lte = _{ ^"<=" }
+gt = _{ ^">" }
+gte = _{ ^">=" }
+
+literal = { number | string | boolean }
+number = @{ digit+ }
+string = _{ "\"" ~ string_value ~ "\"" }
+string_value = { character* }
+boolean = { "true" | "false" }
+
+function_call = { identifier ~ "(" ~ (expression ~ ("," ~ expression)*)? ~ ")" }
+
+type = { "int" | "string" | "boolean" }
+
+identifier = { letter ~ ( letter | digit )* }
+
+letter = _{ 'a'..'z' | 'A'..'Z' }
+digit = _{ '0'..'9' }
+character = _{ letter | digit | " " | "." | "," | "!" | "?" | ";" | ":" }

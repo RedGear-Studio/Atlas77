@@ -52,65 +52,15 @@
 </div>
 
 # Reg-Lang
+Reg-Lang is a statically-typed programming language currently in development. It is built with Rust and uses LLVM as its compiler infrastructure.
 
-This is a simple virtual machine (VM), for the Reg-Lang language, that can execute bytecode instructions. It has 64 registers, each capable of storing 64 bits of binary data, and can execute eight different opcodes: MOV, ADD, JMP, CMP, JMC, PRT, UWU, and HLT.
+Reg-Lang aims to be a simple, easy-to-learn language for beginners, while also providing more advanced features for experienced developers. The language supports basic data types such as integers, floats, strings, char and booleans.
 
-# How to Use
+Reg-Lang features control flow statements like if/else statements and while loops, and supports basic arithmetic operations like addition, subtraction, multiplication, and division, as well as comparison operators like ``==``, ``!=``, ``<``, ``<=``, ``>``, and ``>=``.
 
-To use the VM, you will need to write a program in bytecode format. The bytecode is a sequence of instructions encoded as bytes, where each byte corresponds to an opcode or a value to be loaded into a register.
+The language also supports function declarations, with support for both named and anonymous functions, as well as function calls with support for passing arguments.
 
-Here is an example program that loads the value 42 into register 0, adds the value 23 to it, and prints the result:
-
-```rs
-// Load 42 into register 0
-MOV $0 42 //42 will be store in the .data section, so it's gonna be replaced by a pointer to where it's stored
-
-// Load 23 into register 1
-MOV $1 23
-
-// Add register 0 and register 1, and store the result in register 2
-ADD $0 $1 $2
-
-// Print the value in register 2
-PRT $2
-/// Note: all the instructions are in 32 bits, so PRT $2 is in reality : PRT $2 0 0
-```
-To run this program, you can create a new instance of the VM, set its program property to the bytecode sequence, and call the run method:
-
-```rust
-use reg_lang_vm::VM;
-
-fn main() {
-    let mut vm = VM::new();
-    vm.program = vec![
-        0x00, 0x00, 0x2a, 0x00,
-        0x00, 0x01, 0x17, 0x00,
-        0x01, 0x00, 0x01, 0x02,
-        0x05, 0x02, 0x00, 0x00,
-    ];
-    vm.run();
-}
-```
-This will output:
-
-``> 65``
-
-# OpCodes
-
-    `MOV`: Loads a value from the .data section into a register.
-    `ADD`: Adds the value in one register to the value in another register and stores the result in a third register.
-    `JMP`: Jumps to the address stored in a register.
-    `CMP`: Compares the values in two registers and sets a flag based on the result (greater-than, less-than, or equal).
-    `JMC`: Jumps to an address if a specified flag is set (e.g. jumps if the previous comparison result was greater-than).
-    `PRT`: Prints the value in a register to the console or output stream.
-    `UWU`: Change the uwu_flag to print the value in a register in a more uwu way.
-    `HLT`: Halts the program.
-
-  ## Incoming OpCodes
-    
-    `ADF`: Adds the value in one register to the value in another register and stores the result in a third register but both of the register will be treat as Float
-    `CST`: Cast a register to one number type to another (like Float -> Int or Int -> UInt) (Because a Register just store bits and nothing else)
-
+> Note: Reg-Lang is still in development, and more features are planned for future releases. Stay tuned for updates!
 
 <!-- LICENSE -->
 ## License
