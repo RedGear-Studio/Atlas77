@@ -23,12 +23,10 @@ fn main() {
                         end;
                       ";
     let program = TestParser::parse(Rule::program, input).unwrap_or_else(|e| panic!("{}", e));
-    let mut ast;
     for programs in program.into_iter() {
         match programs.as_rule() {
             Rule::program => {
-                ast = generate_ast(programs);
-                println!("{:#?}", ast);
+                generate_ast(programs);
             },
             _ => unreachable!(),
         }

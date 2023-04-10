@@ -1,5 +1,4 @@
-# configuration file for git-cliff
-# see https://github.com/orhun/git-cliff#configuration-file
+# configuration file for git-cliff (0.1.0)
 
 [changelog]
 # changelog header
@@ -17,9 +16,24 @@ body = """
 {% endif %}\
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
-    {% for commit in commits %}
-        - {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}\
-    {% endfor %}
+    {% for commit in commits
+    | filter(attribute="scope")
+    | sort(attribute="scope") %}
+        - *({{commit.scope}})* {{ commit.message | upper_first }}
+        {%- if commit.breaking %}
+        {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- for commit in commits %}
+        {%- if commit.scope -%}
+        {% else -%}
+            - *(No Category)* {{ commit.message | upper_first }}
+            {% if commit.breaking -%}
+            {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
+            {% endif -%}
+        {% endif -%}
+    {% endfor -%}
+    {% raw %}\n{% endraw %}\
 {% endfor %}\n
 """
 # remove the leading and trailing whitespace from the template
@@ -36,10 +50,6 @@ conventional_commits = true
 filter_unconventional = true
 # process each line of a commit as an individual commit
 split_commits = false
-# regex for preprocessing the commit messages
-commit_preprocessors = [
-    # { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/orhun/git-cliff/issues/${2}))"}, # replace issue numbers
-]
 # regex for parsing and grouping commits
 commit_parsers = [
     { message = "^feat", group = "Features"},
@@ -67,5 +77,3 @@ ignore_tags = ""
 topo_order = false
 # sort the commits inside sections by oldest/newest order
 sort_commits = "oldest"
-# limit the number of commits included in the changelog.
-# limit_commits = 42

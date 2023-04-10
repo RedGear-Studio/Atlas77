@@ -1,11 +1,6 @@
 use pest::iterators::Pair;
 use crate::Rule;
-use super::ast::{
-    Statement,
-    Expression,
-    BinaryOperator,
-    DataType, Program, UnaryOperator, Literal
-};
+use super::ast::{Statement, Expression, BinaryOperator, DataType, Program, UnaryOperator, Literal};
 
 pub fn generate_ast( program: Pair<Rule>) -> Program {
     let mut ast = Program {
@@ -16,7 +11,7 @@ pub fn generate_ast( program: Pair<Rule>) -> Program {
             Rule::statement => {
                 ast.statements.push(make_statement(programs.into_inner().next().unwrap()));
             },
-            _ => (),
+            _ => unreachable!(),
         }
     }
     return ast;
@@ -111,7 +106,6 @@ fn make_identifier( identifier: Pair<Rule>) -> String {
 }
 //Literals
 fn make_literal( literal: Pair<Rule>) -> Literal {
-    println!("{:?}", literal);
     match literal.as_rule() {
         Rule::number => {
             return Literal::Number(literal.as_span().as_str().to_string().parse::<f64>().unwrap());

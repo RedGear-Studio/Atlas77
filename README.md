@@ -58,9 +58,11 @@ Reg-Lang aims to be a simple, easy-to-learn language for beginners, while also p
 
 Reg-Lang features control flow statements like if/else statements and while loops, and supports basic arithmetic operations like addition, subtraction, multiplication, and division, as well as comparison operators like ``==``, ``!=``, ``<``, ``<=``, ``>``, and ``>=``.
 
-The language also supports function declarations, with support for both named and anonymous functions, as well as function calls with support for passing arguments.
-
 > Note: Reg-Lang is still in development, and more features are planned for future releases. Stay tuned for updates!
+> For now, only the Parser and Lexer are implemented.
+
+## Contributing
+If you're interested in contributing to Reg-Lang, please consider contributing via [Github-Issues](https://github.com/RedGear-Studio/Reg-Lang/issues) or [Github-Pull Requests](https://github.com/RedGear-Studio/Reg-Lang/pulls).
 
 <!-- LICENSE -->
 ## License
