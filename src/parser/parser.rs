@@ -19,31 +19,29 @@ pub fn generate_ast( program: Pair<Rule>) -> Program {
 }
 fn make_statement( statement: Pair<Rule>) -> Statement {
     match statement.as_rule() {
-        Rule::print_statement => {
-            return Statement::PrintStatement(make_expression(statement.into_inner().next().unwrap().into_inner().next().unwrap()));
-        },
+        Rule::print_statement => Statement::PrintStatement(make_expression(statement.into_inner().next().unwrap().into_inner().next().unwrap())),
         Rule::variable_declaration => {
             let mut inner_pairs = statement.into_inner();
             let identifier = make_identifier(inner_pairs.next().unwrap());
             let data_type = inner_pairs.next().unwrap().as_str().parse::<DataType>().unwrap();
             let something = inner_pairs.next();
-            let value = if something.is_some() {
-                Some(make_expression(something.unwrap().into_inner().next().unwrap()))
+            let value = if let Some(hehe) = something {
+                Some(make_expression(hehe.into_inner().next().unwrap()))
             } else {
                 None
             };
-            return Statement::VariableDeclaration {
+            Statement::VariableDeclaration {
                 identifier,
                 data_type,
                 value,
-            };
+            }
         },
         Rule::assignment => {
             let mut inner_pairs = statement.into_inner();
-            return Statement::Assignment {
+            Statement::Assignment {
                 identifier: make_identifier(inner_pairs.next().unwrap()),
                 value: make_expression(inner_pairs.next().unwrap().into_inner().next().unwrap()),
-            };
+            }
         },
         Rule::if_statement => {
             let mut inner_pairs = statement.into_inner();
@@ -55,13 +53,13 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
             let mut is_else = false;
             let mut else_body = vec![];
             let something = inner_pairs.next();
-            if something.is_some() {
+            if let Some(value) = something {
                 is_else = true;
-                for statements in something.unwrap().into_inner() {
+                for statements in value.into_inner() {
                     else_body.push(make_statement(statements.into_inner().next().unwrap()));
                 }
             }
-            return Statement::IfStatement {
+            Statement::IfStatement {
                 cond_expr: condition,
                 body_expr: body,
                 else_expr: if is_else {
@@ -78,7 +76,7 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
             for statements in inner_pairs.next().unwrap().into_inner() {
                 body.push(make_statement(statements.into_inner().next().unwrap()));
             }
-            return Statement::WhileLoop {
+            Statement::WhileLoop {
                 cond_expr: condition,
                 body_expr: body,
             }
@@ -89,15 +87,11 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
 
 fn make_expression( expression: Pair<Rule>) -> Expression {
     match expression.as_rule() {
-        Rule::literal => {
-            return Expression::Literal(make_literal(expression.into_inner().next().unwrap()));
-        },
-        Rule::identifier => {
-            return Expression::Identifier(expression.as_span().as_str().to_string());
-        },
+        Rule::literal => Expression::Literal(make_literal(expression.into_inner().next().unwrap())),
+        Rule::identifier => Expression::Identifier(expression.as_span().as_str().to_string()),
         Rule::binary_expression => {
             let mut inner_pairs = expression.into_inner();
-            return Expression::BinaryOp(
+            Expression::BinaryOp(
                 Box::new(make_expression(inner_pairs.next().unwrap().into_inner().next().unwrap())),
                 inner_pairs.next().unwrap().as_str().parse::<BinaryOperator>().unwrap(),
                 Box::new(make_expression(inner_pairs.next().unwrap().into_inner().next().unwrap())),
@@ -105,7 +99,7 @@ fn make_expression( expression: Pair<Rule>) -> Expression {
         },
         Rule::unary_expression => {
             let mut inner_pairs = expression.into_inner();
-            return Expression::UnaryOp(
+            Expression::UnaryOp(
                 inner_pairs.next().unwrap().as_str().parse::<UnaryOperator>().unwrap(),
                 Box::new(make_expression(inner_pairs.next().unwrap().into_inner().next().unwrap()))
             )  
@@ -120,15 +114,9 @@ fn make_identifier( identifier: Pair<Rule>) -> String {
 //Literals
 fn make_literal( literal: Pair<Rule>) -> Literal {
     match literal.as_rule() {
-        Rule::number => {
-            return Literal::Number(literal.as_span().as_str().to_string().parse::<f64>().unwrap());
-        },
-        Rule::string_value => {
-            return Literal::String(literal.as_span().as_str().to_string());
-        },
-        Rule::boolean => {
-            return Literal::Boolean(literal.as_span().as_str().parse::<bool>().unwrap());
-        }
+        Rule::number => Literal::Number(literal.as_span().as_str().to_string().parse::<f64>().unwrap()),
+        Rule::string_value => Literal::String(literal.as_span().as_str().to_string()),
+        Rule::boolean => Literal::Boolean(literal.as_span().as_str().parse::<bool>().unwrap()),
         _ => unreachable!(),
     }
 }

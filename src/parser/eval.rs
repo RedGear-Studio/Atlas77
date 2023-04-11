@@ -17,22 +17,13 @@ pub enum Value {
 }
 impl Value {
     pub fn is_boolean(&self) -> bool {
-        match self {
-            Value::Boolean(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::Boolean(_))
     }
     pub fn is_number(&self) -> bool {
-        match self {
-            Value::Number(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::Number(_))
     }
     pub fn is_string(&self) -> bool {
-        match self {
-            Value::String(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::String(_))
     }
 }
 #[derive(Debug)]
@@ -96,7 +87,7 @@ impl SymbolTable {
                 return Some(&self.variables[len -1 -i].1.value);
             }
         }
-        return None;
+        None
     }
     pub fn new_boolean(&mut self, identifier: String, value: bool, scope: u32) -> Result<(), EvalError> {
         if self.variables.iter().any(|variable| variable.0 == identifier) {
@@ -106,7 +97,7 @@ impl SymbolTable {
             data_type: DataType::Boolean,
             value: Value::Boolean(value),
         }, Scope(scope)));
-        return Ok(());
+        Ok(())
     }
     fn new_number(&mut self, identifier: String, value: f64, scope: u32) -> Result<(), EvalError> {
         if self.variables.iter().any(|variable| variable.0 == identifier) {
@@ -116,7 +107,7 @@ impl SymbolTable {
             data_type: DataType::Float,
             value: Value::Number(value),
         }, Scope(scope)));
-        return Ok(());
+        Ok(())
     }
     fn new_string(&mut self, identifier: String, value: String, scope: u32) -> Result<(), EvalError> {
         if self.variables.iter().any(|variable| variable.0 == identifier) {
@@ -126,7 +117,7 @@ impl SymbolTable {
             data_type: DataType::String,
             value: Value::String(value),
         }, Scope(scope)));
-        return Ok(());
+        Ok(())
     }
     fn set_variable_value(&mut self, identifier: String, value: Value) -> Result<(), EvalError> {
         if let Some(variable) = self.variables
@@ -156,12 +147,12 @@ impl SymbolTable {
             }
             return Err(EvalError::InvalidDataType);
         }
-        return Err(EvalError::InvalidIdentifier(identifier));
+        Err(EvalError::InvalidIdentifier(identifier))
     }
     fn drop_scope(&mut self, scope: u32) -> Result<EvalResult, EvalError> {
         // Remove all the variable who have the scope
         self.variables.retain(|variable| variable.2.0 != scope);
-        return Ok(EvalResult::Sucess);
+        Ok(EvalResult::Sucess)
     }
     pub fn eval(&mut self, program: Vec<Statement>, scope: u32) -> Result<EvalResult, EvalError> {
         for statement in program {
@@ -172,17 +163,9 @@ impl SymbolTable {
                         EvalResult::Number(number) => println!("{}", number),
                         EvalResult::String(string) => println!("{}", string),
                         EvalResult::Boolean(boolean) => println!("{}", boolean),
-                        EvalResult::Identifier(identifier) => {
-                            let value = self.get_variable_value(identifier).unwrap();
-                            match value {
-                                Value::Number(number) => println!("{}", number),
-                                Value::String(string) => println!("{}", string),
-                                Value::Boolean(boolean) => println!("{}", boolean),
-                                Value::Null => println!("null"),
-                            }
-                        },
                         EvalResult::Sucess => println!("sucess"),
                         EvalResult::Null => println!("null"),
+                        _ => return Err(EvalError::InvalidExpression),
                     }
                 },
                 Statement::IfStatement { cond_expr, body_expr, else_expr } => {
@@ -191,16 +174,16 @@ impl SymbolTable {
                         EvalResult::Boolean(boolean) => {
                             if boolean {
                                 self.eval(body_expr, scope + 1)?;
-                            } else if else_expr.is_some() {
-                                self.eval(else_expr.unwrap(), scope + 1)?;
+                            } else if let Some(value) = else_expr {
+                                self.eval(value, scope + 1)?;
                             }
                         },
                         _ => return Err(EvalError::InvalidExpression),
                     }
                 },
                 Statement::VariableDeclaration { identifier, value, data_type } => {
-                    let value = if value.is_some() {
-                        self.eval_expression(value.unwrap())?
+                    let value = if let Some(inside) = value {
+                        self.eval_expression(inside)?
                     } else {
                         EvalResult::Null
                     };
@@ -252,7 +235,7 @@ impl SymbolTable {
                                 }
                             },
                             _ => {
-                                return Err(EvalError::InvalidExpression)
+                                return Err(EvalError::InvalidExpression);
                             },
                         }
                     }
@@ -287,106 +270,74 @@ impl SymbolTable {
                     // Arithmetic
                     BinaryOperator::Plus => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Number(left + right));
-                            },
-                            (EvalResult::String(left), EvalResult::String(right)) => {
-                                return Ok(EvalResult::String(left + &right));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Number(left + right)),
+                            (EvalResult::String(left), EvalResult::String(right)) => Ok(EvalResult::String(left + &right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::Minus => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Number(left - right));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Number(left - right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::Slash => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Number(left / right));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Number(left / right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::Star => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Number(left * right));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Number(left * right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::Mod => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Number(left % right));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Number(left % right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     // Comparison
                     BinaryOperator::DoubleEqual => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Boolean(left == right));
-                            },
-                            (EvalResult::String(left), EvalResult::String(right)) => {
-                                return Ok(EvalResult::Boolean(left == right));
-                            },
-                            (EvalResult::Boolean(left), EvalResult::Boolean(right)) => {
-                                return Ok(EvalResult::Boolean(left == right));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Boolean(left == right)),
+                            (EvalResult::String(left), EvalResult::String(right)) => Ok(EvalResult::Boolean(left == right)),
+                            (EvalResult::Boolean(left), EvalResult::Boolean(right)) => Ok(EvalResult::Boolean(left == right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::GreaterThan => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Boolean(left > right));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Boolean(left > right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::GreaterThanEqual => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Boolean(left >= right));
-                            },
+                            (EvalResult::Number(left), EvalResult::Number(right)) => return Ok(EvalResult::Boolean(left >= right)),
                             _ => return Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::LessThan => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Boolean(left < right));
-                            },
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Boolean(left < right)),
                             _ => return Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::LessThanEqual => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Boolean(left <= right));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Boolean(left <= right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::NotEqual => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => {
-                                return Ok(EvalResult::Boolean(left != right));
-                            },
-                            (EvalResult::String(left), EvalResult::String(right)) => {
-                                return Ok(EvalResult::Boolean(left != right));
-                            },
-                            (EvalResult::Boolean(left), EvalResult::Boolean(right)) => {
-                                return Ok(EvalResult::Boolean(left != right));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Boolean(left != right)),
+                            (EvalResult::String(left), EvalResult::String(right)) => Ok(EvalResult::Boolean(left != right)),
+                            (EvalResult::Boolean(left), EvalResult::Boolean(right)) => Ok(EvalResult::Boolean(left != right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                 }
@@ -396,24 +347,20 @@ impl SymbolTable {
                 match op {
                     UnaryOperator::Negate => {
                         match right {
-                            EvalResult::Number(number) => {
-                                return Ok(EvalResult::Number(-number));
-                            },
-                            _ => return Err(EvalError::InvalidDataType),
+                            EvalResult::Number(number) => Ok(EvalResult::Number(-number)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     }
                 }
             },
             Expression::Literal(literal) => {
                 match literal {
-                    Literal::Number(number) => {
-                        return Ok(EvalResult::Number(number));
-                    }
+                    Literal::Number(number) => Ok(EvalResult::Number(number)),
                     Literal::String(string) => {
-                        return Ok(EvalResult::String(string));
+                        Ok(EvalResult::String(string))
                     }
                     Literal::Boolean(boolean) => {
-                        return Ok(EvalResult::Boolean(boolean));
+                        Ok(EvalResult::Boolean(boolean))
                     }
                 }
             }
@@ -423,16 +370,10 @@ impl SymbolTable {
                     return Err(EvalError::InvalidExpression);
                 }
                 match value.unwrap().clone() {
-                    Value::Number(number) => {
-                        return Ok(EvalResult::Number(number));
-                    },
-                    Value::String(string) => {
-                        return Ok(EvalResult::String(string));
-                    },
-                    Value::Boolean(boolean) => {
-                        return Ok(EvalResult::Boolean(boolean));
-                    },
-                    _ => return Err(EvalError::InvalidDataType),
+                    Value::Number(number) => Ok(EvalResult::Number(number)),
+                    Value::String(string) => Ok(EvalResult::String(string)),
+                    Value::Boolean(boolean) => Ok(EvalResult::Boolean(boolean)),
+                    _ => Err(EvalError::InvalidDataType),
                 }
             }
         }
