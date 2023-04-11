@@ -25,11 +25,7 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
             let identifier = make_identifier(inner_pairs.next().unwrap());
             let data_type = inner_pairs.next().unwrap().as_str().parse::<DataType>().unwrap();
             let something = inner_pairs.next();
-            let value = if let Some(hehe) = something {
-                Some(make_expression(hehe.into_inner().next().unwrap()))
-            } else {
-                None
-            };
+            let value = something.map(|inside| make_expression(inside.into_inner().next().unwrap()));
             Statement::VariableDeclaration {
                 identifier,
                 data_type,

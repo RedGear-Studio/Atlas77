@@ -70,7 +70,7 @@ impl Display for EvalResult {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SymbolTable {
     pub variables: Vec<(String, Variable, Scope)>
 }
@@ -258,7 +258,7 @@ impl SymbolTable {
             }
         }
         self.drop_scope(scope)?;
-        return Ok(EvalResult::Sucess);
+        Ok(EvalResult::Sucess)
     }
 
     fn eval_expression(&mut self, expression: Expression) -> Result<EvalResult, EvalError> {
@@ -316,14 +316,14 @@ impl SymbolTable {
                     },
                     BinaryOperator::GreaterThanEqual => {
                         match (left, right) {
-                            (EvalResult::Number(left), EvalResult::Number(right)) => return Ok(EvalResult::Boolean(left >= right)),
-                            _ => return Err(EvalError::InvalidDataType),
+                            (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Boolean(left >= right)),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::LessThan => {
                         match (left, right) {
                             (EvalResult::Number(left), EvalResult::Number(right)) => Ok(EvalResult::Boolean(left < right)),
-                            _ => return Err(EvalError::InvalidDataType),
+                            _ => Err(EvalError::InvalidDataType),
                         }
                     },
                     BinaryOperator::LessThanEqual => {

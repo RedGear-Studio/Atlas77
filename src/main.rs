@@ -15,7 +15,8 @@ struct TestParser;
 
 fn main() {
     let input: &str = "let x: int = 1;
-    while (x < 5) do
+    let hehe: boolean = true;
+    while hehe do
         x = (x + 1);
         print x;
     end;";

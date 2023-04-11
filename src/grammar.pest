@@ -8,6 +8,7 @@ assignment = { identifier ~ "=" ~ expression }
 print_statement = { "print" ~ expression }
 if_statement = { "if" ~ expression ~ "then" ~ block ~ ("else" ~ block)? ~ "end" }
 while_loop = { "while" ~ expression ~ "do" ~ block ~ "end" }
+for_loop = { "for" ~ identifier ~ "in" ~ expression ~ ".." ~ expression ~ "iterate" ~ block ~ "end"}
 
 expression = { literal | binary_expression | identifier | unary_expression }
 
@@ -36,6 +37,7 @@ number = @{ digit+ }
 string = _{ "\"" ~ string_value ~ "\"" }
 string_value = { character* }
 boolean = { "true" | "false" }
+reserved = { "true" | "false" | "int" | "string" | "boolean" | "let" | "print" | "if" | "then" | "else" | "end" | "while" | "do" | "for" | "in" | "iterate" }
 
 type = { "int" | "string" | "boolean" }
 
