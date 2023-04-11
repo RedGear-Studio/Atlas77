@@ -92,9 +92,7 @@ impl SymbolTable {
     fn get_variable_value(&self, identifier: String) -> Option<&Value> {
         let len = self.variables.len();
         for i in 0..len {
-            println!("For Loop:\n\t\"{}\": \"{}\"", self.variables[len -1 -i].0, identifier);
             if self.variables[len -1 -i].0 == identifier {
-                println!("If:\n\t\"{}\": \"{:?}\"", identifier, self.variables[len -1 -i].1.value);
                 return Some(&self.variables[len -1 -i].1.value);
             }
         }
@@ -295,67 +293,6 @@ impl SymbolTable {
                             (EvalResult::String(left), EvalResult::String(right)) => {
                                 return Ok(EvalResult::String(left + &right));
                             },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Number(left + right));
-                                    },
-                                    (Value::String(left), Value::String(right)) => {
-                                        return Ok(EvalResult::String(left + &right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Number(left + right));
-                                    },
-                                    Value::String(left) => {
-                                        return Ok(EvalResult::String(left + &right.to_string()));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::String(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::String(left.to_string() + &right));
-                                    },
-                                    Value::String(left) => {
-                                        return Ok(EvalResult::String(left + &right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Number(left + right));
-                                    },
-                                    Value::String(right) => {
-                                        return Ok(EvalResult::String(left.to_string() + &right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::String(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::String(left + &right.to_string()));
-                                    },
-                                    Value::String(right) => {
-                                        return Ok(EvalResult::String(left + &right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
                             _ => return Err(EvalError::InvalidDataType),
                         }
                     },
@@ -363,34 +300,6 @@ impl SymbolTable {
                         match (left, right) {
                             (EvalResult::Number(left), EvalResult::Number(right)) => {
                                 return Ok(EvalResult::Number(left - right));
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap();
-                                let right = self.get_variable_value(right).unwrap();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Number(left - right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Number(left - right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Number(left - right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
                             },
                             _ => return Err(EvalError::InvalidDataType),
                         }
@@ -400,34 +309,6 @@ impl SymbolTable {
                             (EvalResult::Number(left), EvalResult::Number(right)) => {
                                 return Ok(EvalResult::Number(left / right));
                             },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap();
-                                let right = self.get_variable_value(right).unwrap();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Number(left / right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Number(left / right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Number(left / right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
                             _ => return Err(EvalError::InvalidDataType),
                         }
                     },
@@ -436,34 +317,6 @@ impl SymbolTable {
                             (EvalResult::Number(left), EvalResult::Number(right)) => {
                                 return Ok(EvalResult::Number(left * right));
                             },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap();
-                                let right = self.get_variable_value(right).unwrap();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Number(left * right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Number(left * right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Number(left * right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
                             _ => return Err(EvalError::InvalidDataType),
                         }
                     },
@@ -471,34 +324,6 @@ impl SymbolTable {
                         match (left, right) {
                             (EvalResult::Number(left), EvalResult::Number(right)) => {
                                 return Ok(EvalResult::Number(left % right));
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap();
-                                let right = self.get_variable_value(right).unwrap();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Number(left % right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Number(left % right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Number(left % right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
                             },
                             _ => return Err(EvalError::InvalidDataType),
                         }
@@ -515,76 +340,6 @@ impl SymbolTable {
                             (EvalResult::Boolean(left), EvalResult::Boolean(right)) => {
                                 return Ok(EvalResult::Boolean(left == right));
                             },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap();
-                                let right = self.get_variable_value(right).unwrap();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Boolean(left == right));
-                                    },
-                                    (Value::String(left), Value::String(right)) => {
-                                        return Ok(EvalResult::Boolean(left == right));
-                                    },
-                                    (Value::Boolean(left), Value::Boolean(right)) => {
-                                        return Ok(EvalResult::Boolean(left == right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Boolean(left == right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::String(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::String(left) => {
-                                        return Ok(EvalResult::Boolean(left == right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Boolean(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Boolean(left) => {
-                                        return Ok(EvalResult::Boolean(left == right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Boolean(left == right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::String(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::String(right) => {
-                                        return Ok(EvalResult::Boolean(left == right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Boolean(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::Boolean(right) => {
-                                        return Ok(EvalResult::Boolean(left == right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
                             _ => return Err(EvalError::InvalidDataType),
                         }
                     },
@@ -592,34 +347,6 @@ impl SymbolTable {
                         match (left, right) {
                             (EvalResult::Number(left), EvalResult::Number(right)) => {
                                 return Ok(EvalResult::Boolean(left > right));
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Boolean(left > right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Boolean(left > right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Boolean(left > right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
                             },
                             _ => return Err(EvalError::InvalidDataType),
                         }
@@ -629,34 +356,6 @@ impl SymbolTable {
                             (EvalResult::Number(left), EvalResult::Number(right)) => {
                                 return Ok(EvalResult::Boolean(left >= right));
                             },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Boolean(left >= right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Boolean(left >= right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Boolean(left >= right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
                             _ => return Err(EvalError::InvalidDataType),
                         }
                     },
@@ -665,34 +364,6 @@ impl SymbolTable {
                             (EvalResult::Number(left), EvalResult::Number(right)) => {
                                 return Ok(EvalResult::Boolean(left < right));
                             },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Boolean(left < right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Boolean(left < right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Boolean(left < right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
                             _ => return Err(EvalError::InvalidDataType),
                         }
                     },
@@ -700,34 +371,6 @@ impl SymbolTable {
                         match (left, right) {
                             (EvalResult::Number(left), EvalResult::Number(right)) => {
                                 return Ok(EvalResult::Boolean(left <= right));
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Boolean(left <= right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Boolean(left <= right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Boolean(left <= right));
-                                    }
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
                             },
                             _ => return Err(EvalError::InvalidDataType),
                         }
@@ -743,76 +386,6 @@ impl SymbolTable {
                             (EvalResult::Boolean(left), EvalResult::Boolean(right)) => {
                                 return Ok(EvalResult::Boolean(left != right));
                             },
-                            (EvalResult::Identifier(left), EvalResult::Identifier(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match (left, right) {
-                                    (Value::Number(left), Value::Number(right)) => {
-                                        return Ok(EvalResult::Boolean(left != right));
-                                    },
-                                    (Value::String(left), Value::String(right)) => {
-                                        return Ok(EvalResult::Boolean(left != right));
-                                    },
-                                    (Value::Boolean(left), Value::Boolean(right)) => {
-                                        return Ok(EvalResult::Boolean(left != right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Number(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Number(left) => {
-                                        return Ok(EvalResult::Boolean(left != right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::String(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::String(left) => {
-                                        return Ok(EvalResult::Boolean(left != right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Identifier(left), EvalResult::Boolean(right)) => {
-                                let left = self.get_variable_value(left).unwrap().clone();
-                                match left {
-                                    Value::Boolean(left) => {
-                                        return Ok(EvalResult::Boolean(left != right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Number(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::Number(right) => {
-                                        return Ok(EvalResult::Boolean(left != right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::String(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::String(right) => {
-                                        return Ok(EvalResult::Boolean(left != right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
-                            (EvalResult::Boolean(left), EvalResult::Identifier(right)) => {
-                                let right = self.get_variable_value(right).unwrap().clone();
-                                match right {
-                                    Value::Boolean(right) => {
-                                        return Ok(EvalResult::Boolean(left != right));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
-                            },
                             _ => return Err(EvalError::InvalidDataType),
                         }
                     },
@@ -825,15 +398,6 @@ impl SymbolTable {
                         match right {
                             EvalResult::Number(number) => {
                                 return Ok(EvalResult::Number(-number));
-                            },
-                            EvalResult::Identifier(identifier) => {
-                                let value = self.get_variable_value(identifier).unwrap().clone();
-                                match value {
-                                    Value::Number(number) => {
-                                        return Ok(EvalResult::Number(-number));
-                                    },
-                                    _ => return Err(EvalError::InvalidDataType),
-                                }
                             },
                             _ => return Err(EvalError::InvalidDataType),
                         }
@@ -854,7 +418,6 @@ impl SymbolTable {
                 }
             }
             Expression::Identifier(identifier) => {
-                println!("{:?}", self);
                 let value = self.get_variable_value(identifier);
                 if value.is_none() {
                     return Err(EvalError::InvalidExpression);
