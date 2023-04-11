@@ -11,6 +11,7 @@ pub fn generate_ast( program: Pair<Rule>) -> Program {
             Rule::statement => {
                 ast.statements.push(make_statement(programs.into_inner().next().unwrap()));
             },
+            Rule::EOI => (),
             _ => unreachable!(),
         }
     }
@@ -49,7 +50,7 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
             let condition = make_expression(inner_pairs.next().unwrap().into_inner().next().unwrap());
             let mut body = vec![];
             for statements in inner_pairs.next().unwrap().into_inner() {
-                body.push(make_statement(statements));
+                body.push(make_statement(statements.into_inner().next().unwrap()));
             }
             let mut is_else = false;
             let mut else_body = vec![];
@@ -57,7 +58,7 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
             if something.is_some() {
                 is_else = true;
                 for statements in something.unwrap().into_inner() {
-                    else_body.push(make_statement(statements));
+                    else_body.push(make_statement(statements.into_inner().next().unwrap()));
                 }
             }
             return Statement::IfStatement {
@@ -68,6 +69,18 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
                 } else {
                     None
                 }
+            }
+        },
+        Rule::while_loop => {
+            let mut inner_pairs = statement.into_inner();
+            let condition = make_expression(inner_pairs.next().unwrap().into_inner().next().unwrap());
+            let mut body = vec![];
+            for statements in inner_pairs.next().unwrap().into_inner() {
+                body.push(make_statement(statements.into_inner().next().unwrap()));
+            }
+            return Statement::WhileLoop {
+                cond_expr: condition,
+                body_expr: body,
             }
         }
         _ => unreachable!()

@@ -5,7 +5,7 @@ pub struct Program {
     pub statements: Vec<Statement>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Statement {
     VariableDeclaration {
         identifier: String,
@@ -28,7 +28,7 @@ pub enum Statement {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expression {
     Literal(Literal),
     Identifier(String),
@@ -36,14 +36,14 @@ pub enum Expression {
     UnaryOp(UnaryOperator, Box<Expression>,),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
     Number(f64),
     String(String),
     Boolean(bool),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum DataType {
     Int,
     Float,
@@ -65,7 +65,7 @@ impl FromStr for DataType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BinaryOperator {
     Plus,
     Minus,
@@ -98,7 +98,7 @@ impl FromStr for BinaryOperator {
         }
     }
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum UnaryOperator {
     Negate,
 }

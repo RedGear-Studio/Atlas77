@@ -1,12 +1,13 @@
-program = { SOI ~ (statement ~ ";")* ~ EOI }
+program = { SOI ~ (statement ~ semicolon)* ~ EOI }
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 
 statement = { variable_declaration | assignment | print_statement | if_statement | while_loop }
+block = { (statement ~ semicolon)* }
 variable_declaration = { "let" ~ identifier ~ ":" ~ type ~ ("=" ~ expression)? }
 assignment = { identifier ~ "=" ~ expression }
 print_statement = { "print" ~ expression }
-if_statement = { "if" ~ expression ~ "then" ~ (statement ~ ";")* ~ ("else" ~ (if_statement | statement ~ ";"))? ~ "end" }
-while_loop = { "while" ~ expression ~ "do" ~ (statement ~ ";")* ~ "end" }
+if_statement = { "if" ~ expression ~ "then" ~ block ~ ("else" ~ block)? ~ "end" }
+while_loop = { "while" ~ expression ~ "do" ~ block ~ "end" }
 
 expression = { literal | binary_expression | identifier | unary_expression }
 
@@ -27,6 +28,8 @@ lt = _{ ^"<" }
 lte = _{ ^"<=" }
 gt = _{ ^">" }
 gte = _{ ^">=" }
+
+semicolon = _{ ^";" }
 
 literal = { number | string | boolean }
 number = @{ digit+ }

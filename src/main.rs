@@ -1,9 +1,10 @@
 pub mod parser {
     pub mod ast;
     pub mod parser;
+    pub mod eval;
 }
 
-use crate::{pest::Parser, parser::parser::generate_ast};
+use crate::{pest::Parser, parser::{eval::{SymbolTable},parser::generate_ast}};
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
@@ -13,20 +14,26 @@ extern crate pest_derive;
 struct TestParser;
 
 fn main() {
-    let input = " print -(5 + 5);
-                        let salut: string = \"YO\";
-                        salut = \"Hello\";
-                        if (salut == \"Hello\") then
-                            print \"Hello\";
+    let input = " let something: int = 5;
+                        if (5 == 5) then
+                            print \"hello\";
+                            something = \"hello\";
                         else
-                            print \"World\";
-                        end;
-                      ";
+                            print \"world\";
+                            something = (5 - 5);
+                        end;";
     let program = TestParser::parse(Rule::program, input).unwrap_or_else(|e| panic!("{}", e));
     for programs in program.into_iter() {
         match programs.as_rule() {
             Rule::program => {
-                generate_ast(programs);
+                let ast = generate_ast(programs);
+                println!("{:#?}", ast);
+                let mut symbol_table = SymbolTable::new();
+                let result = symbol_table.eval(ast.statements, 1);
+                match result {
+                    Ok(_) => (),
+                    Err(e) => println!("{}", e),
+                }
             },
             _ => unreachable!(),
         }
