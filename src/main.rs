@@ -14,20 +14,16 @@ extern crate pest_derive;
 struct TestParser;
 
 fn main() {
-    let input = " let something: int = 5;
-                        if (5 == 5) then
-                            print \"hello\";
-                            something = \"hello\";
-                        else
-                            print \"world\";
-                            something = (5 - 5);
-                        end;";
+    let input: &str = "let x: int = 1;
+    while (x < 5) do
+        x = (x + 1);
+        print x;
+    end;";
     let program = TestParser::parse(Rule::program, input).unwrap_or_else(|e| panic!("{}", e));
     for programs in program.into_iter() {
         match programs.as_rule() {
             Rule::program => {
                 let ast = generate_ast(programs);
-                println!("{:#?}", ast);
                 let mut symbol_table = SymbolTable::new();
                 let result = symbol_table.eval(ast.statements, 1);
                 match result {

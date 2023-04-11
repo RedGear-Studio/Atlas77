@@ -39,7 +39,7 @@ boolean = { "true" | "false" }
 
 type = { "int" | "string" | "boolean" }
 
-identifier = { letter ~ ( letter | digit )* }
+identifier = @{ letter ~ ( letter | digit )* }
 
 letter = _{ 'a'..'z' | 'A'..'Z' }
 digit = _{ '0'..'9' }

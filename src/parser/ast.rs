@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{str::FromStr, fmt::Display};
 
 #[derive(Debug)]
 pub struct Program {
@@ -58,9 +58,20 @@ impl FromStr for DataType {
             "int" => Ok(DataType::Int),
             "float" => Ok(DataType::Float),
             "string" => Ok(DataType::String),
-            "bool" => Ok(DataType::Boolean),
+            "boolean" => Ok(DataType::Boolean),
             "char" => Ok(DataType::Char),
             _ => Err(()),
+        }
+    }
+}
+impl Display for DataType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DataType::Int => write!(f, "int"),
+            DataType::Float => write!(f, "float"),
+            DataType::String => write!(f, "string"),
+            DataType::Boolean => write!(f, "bool"),
+            DataType::Char => write!(f, "char"),
         }
     }
 }

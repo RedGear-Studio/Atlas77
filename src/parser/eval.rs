@@ -37,9 +37,11 @@ impl Value {
 }
 #[derive(Debug)]
 pub enum EvalError {
+    /// Expected, Found
     InvalidDataType,
     InvalidOperator,
-    InvalidIdentifier,
+    /// Found
+    InvalidIdentifier(String),
     InvalidLiteral,
     InvalidExpression,
     InvalidStatement,
@@ -49,7 +51,7 @@ impl Display for EvalError {
         match self {
             EvalError::InvalidDataType => write!(f, "Invalid data type"),
             EvalError::InvalidOperator => write!(f, "Invalid operator"),
-            EvalError::InvalidIdentifier => write!(f, "Invalid identifier"),
+            EvalError::InvalidIdentifier(id) => write!(f, "Error: \"Invalid identifier\":\n\t {} Not found", id),
             EvalError::InvalidLiteral => write!(f, "Invalid literal"),
             EvalError::InvalidExpression => write!(f, "Invalid expression"),
             EvalError::InvalidStatement => write!(f, "Invalid statement"),
@@ -88,14 +90,19 @@ impl SymbolTable {
         }
     }
     fn get_variable_value(&self, identifier: String) -> Option<&Value> {
-        self.variables
-            .iter()
-            .find(|variable| variable.0 == identifier)
-            .map(|variable| &variable.1.value)
+        let len = self.variables.len();
+        for i in 0..len {
+            println!("For Loop:\n\t\"{}\": \"{}\"", self.variables[len -1 -i].0, identifier);
+            if self.variables[len -1 -i].0 == identifier {
+                println!("If:\n\t\"{}\": \"{:?}\"", identifier, self.variables[len -1 -i].1.value);
+                return Some(&self.variables[len -1 -i].1.value);
+            }
+        }
+        return None;
     }
     pub fn new_boolean(&mut self, identifier: String, value: bool, scope: u32) -> Result<(), EvalError> {
         if self.variables.iter().any(|variable| variable.0 == identifier) {
-            return Err(EvalError::InvalidIdentifier);
+            return Err(EvalError::InvalidIdentifier(identifier));
         }
         self.variables.push((identifier, Variable {
             data_type: DataType::Boolean,
@@ -105,7 +112,7 @@ impl SymbolTable {
     }
     fn new_number(&mut self, identifier: String, value: f64, scope: u32) -> Result<(), EvalError> {
         if self.variables.iter().any(|variable| variable.0 == identifier) {
-            return Err(EvalError::InvalidIdentifier);
+            return Err(EvalError::InvalidIdentifier(identifier));
         }
         self.variables.push((identifier, Variable {
             data_type: DataType::Float,
@@ -115,7 +122,7 @@ impl SymbolTable {
     }
     fn new_string(&mut self, identifier: String, value: String, scope: u32) -> Result<(), EvalError> {
         if self.variables.iter().any(|variable| variable.0 == identifier) {
-            return Err(EvalError::InvalidIdentifier);
+            return Err(EvalError::InvalidIdentifier(identifier));
         }
         self.variables.push((identifier, Variable {
             data_type: DataType::String,
@@ -151,7 +158,7 @@ impl SymbolTable {
             }
             return Err(EvalError::InvalidDataType);
         }
-        return Err(EvalError::InvalidIdentifier);
+        return Err(EvalError::InvalidIdentifier(identifier));
     }
     fn drop_scope(&mut self, scope: u32) -> Result<EvalResult, EvalError> {
         // Remove all the variable who have the scope
@@ -847,7 +854,23 @@ impl SymbolTable {
                 }
             }
             Expression::Identifier(identifier) => {
-                return Ok(EvalResult::Identifier(identifier));
+                println!("{:?}", self);
+                let value = self.get_variable_value(identifier);
+                if value.is_none() {
+                    return Err(EvalError::InvalidExpression);
+                }
+                match value.unwrap().clone() {
+                    Value::Number(number) => {
+                        return Ok(EvalResult::Number(number));
+                    },
+                    Value::String(string) => {
+                        return Ok(EvalResult::String(string));
+                    },
+                    Value::Boolean(boolean) => {
+                        return Ok(EvalResult::Boolean(boolean));
+                    },
+                    _ => return Err(EvalError::InvalidDataType),
+                }
             }
         }
     }

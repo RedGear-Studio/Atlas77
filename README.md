@@ -52,14 +52,46 @@
 </div>
 
 # Reg-Lang
-Reg-Lang is a statically-typed programming language currently in development. It is built with Rust and uses LLVM as its compiler infrastructure.
+Reg-Lang is a statically-typed programming language currently in development. 
+> Currently a Tree Walker Interpreter.
 
-Reg-Lang aims to be a simple, easy-to-learn language for beginners, while also providing more advanced features for experienced developers. The language supports basic data types such as integers, floats, strings, char and booleans.
+The language is currently in its early development stage and supports basic programming constructs like variables, control flow statements (while/for loops, if/else), string manipulation, and print statements. The language supports three primitive data types: bool, int, and string.
 
-Reg-Lang features control flow statements like if/else statements and while loops, and supports basic arithmetic operations like addition, subtraction, multiplication, and division, as well as comparison operators like ``==``, ``!=``, ``<``, ``<=``, ``>``, and ``>=``.
+We have two roadmaps for future releases: [`v0.0.2`](https://github.com/RedGear-Studio/Reg-Lang/milestone/2) and [`v0.0.3`](https://github.com/RedGear-Studio/Reg-Lang/milestone/3), which will include exciting features such as support for arrays, functions, and structures. We're excited to continue developing the language and look forward to your feedback and contributions
 
 > Note: Reg-Lang is still in development, and more features are planned for future releases. Stay tuned for updates!
 > For now, only the Parser and Lexer are implemented.
+
+# Installation/Usage
+> For now there isn't any real way to use the language because there isn't any REPL or CLI. But it's planned for the `v0.0.2` release.
+
+# Features
+## Variables
+Variables are declared using the `let` keyword. The type of the variable is declared after the variable name, and the value is assigned using the `=` operator. The following example declares a variable `x` of type `int` and assigns it the value `5`.
+You can change its value later on by using the `=` operator again.
+```rs
+let x: int = 5;
+x = 10;
+```
+## Control Flow
+### If/Else
+The `if` statement is used to execute a block of code if a condition is true. The `else` statement is used to execute a block of code if the condition is false. The following example prints `x is greater than 5` if the value of `x` is greater than 5, and `x is less than or equal to 5` otherwise.
+```rs
+if (x > 5) then
+    print "x is greater than 5";
+else
+    print "x is less than or equal to 5";
+end;
+```
+### While Loop
+The `while` statement is used to execute a block of code repeatedly until a condition is false. The following example prints the numbers from 1 to 5.
+```rs
+let x: int = 1;
+while (x <= 5) do
+    print x;
+    x = x + 1;
+end;
+```
 
 ## Contributing
 If you're interested in contributing to Reg-Lang, please consider contributing via [Github-Issues](https://github.com/RedGear-Studio/Reg-Lang/issues) or [Github-Pull Requests](https://github.com/RedGear-Studio/Reg-Lang/pulls).
