@@ -14,12 +14,13 @@ extern crate pest_derive;
 struct TestParser;
 
 fn main() {
-    let input: &str = "let x: int = 1;
-    let hehe: boolean = true;
-    while hehe do
-        x = (x + 1);
-        print x;
-    end;";
+    let input: &str = "
+print \"Hello World!\";
+let i: int = 16;
+for i to 10 by 2 direction both iterate
+    print i;
+end;
+    ";
     let program = TestParser::parse(Rule::program, input).unwrap_or_else(|e| panic!("{}", e));
     for programs in program.into_iter() {
         match programs.as_rule() {

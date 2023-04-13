@@ -1,4 +1,4 @@
-use super::ast::{Statement, Expression, BinaryOperator, DataType, UnaryOperator, Literal};
+use super::ast::{Statement, Expression, BinaryOperator, DataType, UnaryOperator, Literal, ForLoopDirection};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 #[derive(Debug)]
@@ -24,6 +24,12 @@ impl Value {
     }
     pub fn is_string(&self) -> bool {
         matches!(self, Value::String(_))
+    }
+    pub fn get_number(&self) -> i64 {
+        match self {
+            Value::Number(number) => *number as i64,
+            _ => unreachable!()
+        }
     }
 }
 #[derive(Debug)]
@@ -69,7 +75,14 @@ impl Display for EvalResult {
         }
     }
 }
-
+impl EvalResult {
+    pub fn get_number(&self) -> i64 {
+        match self {
+            EvalResult::Number(number) => *number as i64,
+            _ => unreachable!()
+        }
+    }
+}
 #[derive(Debug, Default)]
 pub struct SymbolTable {
     pub variables: Vec<(String, Variable, Scope)>
@@ -79,6 +92,9 @@ impl SymbolTable {
         SymbolTable {
             variables: vec![],
         }
+    }
+    fn variable_existing(&self, identifier: &str) -> bool {
+        self.variables.iter().any(|variable| variable.0 == identifier)
     }
     fn get_variable_value(&self, identifier: String) -> Option<&Value> {
         let len = self.variables.len();
@@ -154,8 +170,8 @@ impl SymbolTable {
         self.variables.retain(|variable| variable.2.0 != scope);
         Ok(EvalResult::Sucess)
     }
-    pub fn eval(&mut self, program: Vec<Statement>, scope: u32) -> Result<EvalResult, EvalError> {
-        for statement in program {
+    pub fn eval(&mut self, block: Vec<Statement>, scope: u32) -> Result<EvalResult, EvalError> {
+        for statement in block {
             match statement {
                 Statement::PrintStatement(expression) => {
                     let result = self.eval_expression(expression)?;
@@ -237,6 +253,64 @@ impl SymbolTable {
                             _ => {
                                 return Err(EvalError::InvalidExpression);
                             },
+                        }
+                    }
+                },
+                Statement::ForLoop { identifier, expr, step, direction, body_expr } => {
+                    if !self.variable_existing(identifier.as_str()) {
+                        self.new_number(identifier.clone(), 0.0, scope)?;
+                    }
+                    let expr = self.eval_expression(expr)?;
+                    if !matches!(expr, EvalResult::Number(_)) {
+                        return Err(EvalError::InvalidExpression);
+                    }
+                    let expr_value = expr.get_number();
+                    let step = self.eval_expression(step)?;
+                    if !matches!(step, EvalResult::Number(_)) {
+                        return Err(EvalError::InvalidExpression);
+                    }
+                    let step_value = step.get_number();
+                    let current_direction;
+                    match self.get_variable_value(identifier.clone()).unwrap() {
+                        Value::Number(value) => {
+                            match direction {
+                                ForLoopDirection::Decrease => {
+                                    current_direction = false;
+
+                                },
+                                ForLoopDirection::Increase => {
+                                    current_direction = true;
+                                }
+                                ForLoopDirection::Both => {
+                                    if (*value as i64) > expr_value {
+                                        current_direction = false;
+                                    } else {
+                                        current_direction = true;
+                                    }
+                                }
+                            }
+                        },
+                        _ => return Err(EvalError::InvalidExpression),
+                    }
+                    loop {
+                        if current_direction {
+                            if let Value::Number(value) = self.get_variable_value(identifier.clone()).unwrap() {
+                                if *value as i64 > expr_value {
+                                    break;
+                                }
+                            }
+                        } else {
+                            if let Value::Number(value) = self.get_variable_value(identifier.clone()).unwrap() {
+                                if (*value as i64) < expr_value {
+                                    break;
+                                }
+                            }
+                        }
+                        self.eval(body_expr.clone(), scope + 1)?;
+                        if current_direction {
+                            self.set_variable_value(identifier.clone(), Value::Number((self.get_variable_value(identifier.clone()).unwrap().get_number() + step_value) as f64))?;
+                        } else {
+                            self.set_variable_value(identifier.clone(), Value::Number((self.get_variable_value(identifier.clone()).unwrap().get_number() - step_value) as f64))?;
                         }
                     }
                 },

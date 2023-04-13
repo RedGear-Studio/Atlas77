@@ -1,14 +1,20 @@
 program = { SOI ~ (statement ~ semicolon)* ~ EOI }
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 
-statement = { variable_declaration | assignment | print_statement | if_statement | while_loop }
+statement = { variable_declaration | assignment | print_statement | if_statement | while_loop | for_loop }
 block = { (statement ~ semicolon)* }
 variable_declaration = { "let" ~ identifier ~ ":" ~ type ~ ("=" ~ expression)? }
 assignment = { identifier ~ "=" ~ expression }
 print_statement = { "print" ~ expression }
 if_statement = { "if" ~ expression ~ "then" ~ block ~ ("else" ~ block)? ~ "end" }
 while_loop = { "while" ~ expression ~ "do" ~ block ~ "end" }
-for_loop = { "for" ~ identifier ~ "in" ~ expression ~ ".." ~ expression ~ "iterate" ~ block ~ "end"}
+for_loop = { "for" ~ identifier ~ "to" ~ expression ~ ( step? ~ direction?) ~ "iterate" ~ block ~ "end"}
+
+step = { "by" ~ expression }
+direction = { "direction" ~ (increase | decrease | both) }
+increase = { "increase" }
+decrease = { "decrease" }
+both = { "both" }
 
 expression = { literal | binary_expression | identifier | unary_expression }
 
@@ -37,11 +43,11 @@ number = @{ digit+ }
 string = _{ "\"" ~ string_value ~ "\"" }
 string_value = { character* }
 boolean = { "true" | "false" }
-reserved = { "true" | "false" | "int" | "string" | "boolean" | "let" | "print" | "if" | "then" | "else" | "end" | "while" | "do" | "for" | "in" | "iterate" }
+reserved = { "true" | "false" | "int" | "string" | "boolean" | "let" | "print" | "if" | "then" | "else" | "end" | "while" | "do" | "for" | "to" | "increase" | "increase" | "direction" | "decrease" | "both" | "iterate" }
 
 type = { "int" | "string" | "boolean" }
 
-identifier = @{ letter ~ ( letter | digit )* }
+identifier = @{ !reserved ~ (letter ~ ( letter | digit )*) }
 
 letter = _{ 'a'..'z' | 'A'..'Z' }
 digit = _{ '0'..'9' }

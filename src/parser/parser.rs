@@ -1,6 +1,6 @@
 use pest::iterators::Pair;
 use crate::Rule;
-use super::ast::{Statement, Expression, BinaryOperator, DataType, Program, UnaryOperator, Literal};
+use super::ast::{Statement, Expression, BinaryOperator, DataType, Program, UnaryOperator, Literal, ForLoopDirection};
 
 pub fn generate_ast( program: Pair<Rule>) -> Program {
     let mut ast = Program {
@@ -15,7 +15,7 @@ pub fn generate_ast( program: Pair<Rule>) -> Program {
             _ => unreachable!(),
         }
     }
-    return ast;
+    ast
 }
 fn make_statement( statement: Pair<Rule>) -> Statement {
     match statement.as_rule() {
@@ -76,7 +76,47 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
                 cond_expr: condition,
                 body_expr: body,
             }
-        }
+        },
+        Rule::for_loop => {
+            let mut inner_pairs = statement.into_inner();
+            let identifier = make_identifier(inner_pairs.next().unwrap());
+            let expr = make_expression(inner_pairs.next().unwrap().into_inner().next().unwrap());
+            let mut step = None;
+            let mut direction = ForLoopDirection::Increase;
+            let mut body = vec![];
+            for something in inner_pairs {
+                match something.as_rule() {
+                    Rule::step => {
+                        step = Some(make_expression(something.into_inner().next().unwrap().into_inner().next().unwrap()));
+                    },
+                    Rule::direction => {
+                        match something.into_inner().next().unwrap().as_rule() {
+                            Rule::increase => direction = ForLoopDirection::Increase,
+                            Rule::decrease => direction = ForLoopDirection::Decrease,
+                            Rule::both => direction = ForLoopDirection::Both,
+                            _ => unreachable!()
+                        };
+                    },
+                    Rule::block => {
+                        for statements in something.into_inner() {
+                            body.push(make_statement(statements.into_inner().next().unwrap()));
+                        }
+                    },
+                    _ =>  unreachable!()
+                }
+            }
+            Statement::ForLoop {
+                identifier,
+                expr,
+                step: if step.is_some() {
+                    step.unwrap()
+                } else {
+                    Expression::Literal(Literal::Number(1.0))
+                },
+                direction,
+                body_expr: body,
+            }
+        },
         _ => unreachable!()
     }
 }
