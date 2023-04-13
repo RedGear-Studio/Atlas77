@@ -1,9 +1,0 @@
-[package]
-name = "reg-lang"
-version = "0.0.1"
-edition = "2021"
-
-[dependencies]
-reg-lang-vm = { path = "../reg-lang-vm" }
-reg-lang-compiler = { path = "../reg-lang-compiler" }
-rasm-compiler = { path = "../rasm-compiler" }

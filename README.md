@@ -1,23 +1,6 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
 
 
-
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -25,24 +8,11 @@
 [![MIT License][license-shield]][license-url]
 
 
-
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
-  <a href="https://github.com/RedGear-Studio/Reg-Lang">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
-
 <h3 align="center">Reg Lang</h3>
 
   <p align="center">
-    A simple, fast and experimental VM for Reg-Lang.
+    A simple and in development programming language written in Rust.
     <br />
-    <!-- <a href="https://github.com/RedGear-Studio/Reg-Lang"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/RedGear-Studio/Reg-Lang">View Demo</a>
-    · -->
     <a href="https://github.com/RedGear-Studio/Reg-Lang/issues">Report Bug</a>
     ·
     <a href="https://github.com/RedGear-Studio/Reg-Lang/issues">Request Feature</a>
@@ -52,67 +22,99 @@
 </div>
 
 # Reg-Lang
+Reg-Lang is a statically-typed programming language currently in development. 
+> Currently a Tree Walker Interpreter.
 
-This is a simple virtual machine (VM), for the Reg-Lang language, that can execute bytecode instructions. It has 64 registers, each capable of storing 64 bits of binary data, and can execute eight different opcodes: MOV, ADD, JMP, CMP, JMC, PRT, UWU, and HLT.
+The language is currently in its early development stage and supports basic programming constructs like variables, control flow statements (while/for loops, if/else), string manipulation, and print statements. The language supports three primitive data types: bool, int, and string.
 
-# How to Use
+We have two roadmaps for future releases: [`v0.0.2`](https://github.com/RedGear-Studio/Reg-Lang/milestone/2) and [`v0.0.3`](https://github.com/RedGear-Studio/Reg-Lang/milestone/3), which will include exciting features such as support for arrays, functions, and structures, addition of an AST optimizer, REPL and basic stdlib. We're excited to continue developing the language and look forward to your feedback and contributions
 
-To use the VM, you will need to write a program in bytecode format. The bytecode is a sequence of instructions encoded as bytes, where each byte corresponds to an opcode or a value to be loaded into a register.
+> Note: Reg-Lang is still in development, and more features are planned for future releases. Stay tuned for updates!
+> For now, only the Parser and Lexer are implemented.
 
-Here is an example program that loads the value 42 into register 0, adds the value 23 to it, and prints the result:
+# Installation/Usage
+> For now there isn't any real way to use the language because there isn't any REPL or CLI. But it's planned for the `v0.0.2` release.
 
+# Features
+## Variables
+Variables are declared using the `let` keyword. The type of the variable is declared after the variable name, and the value is assigned using the `=` operator. The following example declares a variable `x` of type `int` and assigns it the value `5`.
+You can change its value later on by using the `=` operator again.
 ```rs
-// Load 42 into register 0
-MOV $0 42 //42 will be store in the .data section, so it's gonna be replaced by a pointer to where it's stored
-
-// Load 23 into register 1
-MOV $1 23
-
-// Add register 0 and register 1, and store the result in register 2
-ADD $0 $1 $2
-
-// Print the value in register 2
-PRT $2
-/// Note: all the instructions are in 32 bits, so PRT $2 is in reality : PRT $2 0 0
+let x: int = 5;
+x = 10;
 ```
-To run this program, you can create a new instance of the VM, set its program property to the bytecode sequence, and call the run method:
-
-```rust
-use reg_lang_vm::VM;
-
-fn main() {
-    let mut vm = VM::new();
-    vm.program = vec![
-        0x00, 0x00, 0x2a, 0x00,
-        0x00, 0x01, 0x17, 0x00,
-        0x01, 0x00, 0x01, 0x02,
-        0x05, 0x02, 0x00, 0x00,
-    ];
-    vm.run();
-}
+## Control Flow
+### If/Else
+The `if` statement is used to execute a block of code if a condition is true. The `else` statement is used to execute a block of code if the condition is false. The following example prints `x is greater than 5` if the value of `x` is greater than 5, and `x is less than or equal to 5` otherwise.
+```rs
+if (x > 5) then
+    print "x is greater than 5";
+else
+    print "x is less than or equal to 5";
+end;
 ```
-This will output:
+### While Loop
+The `while` statement is used to execute a block of code repeatedly until a condition is false. The following example prints the numbers from 1 to 5.
+```rs
+let x: int = 1;
+while (x <= 5) do
+    print x;
+    x = (x + 1);
+end;
+```
+### For Loop
+The `for` statement is used to execute a block of code repeatedly for a fixed number of times. The following example prints the numbers from 1 to 5.
+```rs
+for x in 1..5 iterate
+    print x;
+end;
+```
 
-``> 65``
+## Types
+### Integers
+Integers are 64-bit signed integers. The following example declares an integer variable `x` and assigns it the value `5`.
+```rs
+let x: int = 5;
+```
+### Strings
+Strings are sequences of characters. The following example declares a string variable `s` and assigns it the value `"Hello, World!"`.
+```rs
+let s: string = "Hello, World!";
+```
+### Booleans
+Booleans are either `true` or `false`. The following example declares a boolean variable `b` and assigns it the value `true`.
+```rs
+let b: bool = true;
+```
+## Nota Bene
+The binary operations need to be surrounded by parentheses. For example, the following code will not compile:
+```rs
+let x: int = 5;
+let y: int = 10;
+let z: int = x + y * 2;
+```
+The following code will compile:
+```rs
+let x: int = 5;
+let y: int = 10;
+let z: int = ((x + y) * 2);
+```
+> It's planned to remove this limitation in the future.
 
-# OpCodes
+## Contributing
+Thank you for your interest in contributing to our project! We welcome all contributions, whether they be bug fixes, new features, or improvements to the documentation.
 
-    `MOV`: Loads a value from the .data section into a register.
-    `ADD`: Adds the value in one register to the value in another register and stores the result in a third register.
-    `JMP`: Jumps to the address stored in a register.
-    `CMP`: Compares the values in two registers and sets a flag based on the result (greater-than, less-than, or equal).
-    `JMC`: Jumps to an address if a specified flag is set (e.g. jumps if the previous comparison result was greater-than).
-    `PRT`: Prints the value in a register to the console or output stream.
-    `UWU`: Change the uwu_flag to print the value in a register in a more uwu way.
-    `HLT`: Halts the program.
+To get started, please follow these steps:
 
-  ## Incoming OpCodes
-    
-    `ADF`: Adds the value in one register to the value in another register and stores the result in a third register but both of the register will be treat as Float
-    `CST`: Cast a register to one number type to another (like Float -> Int or Int -> UInt) (Because a Register just store bits and nothing else)
+- Fork the repository and clone it locally.
+- Create a new branch for your changes: `git checkout -b my-new-feature`.
+- Make your changes, and be sure to follow our coding conventions and style guide.
+- Commit your changes using [conventional commit specifications](https://www.conventionalcommits.org/en/v1.0.0/): `git commit -m "feat(module): add new feature"`.
+- Push your changes to your fork: `git push origin my-new-feature`.
+- Open a pull request to our repository with a clear description of your changes and why they should be merged.
 
+Once you have submitted your pull request, one of our maintainers will review it and provide feedback. Thank you for helping us make our project better!
 
-<!-- LICENSE -->
 ## License
 
 Distributed under the GPL-3.0 License. See [`LICENSE`](https://github.com/RedGear-Studio/Reg-Lang/blob/main/LICENSE) for more information.
@@ -121,18 +123,15 @@ Distributed under the GPL-3.0 License. See [`LICENSE`](https://github.com/RedGea
 
 
 
-<!-- CONTACT -->
 ## Contact
 
-Twitter Name - [@RedGear Studio](https://twitter.com/RedGearS) - studio.redgear@gmail.com
+Twitter Name: [@RedGear Studio](https://twitter.com/RedGearS) 
+Email: studio.redgear@gmail.com
 
 Project Link: [https://github.com/RedGear-Studio/Reg-Lang](https://github.com/RedGear-Studio/Reg-Lang)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/RedGear-Studio/Reg-Lang.svg?style=for-the-badge
 [contributors-url]: https://github.com/RedGear-Studio/Reg-Lang/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/RedGear-Studio/Reg-Lang.svg?style=for-the-badge

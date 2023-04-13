@@ -1,9 +1,0 @@
-[package]
-name = "reg-lang-compiler"
-version = "0.0.1"
-edition = "2021"
-
-[dependencies]
-pest = "2.1.3"
-pest_derive = "2.1.3"
-reg-byte = { path = "../reg-byte" }

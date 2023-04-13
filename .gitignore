@@ -1,3 +1,6 @@
 /target
 *.lock
 .vscode
+.VSCodeCounter
+/benches
+IDEAS.md
