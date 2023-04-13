@@ -108,8 +108,8 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
             Statement::ForLoop {
                 identifier,
                 expr,
-                step: if step.is_some() {
-                    step.unwrap()
+                step: if let Some(value) = step {
+                    value
                 } else {
                     Expression::Literal(Literal::Number(1.0))
                 },

@@ -299,11 +299,9 @@ impl SymbolTable {
                                     break;
                                 }
                             }
-                        } else {
-                            if let Value::Number(value) = self.get_variable_value(identifier.clone()).unwrap() {
-                                if (*value as i64) < expr_value {
-                                    break;
-                                }
+                        } else if let Value::Number(value) = self.get_variable_value(identifier.clone()).unwrap() {
+                            if (*value as i64) < expr_value {
+                                break;
                             }
                         }
                         self.eval(body_expr.clone(), scope + 1)?;
