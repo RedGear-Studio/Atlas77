@@ -1,15 +1,27 @@
+use std::vec;
+
 use pest::iterators::Pair;
 use crate::Rule;
-use super::ast::{Statement, Expression, BinaryOperator, DataType, Program, UnaryOperator, Literal, ForLoopDirection};
+use crate::ast::func::Function;
+use crate::ast::{
+    stmt::Statement,
+    expr::Expression,
+    expr::BinaryOperator,
+    data_type::DataType,
+    Program,
+    expr::UnaryOperator,
+    literal::Literal,
+    stmt::ForLoopDirection
+};
 
 pub fn generate_ast( program: Pair<Rule>) -> Program {
     let mut ast = Program {
-        statements: vec![],
+        functions: vec![],
     };
     for programs in program.into_inner() {
         match programs.as_rule() {
-            Rule::statement => {
-                ast.statements.push(make_statement(programs.into_inner().next().unwrap()));
+            Rule::function => {
+                ast.functions.push(make_function(programs));
             },
             Rule::EOI => (),
             _ => unreachable!(),
@@ -17,6 +29,23 @@ pub fn generate_ast( program: Pair<Rule>) -> Program {
     }
     ast
 }
+//Need to fix bugs....
+fn make_function(function:Pair<Rule>) -> Function {
+    let mut inner_pairs = function.clone().into_inner();
+    println!("{:?}", function.clone());
+    let name = make_identifier(inner_pairs.next().unwrap());
+    let mut args = vec![];
+    for something in inner_pairs.next().unwrap().into_inner() {
+        //args.push((make_identifier(something), something.as_str().parse::<DataType>().unwrap()));
+        println!("{}", something.as_str());
+    }
+    let mut body = vec![];
+    for statements in inner_pairs.next().unwrap().into_inner() {
+        body.push(make_statement(statements.into_inner().next().unwrap()));
+    }
+    Function::new(name, args, body)
+}
+
 fn make_statement( statement: Pair<Rule>) -> Statement {
     match statement.as_rule() {
         Rule::print_statement => Statement::PrintStatement(make_expression(statement.into_inner().next().unwrap().into_inner().next().unwrap())),

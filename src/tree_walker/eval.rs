@@ -1,4 +1,12 @@
-use super::ast::{Statement, Expression, BinaryOperator, DataType, UnaryOperator, Literal, ForLoopDirection};
+use crate::ast::{
+    stmt::Statement,
+    expr::Expression,
+    expr::BinaryOperator,
+    data_type::DataType,
+    expr::UnaryOperator,
+    literal::Literal, 
+    stmt::ForLoopDirection
+};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 #[derive(Debug)]

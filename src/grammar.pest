@@ -1,42 +1,42 @@
-program = { SOI ~ (statement ~ semicolon)* ~ EOI }
+program = { SOI ~ (function ~ semicolon)* ~ EOI }
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 
+function = { "function" ~ identifier ~ "(" ~ (identifier ~ ":" ~ type)* ~ ")" ~ (":" ~ type)? ~ "begin" ~ block ~ "end" }
+    block = { (statement ~ semicolon)* }
+        semicolon = _{ ^";" }
+
 statement = { variable_declaration | assignment | print_statement | if_statement | while_loop | for_loop }
-block = { (statement ~ semicolon)* }
-variable_declaration = { "let" ~ identifier ~ ":" ~ type ~ ("=" ~ expression)? }
-assignment = { identifier ~ "=" ~ expression }
-print_statement = { "print" ~ expression }
-if_statement = { "if" ~ expression ~ "then" ~ block ~ ("else" ~ block)? ~ "end" }
-while_loop = { "while" ~ expression ~ "do" ~ block ~ "end" }
-for_loop = { "for" ~ identifier ~ "to" ~ expression ~ ( step? ~ direction?) ~ "iterate" ~ block ~ "end"}
+    variable_declaration = { "let" ~ identifier ~ ":" ~ type ~ ("=" ~ expression)? }
+    assignment = { identifier ~ "=" ~ expression }
+    print_statement = { "print" ~ expression }
+    if_statement = { "if" ~ expression ~ "then" ~ block ~ ("else" ~ block)? ~ "end" }
+    while_loop = { "while" ~ expression ~ "do" ~ block ~ "end" }
 
-step = { "by" ~ expression }
-direction = { "direction" ~ (increase | decrease | both) }
-increase = { "increase" }
-decrease = { "decrease" }
-both = { "both" }
+    for_loop = { "for" ~ identifier ~ "to" ~ expression ~ ( step? ~ direction?) ~ "iterate" ~ block ~ "end"}
+        step = { "by" ~ expression }
+        direction = { "direction" ~ (increase | decrease | both) }
+            increase = { "increase" }
+            decrease = { "decrease" }
+            both = { "both" }
 
-expression = { literal | binary_expression | identifier | unary_expression }
 
-binary_expression = { ^"(" ~ expression ~ operator ~ expression ~ ^")"}
-unary_expression = { unary_operator ~ expression }
+    expression = { literal | binary_expression | identifier | unary_expression }
 
-unary_operator = { "-" }
-
-operator = { add | sub | mul | div | mod | eq | neq | lt | lte | gt | gte }
-add = _{ ^"+" }
-sub = _{ ^"-" }
-mul = _{ ^"*" }
-div = _{ ^"/" }
-mod = _{ ^"%" }
-eq = _{ ^"==" }
-neq = _{ ^"!=" }
-lt = _{ ^"<" }
-lte = _{ ^"<=" }
-gt = _{ ^">" }
-gte = _{ ^">=" }
-
-semicolon = _{ ^";" }
+        binary_expression = { ^"(" ~ expression ~ operator ~ expression ~ ^")"}
+            operator = { add | sub | mul | div | mod | eq | neq | lt | lte | gt | gte }
+                add = _{ ^"+" }
+                sub = _{ ^"-" }
+                mul = _{ ^"*" }
+                div = _{ ^"/" }
+                mod = _{ ^"%" }
+                eq = _{ ^"==" }
+                neq = _{ ^"!=" }
+                lt = _{ ^"<" }
+                lte = _{ ^"<=" }
+                gt = _{ ^">" }
+                gte = _{ ^">=" }
+        unary_expression = { unary_operator ~ expression }
+            unary_operator = { "-" }
 
 literal = { number | string | boolean }
 number = @{ digit+ }
@@ -45,7 +45,7 @@ string_value = { character* }
 boolean = { "true" | "false" }
 reserved = { "true" | "false" | "int" | "string" | "boolean" | "let" | "print" | "if" | "then" | "else" | "end" | "while" | "do" | "for" | "to" | "increase" | "increase" | "direction" | "decrease" | "both" | "iterate" }
 
-type = { "int" | "string" | "boolean" }
+type = { "int" | "string" | "boolean" | "char" | "float" | "void" }
 
 identifier = @{ !reserved ~ (letter ~ ( letter | digit )*) }
 

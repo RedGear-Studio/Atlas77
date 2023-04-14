@@ -11,5 +11,6 @@ license = "GPL-3.0"
 categories = ["language"]
 
 [dependencies]
+clap = "4.2.2"
 pest = "2.5.7"
 pest_derive = "2.5.7"
