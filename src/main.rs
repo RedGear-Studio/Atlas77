@@ -8,6 +8,8 @@ pub mod tree_walker;
 
 //use clap::{arg, Command};
 
+use ir::builder::IRBuilder;
+
 use crate::pest::Parser;
 use crate::parser::parser::generate_ast;
 use crate::tree_walker::eval::SymbolTable;
@@ -42,6 +44,8 @@ fn main() {
         match programs.as_rule() {
             Rule::program => {
                 let ast = generate_ast(programs);
+                let mut ir = IRBuilder::new();
+                ir.build(ast);
                 let mut symbol_table = SymbolTable::default();
                 /*let result = symbol_table.eval(ast.functions, 1);
                 match result {

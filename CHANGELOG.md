@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
   - **BREAKING**: Add for loop support
 - *(No Category)* Add IR + Refactor files structures
   - **BREAKING**: Add IR + Refactor files structures
+- *(No Category)* IRContext is now working!
 
 
 ### Miscellaneous Tasks

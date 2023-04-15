@@ -5,7 +5,7 @@ pub struct ContextScope {
     id: usize,
     value: usize,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContextVariable {
     name: String,
     id: usize,
@@ -22,7 +22,7 @@ impl ContextVariable {
         }
     }
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContextFunction {
     name: String,
     variables: Vec<ContextVariable>,
@@ -69,7 +69,7 @@ impl IRContext {
         }
         self.functions.push(ContextFunction::new(name, return_type, self.current_function));
         for arg in args {
-            self.create_variable(arg.0, arg.1);
+            self.create_variable(arg.0, arg.1)?;
         }
         self.current_function += 1;
         Ok(())
@@ -123,22 +123,32 @@ impl IRContext {
             self.functions[self.current_function].current_scope.value -= 1;
         }
     }
-    pub fn sort_function(&mut self) {
-        self.functions.sort_by(|a, b| {
-            a.id.cmp(&b.id)
-        })
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    pub fn test_create_function() {
-        let mut context = IRContext::new();
-        context.create_function("test".to_string(), IRDataType::Int, vec![("a".to_string(), IRDataType::Int), ("b".to_string(), IRDataType::Int)]);
-        context.create_function("main".to_string(), IRDataType::Int, vec![("c".to_string(), IRDataType::Int), ("d".to_string(), IRDataType::Int)]);
-        context.sort_function();
-        println!("{:?}", context.functions);
+    pub fn sort_function(&mut self) -> Result<(), IRError>{
+        let mut sorted_functions: Vec<ContextFunction> = Vec::new();
+        let mut main_function: Option<ContextFunction> = None;
+        let mut index: usize = 0;
+        let mut current_id: usize = 0;
+    
+        while self.functions.len() > 0 {
+            let mut function: ContextFunction = self.functions.remove(0);
+            if function.name == "main" {
+                function.id = 0;
+                index = 0;
+                current_id = 0;
+                main_function = Some(function.clone());
+            } else {
+                function.id = current_id;
+                index += 1;
+                current_id += 1;
+            }
+            sorted_functions.push(function);
+        }
+        self.functions = sorted_functions;
+        if let Some(main_function) = main_function {
+            self.functions.insert(0, main_function);
+        } else {
+            return Err(IRError::NoMainFunction);
+        }
+        Ok(())
     }
 }

@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use self::ir_nodes::func::IRFunction;
 pub mod ir_nodes;
 pub mod print;

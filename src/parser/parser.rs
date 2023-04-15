@@ -21,7 +21,6 @@ pub fn generate_ast( program: Pair<Rule>) -> Program {
     }
     ast
 }
-//Need to fix bugs....
 fn make_function(function:Pair<Rule>) -> Function {
     let mut inner_pairs = function.into_inner();
     let name = make_identifier(inner_pairs.next().unwrap());
