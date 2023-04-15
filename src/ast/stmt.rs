@@ -1,11 +1,12 @@
+use crate::ir::ir_nodes::data_type::IRDataType;
+
 use super::expr::Expression;
-use super::data_type::DataType;
 #[derive(Debug, Clone)]
 pub enum Statement {
     VariableDeclaration {
         identifier: String,
         value: Option<Expression>,
-        data_type: DataType,
+        data_type: IRDataType,
     },
     Assignment {
         identifier: String,

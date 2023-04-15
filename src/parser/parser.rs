@@ -3,16 +3,8 @@ use std::vec;
 use pest::iterators::Pair;
 use crate::Rule;
 use crate::ast::func::Function;
-use crate::ast::{
-    stmt::Statement,
-    expr::Expression,
-    expr::BinaryOperator,
-    data_type::DataType,
-    Program,
-    expr::UnaryOperator,
-    literal::Literal,
-    stmt::ForLoopDirection
-};
+use crate::ast::{stmt::Statement, expr::Expression, expr::BinaryOperator,  Program, expr::UnaryOperator, literal::Literal, stmt::ForLoopDirection};
+use crate::ir::ir_nodes::data_type::IRDataType;
 
 pub fn generate_ast( program: Pair<Rule>) -> Program {
     let mut ast = Program {
@@ -31,19 +23,39 @@ pub fn generate_ast( program: Pair<Rule>) -> Program {
 }
 //Need to fix bugs....
 fn make_function(function:Pair<Rule>) -> Function {
-    let mut inner_pairs = function.clone().into_inner();
-    println!("{:?}", function.clone());
+    let mut inner_pairs = function.into_inner();
     let name = make_identifier(inner_pairs.next().unwrap());
     let mut args = vec![];
+    let mut current_identifier = String::new();
+    let mut current_type = IRDataType::Boolean;
+    let mut i = 0;
     for something in inner_pairs.next().unwrap().into_inner() {
-        //args.push((make_identifier(something), something.as_str().parse::<DataType>().unwrap()));
-        println!("{}", something.as_str());
+        match something.as_rule() {
+            Rule::identifier => current_identifier = make_identifier(something),
+            Rule::data_type => current_type = something.as_str().parse::<IRDataType>().unwrap(),
+            _ => unreachable!(),
+        }
+        if i%2 == 1 {
+            args.push((current_identifier.clone(), current_type.clone()));
+        }
+        i += 1;
     }
     let mut body = vec![];
-    for statements in inner_pairs.next().unwrap().into_inner() {
-        body.push(make_statement(statements.into_inner().next().unwrap()));
+    let mut return_type = IRDataType::Void;
+    for insides in inner_pairs.into_iter() {
+        match insides.as_rule() {
+            Rule::data_type => {
+                return_type = insides.as_str().parse::<IRDataType>().unwrap();
+            },
+            Rule::block => {
+                for statement in insides.into_inner().next().into_iter() {
+                    body.push(make_statement(statement.into_inner().next().unwrap()));
+                }
+            }
+            _ => unreachable!()
+        }
     }
-    Function::new(name, args, body)
+    Function::new(name, args, body, return_type)
 }
 
 fn make_statement( statement: Pair<Rule>) -> Statement {
@@ -52,7 +64,7 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
         Rule::variable_declaration => {
             let mut inner_pairs = statement.into_inner();
             let identifier = make_identifier(inner_pairs.next().unwrap());
-            let data_type = inner_pairs.next().unwrap().as_str().parse::<DataType>().unwrap();
+            let data_type = inner_pairs.next().unwrap().as_str().parse::<IRDataType>().unwrap();
             let something = inner_pairs.next();
             let value = something.map(|inside| make_expression(inside.into_inner().next().unwrap()));
             Statement::VariableDeclaration {

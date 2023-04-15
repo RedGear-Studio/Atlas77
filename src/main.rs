@@ -4,9 +4,9 @@ pub mod compiler;
 pub mod vm;
 pub mod ir;
 pub mod tree_walker;
-use std::path::PathBuf;
+//use std::path::PathBuf;
 
-use clap::{arg, Command};
+//use clap::{arg, Command};
 
 use crate::pest::Parser;
 use crate::parser::parser::generate_ast;
@@ -33,7 +33,7 @@ fn main() {
         _ => unreachable!()
     }*/
     let input: &str = "
-    function salut(x: int): int
+    function salut(x: int, y: boolean): int
     begin
         print x;
     end;";
@@ -54,7 +54,7 @@ fn main() {
     }
 }
 
-fn cli() -> Command {
+/*fn cli() -> Command {
     Command::new("reg-lang")
         .about(" A simple and in development programming language written in Rust.")
         .subcommand_required(true)
@@ -72,4 +72,4 @@ fn cli() -> Command {
                 .arg(arg!(-f --file <FILE> "File to compile."))
                 .arg_required_else_help(true)
         )
-}
+}*/

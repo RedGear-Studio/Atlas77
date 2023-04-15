@@ -6,6 +6,7 @@ pub mod print;
 pub mod analysis;
 pub mod builder;
 pub mod context;
+pub mod errors;
 pub mod transform;
 #[derive(Default)]
 pub struct IRProgram {

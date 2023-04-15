@@ -9,10 +9,10 @@ All notable changes to this project will be documented in this file.
 
 
 ### Features
-
-- *(core)* Working Tree Walker Interpreter
-  - **BREAKING**: Working Tree Walker Interpreter- *(No Category)* Add for loop support
+- *(No Category)* Add for loop support
   - **BREAKING**: Add for loop support
+- *(No Category)* Add IR + Refactor files structures
+  - **BREAKING**: Add IR + Refactor files structures
 
 
 ### Miscellaneous Tasks

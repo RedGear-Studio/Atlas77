@@ -1,16 +1,21 @@
-use super::{data_type::DataType, stmt::Statement};
+use crate::ir::ir_nodes::data_type::IRDataType;
 
+use super::stmt::Statement;
+
+#[derive(Debug)]
 pub struct Function {
-    name: String,
-    args: Vec<(String, DataType)>,
-    statements: Vec<Statement>,
+    pub name: String,
+    pub args: Vec<(String, IRDataType)>,
+    pub statements: Vec<Statement>,
+    pub return_type: IRDataType
 }
 impl Function {
-    pub fn new(name: String, args: Vec<(String, DataType)>, statements: Vec<Statement>) -> Function {
+    pub fn new(name: String, args: Vec<(String, IRDataType)>, statements: Vec<Statement>, return_type: IRDataType) -> Function {
         Function {
             name,
             args,
-            statements
+            statements,
+            return_type
         }
     }
 }

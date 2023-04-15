@@ -1,17 +1,16 @@
-use crate::ast::{
+use crate::{ast::{
     stmt::Statement,
     expr::Expression,
     expr::BinaryOperator,
-    data_type::DataType,
     expr::UnaryOperator,
     literal::Literal, 
     stmt::ForLoopDirection
-};
+}, ir::ir_nodes::data_type::IRDataType};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 #[derive(Debug)]
 pub struct Variable {
-    data_type: DataType,
+    data_type: IRDataType,
     value: Value,
 }
 #[derive(Debug)]
@@ -118,7 +117,7 @@ impl SymbolTable {
             return Err(EvalError::InvalidIdentifier(identifier));
         }
         self.variables.push((identifier, Variable {
-            data_type: DataType::Boolean,
+            data_type: IRDataType::Boolean,
             value: Value::Boolean(value),
         }, Scope(scope)));
         Ok(())
@@ -128,7 +127,7 @@ impl SymbolTable {
             return Err(EvalError::InvalidIdentifier(identifier));
         }
         self.variables.push((identifier, Variable {
-            data_type: DataType::Float,
+            data_type: IRDataType::Float,
             value: Value::Number(value),
         }, Scope(scope)));
         Ok(())
@@ -138,7 +137,7 @@ impl SymbolTable {
             return Err(EvalError::InvalidIdentifier(identifier));
         }
         self.variables.push((identifier, Variable {
-            data_type: DataType::String,
+            data_type: IRDataType::String,
             value: Value::String(value),
         }, Scope(scope)));
         Ok(())
@@ -149,19 +148,19 @@ impl SymbolTable {
             .find(|variable| variable.0 == identifier) {
             //Typechecking
             match variable.1.data_type {
-                DataType::Boolean => {
+                IRDataType::Boolean => {
                     if value.is_boolean() {
                         variable.1.value = value;
                         return Ok(());
                     }
                 },
-                DataType::Float => {
+                IRDataType::Float => {
                     if value.is_number() {
                         variable.1.value = value;
                         return Ok(());
                     }
                 },
-                DataType::String => {
+                IRDataType::String => {
                     if value.is_string() {
                         variable.1.value = value;
                         return Ok(());
@@ -212,7 +211,7 @@ impl SymbolTable {
                         EvalResult::Null
                     };
                     match data_type {
-                        DataType::Int => {
+                        IRDataType::Int => {
                             match value {
                                 EvalResult::Number(number) => {
                                     self.new_number(identifier, number as i64 as f64, scope)?;
@@ -220,7 +219,7 @@ impl SymbolTable {
                                 _ => return Err(EvalError::InvalidDataType),
                             }
                         },
-                        DataType::Float => {
+                        IRDataType::Float => {
                             match value {
                                 EvalResult::Number(number) => {
                                     self.new_number(identifier, number, scope)?;
@@ -228,7 +227,7 @@ impl SymbolTable {
                                 _ => return Err(EvalError::InvalidDataType),
                             }
                         },
-                        DataType::String => {
+                        IRDataType::String => {
                             match value {
                                 EvalResult::String(string) => {
                                     self.new_string(identifier, string, scope)?;
@@ -236,7 +235,7 @@ impl SymbolTable {
                                 _ => return Err(EvalError::InvalidDataType),
                             }
                         },
-                        DataType::Boolean => {
+                        IRDataType::Boolean => {
                             match value {
                                 EvalResult::Boolean(boolean) => {
                                     self.new_boolean(identifier, boolean, scope)?;
