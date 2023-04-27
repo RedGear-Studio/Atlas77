@@ -7,7 +7,7 @@ function = { "function" ~ identifier ~ "(" ~ args ~ ")" ~ (":" ~ data_type)? ~ b
     block = { (statement ~ semicolon)* }
         semicolon = _{ ^";" }
 
-statement = { variable_declaration | assignment | print_statement | if_statement | while_loop | for_loop }
+statement = { variable_declaration | assignment | print_statement | if_statement | while_loop | for_loop | function_call }
     variable_declaration = { "let" ~ identifier ~ ":" ~ data_type ~ ("=" ~ expression)? }
     assignment = { identifier ~ "=" ~ expression }
     print_statement = { "print" ~ expression }
@@ -22,7 +22,7 @@ statement = { variable_declaration | assignment | print_statement | if_statement
             both = { "both" }
 
 
-    expression = { literal | binary_expression | identifier | unary_expression }
+    expression = { literal | binary_expression | identifier | unary_expression | function_call }
 
         binary_expression = { ^"(" ~ expression ~ operator ~ expression ~ ^")"}
             operator = { add | sub | mul | div | mod | eq | neq | lt | lte | gt | gte }
@@ -39,7 +39,7 @@ statement = { variable_declaration | assignment | print_statement | if_statement
                 gte = _{ ^">=" }
         unary_expression = { unary_operator ~ expression }
             unary_operator = { "-" }
-
+        function_call = { identifier ~ "(" ~ (expression)* ~ ")" }
 literal = { number | string | boolean }
 number = @{ digit+ }
 string = _{ "\"" ~ string_value ~ "\"" }

@@ -61,66 +61,27 @@ for x to 5 both 1 step
 end;
 ```
 
-# Heap for Reg-Lang VM
+# SVA Scalable Virtual Architecture
 
-```rs
-pub struct Heap {
-    Vec<u8>
-}
-pub struct SymbolTable {
-    HashMap<id, u64> //id(u64) represent a variable, u64 is the address of that variable in the heap
-}
-```
-That's not fully functional, cuz for example, something like an Array is pretty hard to deal with
-And I maybe need to add the end of the variable pointer
-Or maybe is type too
-And even is scope to drop value
-And probably something that state which are the areas free in the Heap
-Lot of stuff to implement for an heap
+## Introduction:
 
-# VM Instructions
-## .data Section
-- `MOV` [destination: (register1 | stack)] [adress (from .data section)]: Load a value from the .data section to destination (register or the top of the stack)
-## Mathematical Int Instructions
-- `ADD` [register1] [register2] [register3]: Add the value in the register1 to the value in the register2 and store the result in register3
-- `SUB` [register1] [register2] [register3]: Subtract the value in the register1 from the value in the register2 and store the result in register3
-- `MUL` [register1] [register2] [register3]: Multiply the value in the register1 by the value in the register2 and store the result in register3
-- `DIV` [register1] [register2] [register3]: Divide the value in the register1 by the value in the register2 and store the result in register3
-- `MOD` [register1] [register2] [register3]: Modulo the value in the register1 by the value in the register2 and store the result in register3
-## Mathematical Float Instructions
-- `ADF` [register1] [register2] [register3]: Add the value in the register1 to the value in the register2 and store the result in register3 but treat each value as float
-- `MLF` [register1] [register2] [register3]: Multiply the value in the register1 by the value in the register2 and store the result in register3 but treat each value as float
-- `SBF` [register1] [register2] [register3]: Subtract the value in the register1 from the value in the register2 and store the result in register3 but treat each value as float
-- `DVF` [register1] [register2] [register3]: Divide the value in the register1 by the value in the register2 and store the result in register3 but treat each value as float
-- `MDF` [register1] [register2] [register3]: Modulo the value in the register1 by the value in the register2 and store the result in register3 but treat each value as float
-## Comparison Instruction
-- `CMP` [register1] [register2] [type]: Compare the value in register1 with the value in register2 (treat each value as type) and change the compare_flag based on the result (aka equal, less than, greater than)
-## Jump Instructions
-- `JMC` [register1] [compare_flag]: Jump to the address in register1 if the correct flag is set in the compare_flag (flag: "0": equal, "1": less than, "2": greater than, "3": not equal)
-- `JMP` [register1]: Jump unconditionnaly to the address in register1
-## Heap Instructions
-- `ALC` [register1]: Allocate a block of memory of the size of the value stored in register1 in the heap and return the address of that block in register1
-- `DLC` [register1]: Deallocate the block of memory at the address in register1 in the heap
-- `SAV` [from: (register1 | pop_register)] [register2] [register3]: Store the value in either register1 or pop_register to the address in register2 (the value inside register3 is the size of the data that will be stored) in the heap
-- `RLC` [register1] [register2]: Reallocate the block of memory at the address in register1 with the size of the value stored in register2 in the heap and store the new address in register1
-- `GET` [register1]: Get the address of a block of memory based on the id (the id is generate during the compilation and often represent a variable, but instead of using the identifier, it's changed to a usize to be more efficient) in register1 and return the address in register1
-- `COP` [register1] [destination: (register1 | stack)]: Transfer the value at the address stored in register1 to the destination (either register1 or top of the stack)
-## Stack Instructions
-- `PSH` [register1]: Push the value in register1 onto the stack
-- `LOD` [register1]: Load a value from the pop_register to register1
-- `STO` [register1]: Store the value in register1 onto the pop stack
-- `POP` : Remove the value in the top of the stack and store it in the pop_register (special register with "infinite" sized)
-- `CMS` : Compare the value in the pop_register and the value in the top of the stack and change the compare_flag based on the result (aka equal, less than, greater than)
-- `RET` [bool (if needed to return a value)]: Close a function (leave a scope, so can be used to launch the garbage collector and/or drop the current stack of this scope) and POP the value in top of the stack to be used as the return value if bool is true
-## Miscellaneous Instructions
-- `CST` [register1] [type1] [type2]: Take the value in register1, treat it as type1, and store it as type2 in the specified register
-- `PRT` [from: (register | pop_register)] [type]: Print the value in the register or pop_register by interpreting it based on its type (string, int, float, bool, char, array(only with basic types in it))
+SVA (Scalable Virtual Architecture) is a virtual architecture designed to provide an easy and scalable way to implement a virtual machine. It is inspired by the MIPS architecture but is not a complete implementation of it. Instead, its focus is on providing an easy way to add custom syscalls and coprocessors to the VM.
 
+## Architecture:
 
-- .data section: This section typically contains pre-defined constants and data that are used by the program, such as strings, arrays, and other data structures. Since this memory is read-only, it cannot be modified by the program during execution.
+SVA consists of a processor, memory, and a set of coprocessors. The processor implements the SVA instruction set, which is based on the MIPS instruction set but with additional instructions for interacting with coprocessors. The memory is divided into several regions, including the main memory and the memory of each coprocessor.
 
-- Register: Registers are a fast, low-level type of memory that can be used to store values for mathematical and logical operations. Registers are typically used for temporary storage of values during computation, and are often limited in size and number.
+## Coprocessors:
 
-- Heap: The heap is a more complex type of memory that can be used for dynamic allocation of memory during program execution. Unlike the stack, which typically has a fixed size and is used for temporary storage of values, the heap can grow or shrink in size as needed to accommodate new data. This makes it useful for storing more complex data structures such as arrays, linked lists, and trees.
+Coprocessors are additional processors that can be added to the VM to perform specialized operations. Each coprocessor has its own instruction set and memory. The SVA instruction set includes instructions for interacting with coprocessors, allowing programs to communicate with them and take advantage of their specialized capabilities.
 
-- Stack: The stack is a LIFO (last-in, first-out) type of memory that is used for temporary storage of values during program execution. The stack typically has a fixed size and is used to store function call frames, local variables, and other data that is only needed for a short period of time. The stack is often used as a symbol table for the current scope, since each function call creates a new frame on the stack with its own set of local variables and parameters.
+## Syscalls:
+
+Syscalls are functions that allow programs running on the VM to interact with the host operating system. SVA includes a set of built-in syscalls for performing common operations such as file I/O and network communication. In addition, users can define their own syscalls to add custom functionality to the VM.
+
+## Customization:
+
+SVA is designed to be easily customizable. Users can define their own coprocessors and syscalls to add custom functionality to the VM. In addition, the SVA compiler can be extended to support custom syntax and code generation for new instructions and coprocessors.
+Conclusion
+
+SVA provides an easy and scalable way to implement a virtual machine with custom functionality. Its architecture allows for the addition of coprocessors and syscalls, making it ideal for a wide range of applications.

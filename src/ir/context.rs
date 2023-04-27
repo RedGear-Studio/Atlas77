@@ -104,13 +104,17 @@ impl IRContext {
         }
         Err(IRError::VariableNotFound(identifier, 0))
     }
-    pub fn get_variable(&self, id: usize) -> Result<&ContextVariable, IRError> {
+    pub fn variable_exist(&self, identifier: String) -> bool {
+        let mut scopes: Vec<usize> = self.functions[self.current_function].scopes_id.clone();
+        scopes.push(self.functions[self.current_function].current_scope.id);
         for variable in self.functions[self.current_function].variables.iter() {
-            if variable.id == id {
-                return Ok(variable);
+            for scope in scopes.iter() {
+                if variable.name == identifier && variable.scope.id == *scope {
+                    return true;
+                }
             }
         }
-        Err(IRError::VariableNotFound("".to_string(), 0))
+        false
     }
     pub fn create_scope(&mut self) {
         self.functions[self.current_function].current_scope.id = self.functions[self.current_function].next_scope;

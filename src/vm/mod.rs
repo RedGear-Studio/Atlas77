@@ -1,4 +1,4 @@
 pub mod bytecode;
-pub mod errors;
-pub mod vm;
+pub mod events;
+pub mod virtual_cpu;
 pub mod config;
