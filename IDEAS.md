@@ -16,8 +16,8 @@ For example, the following raw function adds two integers together:
 
 ```ruby
 raw add(a: int, b: int):int start
-    ADD $0, $1, $2
-    RET $2
+    add reg1, reg2
+    ret
 end;
 ```
 
@@ -61,27 +61,76 @@ for x to 5 both 1 step
 end;
 ```
 
-# SVA Scalable Virtual Architecture
+# VM Architecture/Instruction Set Specification
 
-## Introduction:
+The VM is a stack-based virtual machine that operates on a custom instruction set. It has a 32-bit address space, 16 registers, and a memory consisting of both heap and stack (both in one).
 
-SVA (Scalable Virtual Architecture) is a virtual architecture designed to provide an easy and scalable way to implement a virtual machine. It is inspired by the MIPS architecture but is not a complete implementation of it. Instead, its focus is on providing an easy way to add custom syscalls and coprocessors to the VM.
+## Registers
 
-## Architecture:
+The VM has 16 general-purpose registers, named reg0 to reg15 (reg0 is the zero register, it's read-only and contains the value 0), each with a width of 32 bits. It also has a temporary register named t_reg, which is used by some instructions as a temporary storage location.
 
-SVA consists of a processor, memory, and a set of coprocessors. The processor implements the SVA instruction set, which is based on the MIPS instruction set but with additional instructions for interacting with coprocessors. The memory is divided into several regions, including the main memory and the memory of each coprocessor.
+## Memory
 
-## Coprocessors:
+The memory of the VM is a mix of stack and heap. The size of the memory is currently undefined. It means that you can push and pop values on top of it and access inner memory by address to get their value or to modify it. When you modify a value, you overwrite it, so you need to be careful when using this instruction. Later on, there will be a separate heap and a stack with a defined size of 512KB.
 
-Coprocessors are additional processors that can be added to the VM to perform specialized operations. Each coprocessor has its own instruction set and memory. The SVA instruction set includes instructions for interacting with coprocessors, allowing programs to communicate with them and take advantage of their specialized capabilities.
+## Instruction Set
 
-## Syscalls:
+The following instructions are available in the VM:
 
-Syscalls are functions that allow programs running on the VM to interact with the host operating system. SVA includes a set of built-in syscalls for performing common operations such as file I/O and network communication. In addition, users can define their own syscalls to add custom functionality to the VM.
+- `[nop]`: Do nothing.
 
-## Customization:
+- `[add ~ reg1 ~ reg2]`: Add the values in reg1 and reg2, and store the result in reg2.
 
-SVA is designed to be easily customizable. Users can define their own coprocessors and syscalls to add custom functionality to the VM. In addition, the SVA compiler can be extended to support custom syntax and code generation for new instructions and coprocessors.
-Conclusion
+- `[sub ~ reg1 ~ reg2]`: Subtract the value in reg1 from the value in reg2, and store the result in reg2.
 
-SVA provides an easy and scalable way to implement a virtual machine with custom functionality. Its architecture allows for the addition of coprocessors and syscalls, making it ideal for a wide range of applications.
+- `[mul ~ reg1 ~ reg2]`: Multiply the values in reg1 and reg2, and store the result in reg2.
+
+- `[div ~ reg1 ~ reg2]`: Divide the value in reg2 by the value in reg1, and store the result in reg2 if reg2 value == 0, the program will return an error and stop.
+
+- `[swp ~ reg1 ~ reg2]`: Swap the values of reg1 and reg2 by using the temporary register t_reg.
+
+- `[mov ~ reg1 ~ im]`: Move a 7-bit immediate value to reg1.
+
+- `[nxt ~ reg1 ~ im]`: Used to "complete" the value moved in a register, you can only move 7 bits in a register as an immediate value, and that's maybe not enough, so you use this instruction to add the next 7 bits after the ones already in the 32-bit registers.
+
+- `[lod ~ reg1 ~ reg2]`: Load the value at the memory address found in reg1 in reg2.
+
+- `[str ~ reg1 ~ reg2]`: Store the value in reg2 at the memory address found in reg1 (if there's already something at that address, it's overwrited).
+
+- `[and ~ reg1 ~ reg2]`: Perform a bitwise AND operation on the values in reg1 and reg2, and store the result in reg2.
+
+- `[psh ~ reg1 ~ reg2]`: Push the value from reg1 to the top of the stack and get its address in reg2.
+
+- `[pop ~ reg1]`: Pop the value from the top of the stack to reg1.
+
+- `[cal ~ reg1]`: Change the program counter to the value in reg1 and create a new stack frame.
+
+- `[ret]`: Return from a function by using the bottom value of the stack frame as the address of where this function was called.
+
+- `[cmp ~ reg1 ~ reg2]`: Compare the values in reg1 and reg2 and set the cmp_register based on the result.
+
+- `[jmp ~ reg1]`: Jump to the address specified in reg1. (Jump already moove the program counter by default to the new address)
+
+- `[jmc ~ cmp_flag]`: Jump to the address contained in reg1 if a certain flag is set in the cmp_register. (Jump already moove the program counter by default to the new address)
+
+- `[sys ~ im]`: Call the system function identified by the immediate value.
+
+### Existing Syscalls :
+
+- 0: Print integer, the integer is found in reg1.
+- 1: Print float, the float is found in reg1.
+- 2: Print string, the string address is found in reg1. (The string needs to be null terminated)
+- 3: Read integer, store the integer in reg1.
+- 4: Read float, store the float in reg1.
+- 5: Read string, store the string on top of the stack and store its address in reg1. (The string needs to be null terminated)
+- 6: Exit the program, found the exit code in reg1 (0 for success, 1 for failure).
+
+## cmp_flag:
+The cmp_flag is a 4-bit register used for comparison operations. It contains four individual flags, each represented by a single bit:
+
+- The Neq flag, representing "Not Equal", is set to 1 if the two compared values are not equal.
+- The Gt flag, representing "Greater Than", is set to 1 if the first compared value is greater than the second.
+- The Lt flag, representing "Less Than", is set to 1 if the first compared value is less than the second.
+- The Eq flag, representing "Equal", is set to 1 if the two compared values are equal.
+
+During a comparison operation, one or more of these flags will be set based on the result of the comparison. For example, if the first value is greater than the second, the Gt flag will be set to 1 and the Neq flag will also be set. These flags can then be used in conjunction with the jmc instruction to control program flow based on the outcome of the comparison.
