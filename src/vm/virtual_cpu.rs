@@ -1,6 +1,6 @@
 use super::{events::VMEvent, bytecode::OpCode};
 
-/// Virtual CPU implementation based on MIPS architecture.
+/// Virtual CPU implementation, only support int 32 bits.
 pub struct VirtualCPU {
     pub pc: usize, // program counter, holds the address of the next instruction to be executed
     pub registers: [u32; 32], // 32 registers (the first register is the zero register /!\ read-only)
@@ -44,104 +44,280 @@ impl VirtualCPU {
                 self.pc += 1;
             },
             OpCode::Add => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
-                let reg3 = ((self.program[self.pc] >> 9) as u8 & 0b0000_0111) as usize;
+                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
+                let reg3: usize = ((self.program[self.pc] >> 6) & 0b0001_1111) as usize;
                 self.registers[reg3] = self.registers[reg1] + self.registers[reg2];
                 self.pc += 1;
             },
             OpCode::Sub => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
-                let reg3 = ((self.program[self.pc] >> 9) as u8 & 0b0001_1111) as usize;
+                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
+                let reg3: usize = ((self.program[self.pc] >> 6) & 0b0001_1111) as usize;
                 self.registers[reg3] = self.registers[reg1] - self.registers[reg2];
                 self.pc += 1;
             },
             OpCode::Mul => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
-                let reg3 = ((self.program[self.pc] >> 9) as u8 & 0b0000_0111) as usize;
+                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
+                let reg3: usize = ((self.program[self.pc] >> 6) & 0b0001_1111) as usize;
                 self.registers[reg3] = self.registers[reg1] * self.registers[reg2];
                 self.pc += 1;
             },
             OpCode::Div => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
-                let reg3 = ((self.program[self.pc] >> 9) as u8 & 0b0000_0111) as usize;
+                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
+                let reg3: usize = ((self.program[self.pc] >> 6) & 0b0001_1111) as usize;
                 if self.registers[reg2] == 0 {
                     return Some(VMEvent::DivideByZero);
                 }
                 self.registers[reg3] = self.registers[reg1] / self.registers[reg2];
                 self.pc += 1;
             },
+            OpCode::Inc => {
+                let reg1: usize = ((self.program[self.pc] >> 19) & 0b0001_1111) as usize;
+                self.registers[reg1] += 1;
+                self.pc += 1;
+            },
+            OpCode::Dec => {
+                let reg1: usize = ((self.program[self.pc] >> 19) & 0b0001_1111) as usize;
+                self.registers[reg1] -= 1;
+                self.pc += 1;
+            },
             OpCode::Mov => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let im = self.program[self.pc] as u16 & 0b0111_1111;
+                let reg1: usize = ((self.program[self.pc] >> 19) & 0b0001_1111) as usize;
+                let im: u16 = self.program[self.pc] as u16;
                 self.registers[reg1] = im as u32;
                 self.pc += 1;
             },
             OpCode::Nxt => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let im = self.program[self.pc] as u16 & 0b0111_1111;
+                let reg1: usize = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
+                let im: u16 = self.program[self.pc] as u16;
                 self.registers[reg1] = (self.registers[reg1] << 16) + im as u32;
                 self.pc += 1;
             },
             OpCode::Swp => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 19) & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 14) & 0b0001_1111) as usize;
                 self.t_register = self.registers[reg1];
                 self.registers[reg1] = self.registers[reg2];
                 self.registers[reg2] = self.t_register;
                 self.pc += 1;
             },
             OpCode::Lod => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
-                self.registers[reg1] = (self.memory[self.registers[reg2] as usize]) as u32;
-                self.registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] << 8) as u32;
-                self.registers[reg1] += (self.memory[(self.registers[reg2] + 2) as usize] << 16) as u32;
-                self.registers[reg1] += (self.memory[(self.registers[reg2] + 3) as usize] << 24) as u32;
+                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
+                match t {
+                    //u8/i8 load
+                    0 | 3 => {
+                        self.registers[reg1] = (self.memory[self.registers[reg2] as usize]) as u32;
+                    }
+                    //u16/i16 load
+                    1 | 4 => {
+                        self.registers[reg1] = (self.memory[self.registers[reg2] as usize]) as u32;
+                        self. registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] as u32) << 8;
+                    }
+                    //u32/i32/f32 load
+                    2 | 5 | 6 => {
+                        self.registers[reg1] = (self.memory[self.registers[reg2] as usize]) as u32;
+                        self.registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] << 8) as u32;
+                        self.registers[reg1] += (self.memory[(self.registers[reg2] + 2) as usize] << 16) as u32;
+                        self.registers[reg1] += (self.memory[(self.registers[reg2] + 3) as usize] << 24) as u32;
+                    }
+                    //char
+                    7 => {
+                        let first_byte: u8 = self.memory[self.registers[reg2] as usize];
+                        //One byte long:
+                        if first_byte <= 0x7F {
+                            self.registers[reg1] = first_byte as u32;
+                        } else 
+                        //Two bytes long:
+                        if first_byte <= 0xDF {
+                            self.registers[reg1] = first_byte as u32;
+                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] as u32) << 8;
+                        } else 
+                        //Three bytes long
+                        if first_byte <= 0xEF {
+                            self.registers[reg1] = (self.memory[self.registers[reg2] as usize]) as u32;
+                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] << 8) as u32;
+                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 2) as usize] << 16) as u32;
+                        } else
+                        //Four bytes long
+                        if first_byte <= 0xF4 {
+                            self.registers[reg1] = (self.memory[self.registers[reg2] as usize]) as u32;
+                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] << 8) as u32;
+                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 2) as usize] << 16) as u32;
+                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 3) as usize] << 24) as u32;
+                        }
+                    }
+                    _ => unreachable!()
+                }
                 self.pc += 1;
             },
             OpCode::Str => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
-                self.memory[self.registers[reg1] as usize] = self.registers[reg2] as u8;
-                self.memory[(self.registers[reg1] + 1) as usize] = (self.registers[reg2] >> 8) as u8;
-                self.memory[(self.registers[reg1] + 2) as usize] = (self.registers[reg2] >> 16) as u8;
-                self.memory[(self.registers[reg1] + 3) as usize] = (self.registers[reg2] >> 24) as u8;
+                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
+                match t {
+                    //u8/i8 store
+                    0 | 3 => {
+                        self.memory[self.registers[reg2] as usize] = self.registers[reg1] as u8;
+                    }
+                    //u16/i16 store
+                    1 | 4 => {
+                        self.memory[self.registers[reg2] as usize] = self.registers[reg1] as u8;
+                        self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> 8) as u8;
+                    }
+                    //u32/i32/f32 store
+                    2 | 5 | 6 => {
+                        self.memory[self.registers[reg2] as usize] = self.registers[reg1] as u8;
+                        self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> 8) as u8;
+                        self.memory[(self.registers[reg2] + 2) as usize] = (self.registers[reg1] >> 16) as u8;
+                        self.memory[(self.registers[reg2] + 3) as usize] = (self.registers[reg1] >> 24) as u8;
+                    }
+                    //char
+                    7 => {
+                        let mut first_byte: u8 = (self.registers[reg1] >> 24) as u8;
+                        let mut i: usize = 0;
+                        for j in 0..3 {
+                            if first_byte != 0 {
+                                break;
+                            }
+                            first_byte = (self.registers[reg1] >> j * 8) as u8;
+                            i = j;
+                        }
+                        //One byte long:
+                        if first_byte <= 0x7F {
+                            self.memory[self.registers[reg2] as usize] = first_byte;
+                        } else
+                        //Two bytes long:
+                        if first_byte <= 0xDF {
+                            self.memory[self.registers[reg2] as usize] = first_byte;
+                            self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> i * 8) as u8;
+                        } else
+                        //Three bytes long
+                        if first_byte <= 0xEF {
+                            self.memory[self.registers[reg2] as usize] = first_byte;
+                            self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> i * 8) as u8;
+                            self.memory[(self.registers[reg2] + 2) as usize] = (self.registers[reg1] >> i * 8) as u8;
+                        } else 
+                        //Four bytes long
+                        if first_byte <= 0xF4 {
+                            self.memory[self.registers[reg2] as usize] = first_byte;
+                            self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> i * 8) as u8;
+                            self.memory[(self.registers[reg2] + 2) as usize] = (self.registers[reg1] >> i * 8) as u8;
+                            self.memory[(self.registers[reg2] + 3) as usize] = (self.registers[reg1] >> i * 8) as u8;
+                        }
+                    }
+                    _ => unreachable!()
+                }
                 self.pc += 1;
             },
             OpCode::And => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
-                let reg3 = ((self.program[self.pc] >> 9) as u8 & 0b0001_1111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
+                let reg3: usize = ((self.program[self.pc] >> 9) as u8 & 0b0001_1111) as usize;
                 self.registers[reg3] = self.registers[reg1] & self.registers[reg2];
                 self.pc += 1;
             },
             OpCode::Psh => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
+                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
                 self.registers[reg2] = self.memory.len() as u32;
-                self.memory.push(self.registers[reg1] as u8);
-                self.memory.push((self.registers[reg1] >> 8) as u8);
-                self.memory.push((self.registers[reg1] >> 16) as u8);
-                self.memory.push((self.registers[reg1] >> 24) as u8);
+                match t {
+                    //u8/i8 store
+                    0 | 3 => {
+                        self.memory.push(self.registers[reg1] as u8);
+                    }
+                    //u16/i16 store
+                    1 | 4 => {
+                        self.memory.push(self.registers[reg1] as u8);
+                        self.memory.push((self.registers[reg1] >> 8) as u8);
+                    }
+                    //u32/i32/f32 store
+                    2 | 5 | 6 => {
+                        self.memory.push(self.registers[reg1] as u8);
+                        self.memory.push((self.registers[reg1] >> 8) as u8);
+                        self.memory.push((self.registers[reg1] >> 16) as u8);
+                        self.memory.push((self.registers[reg1] >> 24) as u8);
+                    }
+                    //char
+                    7 => {
+                        let mut first_byte: u8 = (self.registers[reg1] >> 24) as u8;
+                        let mut i: usize = 0;
+                        for j in 0..3 {
+                            if first_byte != 0 {
+                                break;
+                            }
+                            first_byte = (self.registers[reg1] >> j * 8) as u8;
+                            i = j;
+                        }
+                        //One byte long:
+                        if first_byte <= 0x7F {
+                            self.memory.push(first_byte);
+                        } else
+                        //Two bytes long:
+                        if first_byte <= 0xDF {
+                            self.memory.push(first_byte);
+                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
+                        } else
+                        //Three bytes long
+                        if first_byte <= 0xEF {
+                            self.memory.push(first_byte);
+                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
+                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
+                        } else 
+                        //Four bytes long
+                        if first_byte <= 0xF4 {
+                            self.memory.push(first_byte);
+                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
+                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
+                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
+                        }
+                    }
+                    _ => unreachable!()
+                }
+
                 self.stack_pointer = self.memory.len();
                 self.pc += 1;
             },
             OpCode::Pop => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                self.registers[reg1] = (
-                    (self.memory.pop().unwrap() as u32) << 24 |
-                    (self.memory.pop().unwrap() as u32) << 16 | 
-                    (self.memory.pop().unwrap() as u32) << 8  |
-                    self.memory.pop().unwrap() as u32);
+                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
+                match t {
+                    //u8/i8 pop
+                    0 | 3 => {
+                        self.registers[reg1] = self.memory.pop().unwrap() as u32
+                    },
+                    //u16/i16 pop
+                    1 | 4 => {
+                        self.registers[reg1] = self.memory.pop().unwrap() as u32;
+                        self.registers[reg1] += (self.memory.pop().unwrap() as u32) << 8;
+                    }
+                    //u32/i32/f32 pop
+                    2 | 5 | 6 => {
+                        self.registers[reg1] = self.memory.pop().unwrap() as u32;
+                        self.registers[reg1] += (self.memory.pop().unwrap() as u32) << 8;
+                        self.registers[reg1] += (self.memory.pop().unwrap() as u32) << 16;
+                        self.registers[reg1] += (self.memory.pop().unwrap() as u32) << 24;
+                    }
+                    //char
+                    7 => {
+                        unimplemented!();
+                    }
+                    _ => unreachable!()
+                }
                 self.stack_pointer = self.memory.len();
                 self.pc += 1;
             },
             OpCode::Cal => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
+                let reg1 = ((self.program[self.pc] >> 19) & 0b0001_1111) as usize;
                 self.memory.push(((self.pc as u32) >> 24) as u8);
                 self.memory.push(((self.pc as u32) >> 16) as u8);
                 self.memory.push(((self.pc as u32) >> 8) as u8);
@@ -166,8 +342,8 @@ impl VirtualCPU {
                 }
             },
             OpCode::Cmp => {
-                let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let reg2 = ((self.program[self.pc] >> 14) as u8 & 0b0001_1111) as usize;
+                let reg1: usize = ((self.program[self.pc] >> 19) & 0b0001_1111) as usize;
+                let reg2: usize = ((self.program[self.pc] >> 14) & 0b0001_1111) as usize;
                 if self.registers[reg1] == self.registers[reg2] {
                     self.cmp_register = 0b0001;
                 }
@@ -179,6 +355,22 @@ impl VirtualCPU {
                 }
                 self.pc += 1;
             },
+            OpCode::Cst => {
+                let (t1, t2) = (((self.program[self.pc] >> 22) & 0b0000_0111) as usize,
+                    ((self.program[self.pc] >> 19) & 0b0000_0111) as usize);
+                let reg: usize = ((self.program[self.pc] >> 14) & 0b0001_1111) as usize;
+                //0 = u8, 1 = u16, 2 = u32, 3 = i8, 4 = i16, 5 = i32, 6 = f32, 7 = char
+                //Can't cast to a char
+                unimplemented!();
+                match (t1, t2) {
+                    (0, 0) | (1, 1) | (2, 2) | (3, 3) | (4, 4) | (5, 5) | (6, 6) => (), //Cast of the same type
+                    (0, 1) | (0, 2) => (), //Cast of a more precise Uint type
+                    (3, 4) => {
+
+                    },
+                    _ => unreachable!()
+                }
+            }
             OpCode::Jmp => {
                 let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
                 self.pc = self.registers[reg1] as usize;
