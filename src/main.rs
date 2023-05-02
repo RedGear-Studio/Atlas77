@@ -2,9 +2,8 @@
 
 pub mod compiler;
 pub mod vm;
-//use std::path::PathBuf;
 
-//use clap::{arg, Command};
+use std::fs;
 
 use crate::pest::Parser;
 extern crate pest;
@@ -15,43 +14,33 @@ extern crate pest_derive;
 #[grammar = "grammar.pest"]
 struct TestParser;
 
-fn main() {
-    /*let matches = cli().get_matches();
-    match matches.subcommand() {
-        Some(("run", sub_matches)) => {
-            let path = sub_matches
-                .get_many::<PathBuf>("PATH")
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>();
-            println!("Paths: {:?}", path);
-        }
-        _ => unreachable!()
-    }*/
-    let input: &str = "
-    function salut(x: int, y: boolean): int
-    begin
-        print x;
-    end;";
-    let program: pest::iterators::Pairs<Rule> = TestParser::parse(Rule::program, input).unwrap_or_else(|e| panic!("{}", e));
-}
+fn main(){
+    //Bro WTF?
+    let command = std::env::args().nth(1).unwrap_or_else(|| {
+        println!("Reg-Lang CLI v0.1.0
+  USAGE: reglang <command> [args]
+  Commands:
+    - compile <path>
+    - run <path>
+Nota Bene: The compile command doesn't work as of now.");
+        std::process::exit(0);
+    });
 
-/*fn cli() -> Command {
-    Command::new("reg-lang")
-        .about(" A simple and in development programming language written in Rust.")
-        .subcommand_required(true)
-        .arg_required_else_help(true)
-        .allow_external_subcommands(true)
-        .subcommand(
-            Command::new("run")
-                .about("Run a program.")
-                .arg(arg!(-f --file <FILE> "File to run."))
-                .arg_required_else_help(true)
-        )
-        .subcommand(
-            Command::new("compile")
-                .about("Compile a program. Not usable for now.")
-                .arg(arg!(-f --file <FILE> "File to compile."))
-                .arg_required_else_help(true)
-        )
-}*/
+    if command == "compile" {
+        let Some(path) = std::env::args().nth(2) else {
+            eprintln!("You must specify a path to a file");
+            std::process::exit(1);
+        };
+        let content = fs::read_to_string(&path).unwrap_or_else(|e| {
+            eprintln!("Failed to read input file {}: {}", path, e);
+            std::process::exit(1);
+        });
+        let result = TestParser::parse(Rule::program, &content).unwrap_or_else(|e| panic!("{}", e));
+    } else if command == "compile" {
+        let Some(path) = std::env::args().nth(2) else {
+            eprintln!("You must specify a path to a file");
+            std::process::exit(1);
+        };
+    }
+    println!("Hello, world!");
+}

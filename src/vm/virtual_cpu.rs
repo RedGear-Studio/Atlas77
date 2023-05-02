@@ -33,7 +33,30 @@ impl VirtualCPU {
     pub fn run(&mut self) {
         loop {
             match self.execute_instructions() {
-                Some(VMEvent::IllegalOpCode) => break,
+                Some(VMEvent::IllegalOpCode) => {
+                    println!("Error: Illegal opcode");    
+                    break
+                },
+                Some(VMEvent::DivideByZero) => {
+                    println!("Error: Division by zero");    
+                    break
+                },
+                Some(VMEvent::OutOfBound) => {
+                    println!("Error: Program Out of bound");    
+                    break
+                },
+                Some(VMEvent::StackOverflow) => {
+                    println!("Error: Stack Overflow");
+                    break
+                },
+                Some(VMEvent::StackUnderflow) => {
+                    println!("Error: Stack underflow");
+                    break
+                },
+                Some(VMEvent::ExitSyscall) => {
+                    println!("Exit program with code {}", self.registers[1]);
+                    break;
+                },
                 _ => (),
             }
         }
@@ -317,7 +340,7 @@ impl VirtualCPU {
                     self.memory.pop();
                 }
                 for i in 0..3 {
-                    self.frame_pointer += ((self.memory.pop().unwrap() as u32) << i*8) as usize;
+                    self.frame_pointer += ((self.memory.pop().unwrap() as u32) << (i * 4)) as usize;
                 }
                 for i in 0..3 {
                     self.pc += ((self.memory.pop().unwrap() as u32) << (i * 4)) as usize;
