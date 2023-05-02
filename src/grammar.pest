@@ -1,56 +1,106 @@
-program = { SOI ~ (function ~ semicolon)* ~ EOI }
-WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+program           =  { SOI ~ directive ~ EOI }
+WHITESPACE        = _{ " " | "\t" | "\r" | "\n" | "," }
+COMMENT           = _{ ";" ~ ('a'..'z' | 'A'..'Z' | '0'..'9')* ~ "\n" }
+general_register  =  { "reg" ~ ASCII_DIGIT }
+argument_register =  { "arg" ~ ASCII_DIGIT }
 
-function = { "function" ~ identifier ~ "(" ~ args ~ ")" ~ (":" ~ data_type)? ~ begin ~ block ~ "end" }
-    begin = _{ "begin"}
-    args = { (identifier ~ ":" ~ data_type)? ~ ("," ~ identifier ~ ":" ~ data_type)* }
-    block = { (statement ~ semicolon)* }
-        semicolon = _{ ^";" }
+directive             = { include_directive* ~ data_directive? ~ text_directive ~ global_directive ~ function+ ~ end_directive }
+definition            = { label ~ ":" }
+label                 = { "_"* ~ ASCII_ALPHA ~ ASCII_ALPHANUMERIC* }
+include_directive     = { ".include" ~ "\"" ~ ASCII_ALPHANUMERIC* ~ "." ~ "asm" ~ "\"" }
+data_directive        = { ".data" ~ (variable)* }
+variable              = { definition ~ type_directive }
+type_directive        = {
+    i32_directive
+  | f32_directive
+  | string_directive
+  | char_directive
+  | i32_array_directive
+  | f32_array_directive
+}
+i32_directive         = { ".i32" ~ int }
+i16_directive         = { ".i16" ~ int }
+i8_directive          = { ".i8" ~ int }
+u32_directive         = { ".u32" ~ uint }
+u16_directive         = { ".u16" ~ uint }
+u8_directive          = { ".u8" ~ uint }
+f32_directive         = { ".f32" ~ float }
+string_directive      = { ".string" ~ "\"" ~ ASCII_ALPHANUMERIC* ~ "\"" }
+char_directive        = { ".char" ~ "'" ~ ASCII_ALPHA ~ "'" }
+i32_array_directive   = { ".i32_array" ~ ASCII_DIGIT ~ "{" ~ (ASCII_DIGIT ~ ",") ~ "}" }
+f32_array_directive   = { ".f32_array" ~ ASCII_DIGIT ~ "{" ~ ((ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT*) ~ ",") ~ "}" }
+text_directive        = { ".text" }
+end_directive         = { ".end" }
+global_directive      = { ".global" ~ ASCII_ALPHANUMERIC+ }
+function              = { definition ~ instruction* }
+instruction_directive = { ".instruction" ~ (argument_register)* ~ general_register }
 
-statement = { variable_declaration | assignment | print_statement | if_statement | while_loop | for_loop | function_call }
-    variable_declaration = { "let" ~ identifier ~ ":" ~ data_type ~ ("=" ~ expression)? }
-    assignment = { identifier ~ "=" ~ expression }
-    print_statement = { "print" ~ expression }
-    if_statement = { "if" ~ expression ~ "then" ~ block ~ ("else" ~ block)? ~ "end" }
-    while_loop = { "while" ~ expression ~ "do" ~ block ~ "end" }
+instruction = {
+    nop_ins
+  | add_ins
+  | sub_ins
+  | mul_ins
+  | div_ins
+  | or_ins
+  | cmp_ins
+  | mov_ins
+  | inc_ins
+  | dec_ins
+  | swp_ins
+  | lod_ins
+  | str_ins
+  | psh_ins
+  | pop_ins
+  | cal_ins
+  | ret_ins
+  | jmp_ins
+  | jmc_ins
+  | sys_ins
+}
+nop_ins     = { "nop" }
+add_ins     = { "add" ~ type ~ general_register ~ general_register ~ general_register }
+sub_ins     = { "sub" ~ type ~ general_register ~ general_register ~ general_register }
+mul_ins     = { "mul" ~ type ~ general_register ~ general_register ~ general_register }
+div_ins     = { "div" ~ type ~ general_register ~ general_register ~ general_register }
+and_ins     = { "and" ~ general_register ~ general_register ~ general_register }
+or_ins      = { "or" ~ general_register ~ general_register ~ general_register }
+cmp_ins     = { "cmp" ~ general_register ~ general_register }
+mov_ins     = { "mov" ~ general_register ~ int }
+inc_ins     = { "inc" ~ general_register }
+dec_ins     = { "dec" ~ general_register }
+swp_ins     = { "swp" ~ general_register ~ general_register }
+lod_ins     = { "lod" ~ type ~ general_register ~ general_register }
+str_ins     = { "str" ~ type ~ general_register ~ general_register }
+psh_ins     = { "psh" ~ type ~ general_register ~ general_register }
+pop_ins     = { "pop" ~ type ~ general_register }
+cal_ins     = { "cal" ~ label }
+ret_ins     = { "ret" }
+cst_ins     = { "cst" ~ type ~ type ~ general_register }
+jmp_ins     = { "jmp" ~ label }
+jmc_ins     = { "jmc" ~ compare_flag ~ label }
+sys_ins     = { "sys" ~ uint }
 
-    for_loop = { "for" ~ identifier ~ "to" ~ expression ~ ( step? ~ direction?) ~ "iterate" ~ block ~ "end"}
-        step = { "by" ~ expression }
-        direction = { "direction" ~ (increase | decrease | both) }
-            increase = { "increase" }
-            decrease = { "decrease" }
-            both = { "both" }
+int   = @{ "-"? ~ ASCII_DIGIT+ }
+uint  = @{ ASCII_DIGIT+ }
+float = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
 
+compare_flag = { "eq" | "ne" | "lt" | "lte" | "gt" | "gte" }
 
-    expression = { literal | binary_expression | identifier | unary_expression | function_call }
-
-        binary_expression = { ^"(" ~ expression ~ operator ~ expression ~ ^")"}
-            operator = { add | sub | mul | div | mod | eq | neq | lt | lte | gt | gte }
-                add = _{ ^"+" }
-                sub = _{ ^"-" }
-                mul = _{ ^"*" }
-                div = _{ ^"/" }
-                mod = _{ ^"%" }
-                eq = _{ ^"==" }
-                neq = _{ ^"!=" }
-                lt = _{ ^"<" }
-                lte = _{ ^"<=" }
-                gt = _{ ^">" }
-                gte = _{ ^">=" }
-        unary_expression = { unary_operator ~ expression }
-            unary_operator = { "-" }
-        function_call = { identifier ~ "(" ~ (expression)* ~ ")" }
-literal = { number | string | boolean }
-number = @{ digit+ }
-string = _{ "\"" ~ string_value ~ "\"" }
-string_value = { character* }
-boolean = { "true" | "false" }
-reserved = { "true" | "false" | "int" | "string" | "boolean" | "let" | "print" | "if" | "then" | "else" | "end" | "while" | "do" | "for" | "to" | "increase" | "increase" | "direction" | "decrease" | "both" | "iterate" }
-
-data_type = { "int" | "string" | "boolean" | "char" | "float" | "void" }
-
-identifier = @{ !reserved ~ (letter ~ ( letter | digit )*) }
-
-letter = _{ 'a'..'z' | 'A'..'Z' }
-digit = _{ '0'..'9' }
-character = _{ letter | digit | " " | "." | "," | "!" | "?" | ";" | ":" }
+type      = {
+    i8_type
+  | i16_type
+  | i32_type
+  | u8_type
+  | u16_type
+  | u32_type
+  | f32_type
+  | char_type
+}
+i8_type   = { "i8" }
+i16_type  = { "i16" }
+i32_type  = { "i32" }
+u8_type   = { "u8" }
+u16_type  = { "u16" }
+u32_type  = { "u32" }
+f32_type  = { "f32" }
+char_type = { "char" }

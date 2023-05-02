@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use super::{events::VMEvent, bytecode::OpCode};
 
 /// Virtual CPU implementation, only support int 32 bits.
@@ -324,14 +326,10 @@ impl VirtualCPU {
             OpCode::Cmp => {
                 let reg1: usize = ((self.program[self.pc] >> 19) & 0b0001_1111) as usize;
                 let reg2: usize = ((self.program[self.pc] >> 14) & 0b0001_1111) as usize;
-                if self.registers[reg1] == self.registers[reg2] {
-                    self.cmp_register = 0b0001;
-                }
-                else if self.registers[reg1] < self.registers[reg2] {
-                    self.cmp_register = 0b0010;                    
-                }
-                else if self.registers[reg1] > self.registers[reg2] {
-                    self.cmp_register = 0b0100;
+                match self.registers[reg1].cmp(&self.registers[reg2]) {
+                    Ordering::Less => self.cmp_register = 0b0010,
+                    Ordering::Greater => self.cmp_register = 0b0100,
+                    Ordering::Equal => self.cmp_register = 0b0001
                 }
                 self.pc += 1;
             },
