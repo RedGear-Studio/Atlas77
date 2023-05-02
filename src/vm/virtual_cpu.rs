@@ -1,6 +1,7 @@
 use super::{events::VMEvent, bytecode::OpCode};
 
 /// Virtual CPU implementation, only support int 32 bits.
+#[derive(Default)]
 pub struct VirtualCPU {
     pub pc: usize, // program counter, holds the address of the next instruction to be executed
     pub registers: [u32; 32], // 32 registers (the first register is the zero register /!\ read-only)
@@ -125,34 +126,27 @@ impl VirtualCPU {
                     //u32/i32/f32 load
                     2 | 5 | 6 => {
                         self.registers[reg1] = (self.memory[self.registers[reg2] as usize]) as u32;
-                        self.registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] << 8) as u32;
-                        self.registers[reg1] += (self.memory[(self.registers[reg2] + 2) as usize] << 16) as u32;
-                        self.registers[reg1] += (self.memory[(self.registers[reg2] + 3) as usize] << 24) as u32;
+                        self.registers[reg1] = (self.registers[reg1] << 8) + (self.memory[(self.registers[reg2] + 1) as usize]) as u32;
+                        self.registers[reg1] = (self.registers[reg1] << 16) + (self.memory[(self.registers[reg2] + 2) as usize]) as u32;
+                        self.registers[reg1] = (self.registers[reg1] << 24) + (self.memory[(self.registers[reg2] + 3) as usize]) as u32;
                     }
                     //char
                     7 => {
                         let first_byte: u8 = self.memory[self.registers[reg2] as usize];
-                        //One byte long:
                         if first_byte <= 0x7F {
                             self.registers[reg1] = first_byte as u32;
-                        } else 
-                        //Two bytes long:
-                        if first_byte <= 0xDF {
+                        } else if first_byte <= 0xDF {
                             self.registers[reg1] = first_byte as u32;
-                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] as u32) << 8;
-                        } else 
-                        //Three bytes long
-                        if first_byte <= 0xEF {
+                            self.registers[reg1] = (self.registers[reg1] << 8)  + (self.memory[(self.registers[reg2] + 1) as usize]) as u32;
+                        } else if first_byte <= 0xEF {
                             self.registers[reg1] = (self.memory[self.registers[reg2] as usize]) as u32;
-                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] << 8) as u32;
-                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 2) as usize] << 16) as u32;
-                        } else
-                        //Four bytes long
-                        if first_byte <= 0xF4 {
+                            self.registers[reg1] = (self.registers[reg1] << 8)  + (self.memory[(self.registers[reg2] + 1) as usize]) as u32;
+                            self.registers[reg1] = (self.registers[reg1] << 16) + (self.memory[(self.registers[reg2] + 2) as usize]) as u32;
+                        } else if first_byte <= 0xF4 {
                             self.registers[reg1] = (self.memory[self.registers[reg2] as usize]) as u32;
-                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 1) as usize] << 8) as u32;
-                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 2) as usize] << 16) as u32;
-                            self.registers[reg1] += (self.memory[(self.registers[reg2] + 3) as usize] << 24) as u32;
+                            self.registers[reg1] = (self.registers[reg1] << 8)  + (self.memory[(self.registers[reg2] + 1) as usize]) as u32;
+                            self.registers[reg1] = (self.registers[reg1] << 16) + (self.memory[(self.registers[reg2] + 2) as usize]) as u32;
+                            self.registers[reg1] = (self.registers[reg1] << 24) + (self.memory[(self.registers[reg2] + 3) as usize]) as u32;
                         }
                     }
                     _ => unreachable!()
@@ -188,30 +182,23 @@ impl VirtualCPU {
                             if first_byte != 0 {
                                 break;
                             }
-                            first_byte = (self.registers[reg1] >> j * 8) as u8;
+                            first_byte = (self.registers[reg1] >> (j * 4)) as u8;
                             i = j;
                         }
-                        //One byte long:
                         if first_byte <= 0x7F {
                             self.memory[self.registers[reg2] as usize] = first_byte;
-                        } else
-                        //Two bytes long:
-                        if first_byte <= 0xDF {
+                        } else if first_byte <= 0xDF {
                             self.memory[self.registers[reg2] as usize] = first_byte;
-                            self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> i * 8) as u8;
-                        } else
-                        //Three bytes long
-                        if first_byte <= 0xEF {
+                            self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> (i * 4)) as u8;
+                        } else if first_byte <= 0xEF {
                             self.memory[self.registers[reg2] as usize] = first_byte;
-                            self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> i * 8) as u8;
-                            self.memory[(self.registers[reg2] + 2) as usize] = (self.registers[reg1] >> i * 8) as u8;
-                        } else 
-                        //Four bytes long
-                        if first_byte <= 0xF4 {
+                            self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> (i * 4)) as u8;
+                            self.memory[(self.registers[reg2] + 2) as usize] = (self.registers[reg1] >> (i * 4)) as u8;
+                        } else if first_byte <= 0xF4 {
                             self.memory[self.registers[reg2] as usize] = first_byte;
-                            self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> i * 8) as u8;
-                            self.memory[(self.registers[reg2] + 2) as usize] = (self.registers[reg1] >> i * 8) as u8;
-                            self.memory[(self.registers[reg2] + 3) as usize] = (self.registers[reg1] >> i * 8) as u8;
+                            self.memory[(self.registers[reg2] + 1) as usize] = (self.registers[reg1] >> (i * 4)) as u8;
+                            self.memory[(self.registers[reg2] + 2) as usize] = (self.registers[reg1] >> (i * 4)) as u8;
+                            self.memory[(self.registers[reg2] + 3) as usize] = (self.registers[reg1] >> (i * 4)) as u8;
                         }
                     }
                     _ => unreachable!()
@@ -255,30 +242,23 @@ impl VirtualCPU {
                             if first_byte != 0 {
                                 break;
                             }
-                            first_byte = (self.registers[reg1] >> j * 8) as u8;
+                            first_byte = (self.registers[reg1] >> (j * 4)) as u8;
                             i = j;
                         }
-                        //One byte long:
                         if first_byte <= 0x7F {
                             self.memory.push(first_byte);
-                        } else
-                        //Two bytes long:
-                        if first_byte <= 0xDF {
+                        } else if first_byte <= 0xDF {
                             self.memory.push(first_byte);
-                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
-                        } else
-                        //Three bytes long
-                        if first_byte <= 0xEF {
+                            self.memory.push((self.registers[reg1] >> (i * 4)) as u8);
+                        } else if first_byte <= 0xEF {
                             self.memory.push(first_byte);
-                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
-                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
-                        } else 
-                        //Four bytes long
-                        if first_byte <= 0xF4 {
+                            self.memory.push((self.registers[reg1] >> (i * 4)) as u8);
+                            self.memory.push((self.registers[reg1] >> (i * 4)) as u8);
+                        } else if first_byte <= 0xF4 {
                             self.memory.push(first_byte);
-                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
-                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
-                            self.memory.push((self.registers[reg1] >> i * 8) as u8);
+                            self.memory.push((self.registers[reg1] >> (i * 4)) as u8);
+                            self.memory.push((self.registers[reg1] >> (i * 4)) as u8);
+                            self.memory.push((self.registers[reg1] >> (i * 4)) as u8);
                         }
                     }
                     _ => unreachable!()
@@ -338,7 +318,7 @@ impl VirtualCPU {
                     self.frame_pointer += ((self.memory.pop().unwrap() as u32) << i*8) as usize;
                 }
                 for i in 0..3 {
-                    self.pc += ((self.memory.pop().unwrap() as u32) << i*8) as usize;
+                    self.pc += ((self.memory.pop().unwrap() as u32) << (i * 4)) as usize;
                 }
             },
             OpCode::Cmp => {
@@ -361,7 +341,7 @@ impl VirtualCPU {
                 let reg: usize = ((self.program[self.pc] >> 14) & 0b0001_1111) as usize;
                 //0 = u8, 1 = u16, 2 = u32, 3 = i8, 4 = i16, 5 = i32, 6 = f32, 7 = char
                 //Can't cast to a char
-                unimplemented!();
+                unimplemented!("Cst opcode not implemented yet");
                 match (t1, t2) {
                     (0, 0) | (1, 1) | (2, 2) | (3, 3) | (4, 4) | (5, 5) | (6, 6) => (), //Cast of the same type
                     (0, 1) | (0, 2) => (), //Cast of a more precise Uint type
