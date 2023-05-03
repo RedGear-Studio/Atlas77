@@ -13,3 +13,4 @@ categories = ["language"]
 [dependencies]
 pest = "2.5.7"
 pest_derive = "2.5.7"
+colored = "2.0.0"

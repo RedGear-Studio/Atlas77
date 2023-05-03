@@ -5,19 +5,26 @@ comment_line      = @{ ";" ~ (!("\r" | "\n") ~ ANY)* }
 general_register  =  { "reg" ~ ASCII_DIGIT }
 argument_register =  { "arg" ~ ASCII_DIGIT }
 
-directive             =  _{ include_directive* ~ data_directive? ~ text_directive ~ end_directive }
+directive             = _{ include_directive* ~ data_directive? ~ text_directive? ~ end_directive }
 definition            =  { label ~ ":" }
 label                 = @{ "_"* ~ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC)* }
-include_directive     =  { ".include" ~ "\"" ~ ASCII_ALPHANUMERIC* ~ "." ~ "asm" ~ "\"" }
+include_directive     =  { ".include" ~ "<" ~ file ~ ">" }
+file                  =  { ASCII_ALPHANUMERIC* ~ ".asr" }
 data_directive        =  { ".data" ~ (variable)* }
 variable              =  { definition ~ type_directive }
 type_directive        =  {
     i32_directive
+  | i16_directive
+  | i8_directive
+  | u32_directive
+  | u16_directive
+  | u8_directive
   | f32_directive
   | string_directive
   | char_directive
-  | i32_array_directive
-  | f32_array_directive
+  | array_i32_directive
+  | array_u32_directive
+  | array_f32_directive
 }
 i32_directive         =  { ".i32" ~ int }
 i16_directive         =  { ".i16" ~ int }
@@ -28,17 +35,18 @@ u8_directive          =  { ".u8" ~ uint }
 f32_directive         =  { ".f32" ~ float }
 string_directive      =  { ".string" ~ "\"" ~ string ~ "\"" }
 char_directive        =  { ".char" ~ "'" ~ ASCII_ALPHA ~ "'" }
-i32_array_directive   =  { ".i32_array" ~ ASCII_DIGIT ~ "{" ~ (ASCII_DIGIT ~ ",") ~ "}" }
-f32_array_directive   =  { ".f32_array" ~ ASCII_DIGIT ~ "{" ~ ((ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT*) ~ ",") ~ "}" }
+array_i32_directive   =  { ".array_i32" ~ array_size? ~ "{" ~ int* ~ "}" }
+array_u32_directive   =  { ".array_u32" ~ array_size? ~ "{" ~ uint* ~ "}" }
+array_f32_directive   =  { ".array_f32" ~ array_size? ~ "{" ~ float* ~ "}" }
 text_directive        =  { ".text" ~ global_directive ~ function+ }
 end_directive         =  { ".end" }
 global_directive      =  { ".global" ~ label }
 function              =  { definition ~ instruction* }
 instruction_directive =  { ".instruction" ~ (argument_register)* ~ general_register }
-
-string      =  { characters* }
-characters  = _{ ASCII_ALPHANUMERIC | "!" | ";" | "." | ":" | "(" | ")" | "{" | "}" | "&" | "|" | "'" | "@" | "^" | "*" | "[" | "]" | "$" | "%" | "£" | "/" | "+" | "=" | "-°" | "~" | "?" | "<" | ">" | "°" }
-instruction =  {
+array_size            = @{ uint }
+string                =  { characters* }
+characters            = _{ ASCII_ALPHANUMERIC | "!" | ";" | "." | ":" | "(" | ")" | "{" | "}" | "&" | "|" | "'" | "@" | "^" | "*" | "[" | "]" | "$" | "%" | "£" | "/" | "+" | "=" | "-°" | "~" | "?" | "<" | ">" | "°" }
+instruction           =  {
     nop_ins
   | add_ins
   | sub_ins
@@ -60,28 +68,28 @@ instruction =  {
   | jmc_ins
   | sys_ins
 }
-nop_ins     =  { "nop" }
-add_ins     =  { "add" ~ type ~ general_register ~ general_register ~ general_register }
-sub_ins     =  { "sub" ~ type ~ general_register ~ general_register ~ general_register }
-mul_ins     =  { "mul" ~ type ~ general_register ~ general_register ~ general_register }
-div_ins     =  { "div" ~ type ~ general_register ~ general_register ~ general_register }
-and_ins     =  { "and" ~ general_register ~ general_register ~ general_register }
-or_ins      =  { "or" ~ general_register ~ general_register ~ general_register }
-cmp_ins     =  { "cmp" ~ general_register ~ general_register }
-mov_ins     =  { "mov" ~ general_register ~ (int | label) }
-inc_ins     =  { "inc" ~ general_register }
-dec_ins     =  { "dec" ~ general_register }
-swp_ins     =  { "swp" ~ general_register ~ general_register }
-lod_ins     =  { "lod" ~ type ~ general_register ~ general_register }
-str_ins     =  { "str" ~ type ~ general_register ~ general_register }
-psh_ins     =  { "psh" ~ type ~ general_register ~ general_register }
-pop_ins     =  { "pop" ~ type ~ general_register }
-cal_ins     =  { "cal" ~ label }
-ret_ins     =  { "ret" }
-cst_ins     =  { "cst" ~ type ~ type ~ general_register }
-jmp_ins     =  { "jmp" ~ label }
-jmc_ins     =  { "jmc" ~ compare_flag ~ label }
-sys_ins     =  { "sys" ~ uint }
+nop_ins               =  { "nop" }
+add_ins               =  { "add" ~ type ~ general_register ~ general_register ~ general_register }
+sub_ins               =  { "sub" ~ type ~ general_register ~ general_register ~ general_register }
+mul_ins               =  { "mul" ~ type ~ general_register ~ general_register ~ general_register }
+div_ins               =  { "div" ~ type ~ general_register ~ general_register ~ general_register }
+and_ins               =  { "and" ~ general_register ~ general_register ~ general_register }
+or_ins                =  { "or" ~ general_register ~ general_register ~ general_register }
+cmp_ins               =  { "cmp" ~ general_register ~ general_register }
+mov_ins               =  { "mov" ~ general_register ~ (int | label) }
+inc_ins               =  { "inc" ~ general_register }
+dec_ins               =  { "dec" ~ general_register }
+swp_ins               =  { "swp" ~ general_register ~ general_register }
+lod_ins               =  { "lod" ~ type ~ general_register ~ general_register }
+str_ins               =  { "str" ~ type ~ general_register ~ general_register }
+psh_ins               =  { "psh" ~ type ~ general_register ~ general_register }
+pop_ins               =  { "pop" ~ type ~ general_register }
+cal_ins               =  { "cal" ~ label }
+ret_ins               =  { "ret" }
+cst_ins               =  { "cst" ~ type ~ type ~ general_register }
+jmp_ins               =  { "jmp" ~ label }
+jmc_ins               =  { "jmc" ~ compare_flag ~ label }
+sys_ins               =  { "sys" ~ uint }
 
 int   = @{ "-"? ~ ASCII_DIGIT+ }
 uint  = @{ ASCII_DIGIT+ }

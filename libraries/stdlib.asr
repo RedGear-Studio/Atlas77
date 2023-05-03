@@ -1,0 +1,43 @@
+; Standard library for the assembler of ASL (A Simple Language)
+; Provides useful functions and constants for programs
+
+; === Constants ===
+
+.data
+    .export
+    false: .u8 0 ; boolean false value
+    .export
+    true: .u8 1 ; boolean true value
+    .export
+    EXIT_SUCCESS: .u8 0 ; successful program termination status
+    .export
+    EXIT_FAILURE: .u8 1 ; unsuccessful program termination status
+    .export
+    ERROR_STACKOVERFLOW: .u8 2 ; stack overflow error code
+    .export
+    ERROR_STACKUNDERFLOW: .u8 3 ; stack underflow error code
+
+; === Functions ===
+.text
+.library ; define the file as a library, with no entry point
+
+; strlen: calculates the length of a null-terminated string and pushes the result on top of the stack as an u32
+; input: pointer to the string to calculate the length of
+; output: u32 length of the string
+.export
+strlen:
+    ; implementation coming soon
+
+; strcpy: copies one null-terminated string from an address to another
+; input: pointer to the source string to copy & pointer where to copy the string, if the pointer == stack_frame_pointer, it'll be push on top of the stack.
+; if the given pointer to copy to is invalid (it points to the data segment or is bigger than the stack_frame_pointer) the program will crash with an error
+.export
+strcpy:
+    ; implementation coming soon
+; memcpy: copies a block of memory of a given size from an address to another
+; input: pointer to the source block of memory & pointer where to copy the block of memory, if the pointer == stack_frame_pointer, it'll be push on top of the stack & size of the data to copy
+; if the give pointer to copy to is invalid (it points to the data segment or is bigger than the stack_frame_pointer) the program will crash with an error
+.export
+memcpy:
+    ; implementation coming soon
+.end

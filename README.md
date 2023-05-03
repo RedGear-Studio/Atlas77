@@ -47,16 +47,10 @@ The memory of the VM is a stack but with a size not defined (32 GB max). It beha
 - 5: Read string, store the string on top of the stack and store its address in reg1. (The string needs to be null terminated)
 - 6: Exit the program, found the exit code in reg1 (0 for success, 1 for failure).
 
-### Types for the instructions:
+### Supported types:
 > This is the value of a type in the VM. The type is used to know how to interpret the value in a register.
-- 0: `u8`
-- 1: `u16`
-- 2: `u32`
-- 3: `i8`
-- 4: `i16`
-- 5: `i32`
-- 6: `f32`
-- 7: `char`
+`u8`(0), `u16`(1), `u32`(2), `i8`(3), `i16`(4), `i32`(5), `f32`(6), `char`(7)
+> Arrays are not supported yet.
 
 ### cmp_flag:
 The cmp_flag is a 4-bit register used for comparison operations. It contains four individual flags, each represented by a single bit:
