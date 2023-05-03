@@ -1,10 +1,12 @@
 #![allow(unused)]
 
-pub mod compiler;
+pub mod asr_compiler;
 pub mod vm;
 
 use std::fs;
 use colored::Colorize;
+use crate::asr_compiler::compiler::ASMContext;
+
 use crate::pest::Parser;
 extern crate pest;
 #[macro_use]
@@ -15,7 +17,6 @@ extern crate pest_derive;
 struct TestParser;
 
 fn main(){
-    //Bro WTF?
     let command = std::env::args().nth(1).unwrap_or_else(|| {
         println!("Reg-Lang CLI v0.1.0
   USAGE: asl <command> [args]
@@ -44,8 +45,9 @@ We are working to add support for the `.include` directive in a future version o
         println!("{}: {}", "Parsing".bold().blue(), path);
         let result = TestParser::parse(Rule::program, &content).unwrap_or_else(|e| panic!("{}", e));
         println!("{}", "Finished".bold().green());
-        println!("{}", "Compiling".bold().blue());
-        let vm = compiler::compiler::compile(result.into_iter().next().unwrap());
+        println!("{} parsed result", "Compiling".bold().blue());
+        let mut context = ASMContext::new();
+        let vm = context.compile(result.into_iter().next().unwrap());
         println!("{}", "Finished".bold().green());
     }
 }

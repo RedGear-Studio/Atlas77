@@ -1,13 +1,15 @@
 program           =  { SOI ~ directive ~ EOI }
-WHITESPACE        = _{ " " | "\t" | "\r" | "\n" | "," }
+WHITESPACE        = _{ " " | "\t" |"\r" | "\n" | "," }
 COMMENT           = _{ comment_line }
 comment_line      = @{ ";" ~ (!("\r" | "\n") ~ ANY)* }
 general_register  =  { "reg" ~ ASCII_DIGIT }
 argument_register =  { "arg" ~ ASCII_DIGIT }
 
-directive             = _{ include_directive* ~ data_directive? ~ text_directive? ~ end_directive }
+directive             = _{ include_directive* ~ data_directive? ~ text_directive ~ end_directive }
 definition            =  { label ~ ":" }
-label                 = @{ "_"* ~ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC)* }
+label                 = @{ ASCII_ALPHA ~ ("_" | ASCII_ALPHANUMERIC)* }
+func_definition       =  { func_label ~ ":" }
+func_label            = @{ "_" ~ label }
 include_directive     =  { ".include" ~ "<" ~ file ~ ">" }
 file                  =  { ASCII_ALPHANUMERIC* ~ ".asr" }
 data_directive        =  { ".data" ~ (variable)* }
@@ -40,8 +42,8 @@ array_u32_directive   =  { ".array_u32" ~ array_size? ~ "{" ~ uint* ~ "}" }
 array_f32_directive   =  { ".array_f32" ~ array_size? ~ "{" ~ float* ~ "}" }
 text_directive        =  { ".text" ~ global_directive ~ function+ }
 end_directive         =  { ".end" }
-global_directive      =  { ".global" ~ label }
-function              =  { definition ~ instruction* }
+global_directive      =  { ".global" ~ func_label }
+function              =  { func_definition ~ (definition | instruction)* }
 instruction_directive =  { ".instruction" ~ (argument_register)* ~ general_register }
 array_size            = @{ uint }
 string                =  { characters* }
@@ -84,16 +86,16 @@ lod_ins               =  { "lod" ~ type ~ general_register ~ general_register }
 str_ins               =  { "str" ~ type ~ general_register ~ general_register }
 psh_ins               =  { "psh" ~ type ~ general_register ~ general_register }
 pop_ins               =  { "pop" ~ type ~ general_register }
-cal_ins               =  { "cal" ~ label }
+cal_ins               =  { "cal" ~ func_label }
 ret_ins               =  { "ret" }
 cst_ins               =  { "cst" ~ type ~ type ~ general_register }
 jmp_ins               =  { "jmp" ~ label }
-jmc_ins               =  { "jmc" ~ compare_flag ~ label }
+jmc_ins               =  { "jmc" ~ compare_flag ~ (label | func_label) }
 sys_ins               =  { "sys" ~ uint }
 
 int   = @{ "-"? ~ ASCII_DIGIT+ }
 uint  = @{ ASCII_DIGIT+ }
-float = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
+float = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
 
 compare_flag = { "eq" | "ne" | "lt" | "lte" | "gt" | "gte" }
 

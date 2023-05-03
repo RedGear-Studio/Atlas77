@@ -3,7 +3,7 @@
 .data
 msg: .string "Hello World" ; '\0' is added by default
 test: .array_i32 5 {0, 2, 3, 5, 4}
-number: .i8 -5
+number: .i8 -5000
 .text
 .global _start 
 _start:
