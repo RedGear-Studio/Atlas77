@@ -1,5 +1,3 @@
-use pest::pratt_parser::Op;
-
 /// Instruction of the virtual machine, 32-bit, and each OpCode is 8-bit. Refer to README.md to a more detailed documentation about each OpCode
 #[repr(u8)]
 pub enum OpCode {

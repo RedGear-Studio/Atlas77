@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-
+use crate::Colorize;
 use super::{events::VMEvent, bytecode::OpCode};
 
 /// Virtual CPU implementation, only support int 32 bits.
@@ -34,33 +34,41 @@ impl VirtualCPU {
         loop {
             match self.execute_instructions() {
                 Some(VMEvent::IllegalOpCode) => {
-                    println!("Error: Illegal opcode");    
+                    println!("{}:\n  |\n  = Illegal Opcode at address {:#06x}", "Runtime Error:".bold().red(), self.pc);
                     break
                 },
                 Some(VMEvent::DivideByZero) => {
-                    println!("Error: Division by zero");    
+                    println!("{}:\n  |\n  = Division by zero at address {:#06x}", "Runtime Error".bold().red(), self.pc);
                     break
                 },
                 Some(VMEvent::OutOfBound) => {
-                    println!("Error: Program Out of bound");    
+                    println!("{}:\n  |\n  = Program Out of bound, the program size is {:#06x} and the address is {:#06x}", "Runtime Error".bold().red(), self.program.len(), self.pc);    
                     break
                 },
                 Some(VMEvent::StackOverflow) => {
-                    println!("Error: Stack Overflow");
+                    println!("{}:\n  |\n  = Stack overflow at address {:#06x}", "Runtime Error".bold().red(), self.pc);
                     break
                 },
                 Some(VMEvent::StackUnderflow) => {
-                    println!("Error: Stack underflow");
+                    println!("{}:\n  |\n  = Stack underflow at address {:#06x}", "Runtime Error".bold().red(), self.pc);
                     break
                 },
                 Some(VMEvent::ExitSyscall) => {
-                    println!("Exit program with code {}", self.registers[1]);
+                    match self.registers[1] {
+                        0 => {
+                            println!("{}:\n  |\n  = Success, exit with code {}", "Finished:".bold().green(), self.registers[1]);
+                        }
+                        _ => {
+                            //TODO!: Add more information about the error
+                            println!("{}:\n  |\n  = Exit with code {}: Failure", "Runtime Error:".bold().red(), self.registers[1]);
+                        }
+                    }
                     break;
                 },
                 _ => (),
             }
         }
-    } 
+    }
     pub fn execute_instructions(&mut self) -> Option<VMEvent> {
         if self.pc >= self.program.len() {
             return Some(VMEvent::OutOfBound);

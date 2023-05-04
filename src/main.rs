@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 pub mod asr_compiler;
 pub mod vm;
 
@@ -43,11 +41,16 @@ We are working to add support for the `.include` directive in a future version o
             std::process::exit(1);
         });
         println!("{}: {}", "Parsing".bold().blue(), path);
-        let result = TestParser::parse(Rule::program, &content).unwrap_or_else(|e| panic!("{}", e));
+        let result = TestParser::parse(Rule::program, &content).unwrap_or_else(|e| {
+            println!("{}:\n{}", "Error".bold().red(), e);
+            std::process::exit(0);
+        });
         println!("{}", "Finished".bold().green());
         println!("{} parsed result", "Compiling".bold().blue());
         let mut context = ASMContext::new();
-        let vm = context.compile(result.into_iter().next().unwrap());
+        let mut vm = context.compile(result.into_iter().next().unwrap());
         println!("{}", "Finished".bold().green());
+        println!("{}", "Running".bold().green());
+        vm.run();
     }
 }

@@ -1,12 +1,23 @@
+use std::vec;
+
 use pest::{iterators::Pair, error::Error};
 use colored::Colorize;
 use crate::Rule;
 use crate::vm::virtual_cpu::VirtualCPU;
-use super::intermediate_instruction::IntermediateInstruction;
-
-struct ErrorsAndWarnings {
+use super::intermediate_instruction::{IntermediateInstruction, Type, CmpFlag};
+#[derive(Default)]
+struct Message {
+    ///Used to report potential issues
     warnings: Vec<Error<Rule>>,
+    ///Used to report errors
     errors: Vec<Error<Rule>>,
+    ///Used to report compiler modification of the code
+    notices: Vec<Error<Rule>>,
+}
+impl Message {
+    fn new() -> Self {
+        Message { warnings: vec![], errors: vec![], notices: vec![] }
+    }
 }
 #[derive(Debug, Clone)]
 enum Value {
@@ -18,14 +29,14 @@ enum Value {
     U16(u16),
     U8(u8),
     Str(String),
-    Bool(bool),
     None,
 }
 #[derive(Debug)]
 struct Function {
     name: String,
     address: usize,
-    content: Vec<(String, Vec<IntermediateInstruction>)>
+    content: Vec<(String, Vec<IntermediateInstruction>)>,
+    current_label: usize,
 }
 #[derive(Debug)]
 struct Data {
@@ -50,22 +61,24 @@ impl ASMContext {
         }
     }
     pub fn compile(&mut self, program: Pair<Rule>) -> VirtualCPU {
-        let mut errors_and_warnings = ErrorsAndWarnings { errors:vec![], warnings:vec![] };
+        let mut messages = Message::new();
         let mut vm: VirtualCPU = VirtualCPU::default();
         for directive in program.into_inner() {
             match directive.as_rule() {
                 Rule::include_directive => {
                     let result = self.compile_include_directive(directive);
-                    errors_and_warnings.warnings.extend(result.warnings);
-                    errors_and_warnings.errors.extend(result.errors);
+                    messages.warnings.extend(result.warnings);
+                    messages.errors.extend(result.errors);
                 },
                 Rule::data_directive => {
                     let result = self.compile_data_segment(directive);
-                    errors_and_warnings.warnings.extend(result.warnings);
-                    errors_and_warnings.errors.extend(result.errors);
+                    messages.warnings.extend(result.warnings);
+                    messages.errors.extend(result.errors);
                 },
                 Rule::text_directive => {
-                    //warnings.extend(self.compile_program(directive));
+                    let result = self.compile_program(directive);
+                    messages.warnings.extend(result.warnings);
+                    messages.errors.extend(result.errors);
                 },
                 Rule::end_directive => {
                     //TODO!: Modify all the label in code by their respective address
@@ -80,13 +93,17 @@ impl ASMContext {
                 _ => unreachable!()
             }
         }
-        
-        for warning in errors_and_warnings.warnings {
+        println!("{:?}", self);
+        for warning in messages.warnings {
             println!("{}:", "Warning".bold().yellow());
             println!("{}", warning);
         }
-        if !errors_and_warnings.errors.is_empty() {
-            for error in errors_and_warnings.errors {
+        for notice in messages.notices {
+            println!("{}:", "Notice".bold().blue());
+            println!("{}", notice);
+        }
+        if !messages.errors.is_empty() {
+            for error in messages.errors {
                 println!("{}:", "Error".bold().red());
                 println!("{}", error);
             }
@@ -95,8 +112,8 @@ impl ASMContext {
         vm
     }
     
-    fn compile_include_directive(&mut self, include: Pair<Rule>) -> ErrorsAndWarnings {
-        let mut errors_and_warnings: ErrorsAndWarnings = ErrorsAndWarnings { errors:vec![], warnings:vec![] };
+    fn compile_include_directive(&mut self, include: Pair<Rule>) -> Message {
+        let mut messages: Message = Message::new();
         for file in include.into_inner() {
             match file.as_rule() {
                 Rule::file => {
@@ -107,28 +124,28 @@ impl ASMContext {
                         },
                         file.as_span()
                     );
-                    errors_and_warnings.warnings.push(war);
+                    messages.warnings.push(war);
                 }
                 _ => unreachable!()
             }
             
         }
-        errors_and_warnings
+        messages
     }
 
-    fn compile_data_segment(&mut self, data: Pair<Rule>) -> ErrorsAndWarnings {
-        let mut errors_and_warnings: ErrorsAndWarnings = ErrorsAndWarnings { errors:vec![], warnings:vec![] };
+    fn compile_data_segment(&mut self, data: Pair<Rule>) -> Message {
+        let mut messages: Message = Message::new();
         for variable in data.into_inner() {
             let mut inner_pairs = variable.into_inner();
-            let definition = inner_pairs.next().unwrap();
+            let label = inner_pairs.next().unwrap().into_inner().next().unwrap();
             let type_directive = inner_pairs.next().unwrap();
             let value = type_directive.into_inner().next().unwrap();
-            let mut data;
+            let data;
             match value.as_rule() {
                 Rule::string_directive => {
                     let intermediate = Value::Str(value.into_inner().next().unwrap().as_str().to_string());
                     self.data.push(Data {
-                        name: definition.as_str().to_string(),
+                        name: label.as_str().to_string(),
                         address: self.data_segment.len(),
                         value: intermediate.clone()
                     });
@@ -143,7 +160,7 @@ impl ASMContext {
                             },
                             value.as_span()
                         );
-                        errors_and_warnings.errors.push(war);
+                        messages.errors.push(war);
                         continue;
                     };
                     data = Value::I32(number);
@@ -157,7 +174,7 @@ impl ASMContext {
                             },
                             value.as_span()
                         );
-                        errors_and_warnings.errors.push(war);
+                        messages.errors.push(war);
                         continue;
                     };
                     data = Value::I16(number);
@@ -171,7 +188,7 @@ impl ASMContext {
                             },
                             value.as_span()
                         );
-                        errors_and_warnings.errors.push(war);
+                        messages.errors.push(war);
                         continue;
                     };
                     data = Value::I8(number);
@@ -185,7 +202,7 @@ impl ASMContext {
                             },
                             value.as_span()
                         );
-                        errors_and_warnings.errors.push(war);
+                        messages.errors.push(war);
                         continue;
                     };
                     data = Value::F32(number);
@@ -199,7 +216,7 @@ impl ASMContext {
                             },
                             value.as_span()
                         );
-                        errors_and_warnings.errors.push(war);
+                        messages.errors.push(war);
                         continue;
                     };
                     data = Value::U32(number);
@@ -213,7 +230,7 @@ impl ASMContext {
                             },
                             value.as_span()
                         );
-                        errors_and_warnings.errors.push(war);
+                        messages.errors.push(war);
                         continue;
                     };
                     data = Value::U16(number);
@@ -227,7 +244,7 @@ impl ASMContext {
                             },
                             value.as_span()
                         );
-                        errors_and_warnings.errors.push(war);
+                        messages.errors.push(war);
                         continue;
                     };
                     data = Value::U8(number);
@@ -239,7 +256,7 @@ impl ASMContext {
                         },
                         value.as_span()
                     );
-                    errors_and_warnings.warnings.push(war);
+                    messages.warnings.push(war);
                     data = Value::None;
                 },
                 Rule::array_f32_directive => {
@@ -249,7 +266,7 @@ impl ASMContext {
                         },
                         value.as_span()
                     );
-                    errors_and_warnings.warnings.push(war);
+                    messages.warnings.push(war);
                     data = Value::None;
                 },
                 Rule::array_i32_directive => {
@@ -259,7 +276,7 @@ impl ASMContext {
                         },
                         value.as_span()
                     );
-                    errors_and_warnings.warnings.push(war);
+                    messages.warnings.push(war);
                     data = Value::None;
                 },
                 _ => unreachable!()
@@ -267,7 +284,7 @@ impl ASMContext {
             match data {
                 Value::F32(f) => {
                     self.data.push(Data {
-                        name: definition.as_str().to_string(),
+                        name: label.as_str().to_string(),
                         address: self.data_segment.len(),
                         value: data
                     });
@@ -276,7 +293,7 @@ impl ASMContext {
                 },
                 Value::I32(i) => {
                     self.data.push(Data {
-                        name: definition.as_str().to_string(),
+                        name: label.as_str().to_string(),
                         address: self.data_segment.len(),
                         value: data
                     });
@@ -285,7 +302,7 @@ impl ASMContext {
                 },
                 Value::I16(i) => {
                     self.data.push(Data {
-                        name: definition.as_str().to_string(),
+                        name: label.as_str().to_string(),
                         address: self.data_segment.len(),
                         value: data
                     });
@@ -294,7 +311,7 @@ impl ASMContext {
                 },
                 Value::I8(i) => {
                     self.data.push(Data {
-                        name: definition.as_str().to_string(),
+                        name: label.as_str().to_string(),
                         address: self.data_segment.len(),
                         value: data
                     });
@@ -302,7 +319,7 @@ impl ASMContext {
                 },
                 Value::U32(u) => {
                     self.data.push(Data {
-                        name: definition.as_str().to_string(),
+                        name: label.as_str().to_string(),
                         address: self.data_segment.len(),
                         value: data
                     });
@@ -311,7 +328,7 @@ impl ASMContext {
                 },
                 Value::U16(u) => {
                     self.data.push(Data {
-                        name: definition.as_str().to_string(),
+                        name: label.as_str().to_string(),
                         address: self.data_segment.len(),
                         value: data
                     });
@@ -320,7 +337,7 @@ impl ASMContext {
                 },
                 Value::U8(u) => {
                     self.data.push(Data {
-                        name: definition.as_str().to_string(),
+                        name: label.as_str().to_string(),
                         address: self.data_segment.len(),
                         value: data
                     });
@@ -331,15 +348,288 @@ impl ASMContext {
                     self.data_segment.push(0);
                 },
                 Value::None => (),
-                _ => unimplemented!()
             }
         }
-        errors_and_warnings
+        messages
     }
-    fn compile_program(&mut self, program: Pair<Rule>) -> Vec<Error<Rule>> {
-        todo!()
+    fn compile_program(&mut self, program: Pair<Rule>) -> Message {
+        let mut messages = Message::new();
+        let mut inner_pairs = program.into_inner();
+        //Define the entry point of the program.
+        let directive = inner_pairs.next().unwrap();
+        self.entry_point = match directive.as_rule() {
+            Rule::global_directive => {
+                Some(directive.into_inner().next().unwrap().as_str().to_owned())
+            },
+            Rule::library_directive => {
+                None
+            }
+            _ => {
+                let err = Error::new_from_span(
+                    pest::error::ErrorVariant::<crate::Rule>::CustomError {
+                        message: "Unknown directive".to_owned()
+                    },
+                    directive.as_span()
+                );
+                messages.errors.push(err);
+                None
+            }
+        };
+        for function in inner_pairs {
+            let (result, result_function) = self.compile_function(function);
+            self.functions.push(result_function);
+            messages.notices.extend(result.notices);
+            messages.errors.extend(result.errors);
+            messages.warnings.extend(result.warnings);
+        }
+        messages
     }
-    fn compile_function(&mut self, function: Pair<Rule>) -> Vec<Error<Rule>> {
-        todo!()
+    fn compile_function(&mut self, function: Pair<Rule>) -> (Message, Function) {
+        let mut messages = Message::new();
+        let mut inner_pairs = function.into_inner();
+        let name = inner_pairs.next().unwrap().as_str().to_owned();
+        let mut current_function = Function {
+            name: name.clone(),
+            address: 0,
+            content: vec![(name, vec![])],
+            current_label: 0,
+        };
+        for something in inner_pairs.next().into_iter() {
+            match something.as_rule() {
+                Rule::definition => {
+                    current_function.content.push((something.into_inner().next().unwrap().as_str().to_owned(), vec![]));
+                    current_function.current_label += 1;
+                },
+                Rule::instruction => {
+                    for instruction in something.into_inner() {
+                        let result = self.compile_instruction(&mut current_function, instruction);
+                        messages.notices.extend(result.notices);
+                        messages.warnings.extend(result.warnings);
+                        messages.errors.extend(result.errors);
+                    }
+                }
+                _ => unreachable!()
+            }
+        }
+        current_function.address = if self.functions.len() >= 1 {
+            let mut address = 0;
+            for function in self.functions.iter() {
+                for label in function.content.iter() {
+                    address += label.1.len();
+                }
+            }
+            address
+        } else {
+            0
+        };
+        (messages, current_function)
+    }
+    fn compile_instruction(&mut self, current_function: &mut Function, instruction: Pair<Rule>) -> Message {
+        let mut messages = Message::new();
+
+        match instruction.as_rule() {
+            Rule::add_ins => {
+                let mut inner = instruction.into_inner();
+                let _type = inner.next().unwrap().as_str().parse::<Type>().unwrap();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Add(
+                        _type,
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::sub_ins => {
+                let mut inner = instruction.into_inner();
+                let _type = inner.next().unwrap().as_str().parse::<Type>().unwrap();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Sub(
+                        _type,
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::mul_ins => {
+                let mut inner = instruction.into_inner();
+                let _type = inner.next().unwrap().as_str().parse::<Type>().unwrap();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Mul(
+                        _type,
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::div_ins => {
+                let mut inner = instruction.into_inner();
+                let _type = inner.next().unwrap().as_str().parse::<Type>().unwrap();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Div(
+                        _type,
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::mov_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Mov(
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().as_str().to_owned(),
+                    )
+                )
+            },
+            Rule::sys_ins => {
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Sys(
+                        instruction.into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                    )
+                )
+            },
+            Rule::or_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Or(
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::and_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::And(
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::cmp_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Cmp(
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::inc_ins => {
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Inc(
+                        instruction.into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                    )
+                );
+            },
+            Rule::dec_ins => {
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Dec(
+                        instruction.into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                    )
+                );
+            },
+            Rule::swp_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Swp(
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::lod_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Lod(
+                        inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap(), 
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                )
+            },
+            Rule::str_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Str(
+                        inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap(), 
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                )
+            },
+            Rule::jmp_ins => {
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Jmp(
+                        instruction.into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::jmc_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Jmc(
+                        inner.next().unwrap().as_str().parse::<CmpFlag>().unwrap(), 
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            Rule::psh_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Psh(
+                        inner.next().unwrap().as_str().parse::<Type>().unwrap(),
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap(),
+                    )
+                );
+            },
+            Rule::pop_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Pop(
+                        inner.next().unwrap().as_str().parse::<Type>().unwrap(),
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap(),
+                    )
+                );
+            },
+            Rule::cal_ins => {
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Cal(
+                        instruction.into_inner().next().unwrap().as_str().to_owned()
+                    )
+                )
+            },
+            Rule::ret_ins => {
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Ret
+                );
+            },
+            Rule::cst_ins => {
+                let mut inner = instruction.into_inner();
+                current_function.content[current_function.current_label].1.push(
+                    IntermediateInstruction::Cst(
+                        inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
+                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                    )
+                );
+            },
+            _ => {
+                let err = Error::new_from_span(
+                    pest::error::ErrorVariant::<crate::Rule>::CustomError {
+                        message: "Unknown instruction. The instruction may not be implemented yet".to_owned()
+                    },
+                    instruction.as_span()
+                );
+                messages.errors.push(err);
+            },
+        }
+        messages
     }
 }

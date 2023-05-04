@@ -1,9 +1,10 @@
-program           =  { SOI ~ directive ~ EOI }
-WHITESPACE        = _{ " " | "\t" |"\r" | "\n" | "," }
-COMMENT           = _{ comment_line }
-comment_line      = @{ ";" ~ (!("\r" | "\n") ~ ANY)* }
-general_register  =  { "reg" ~ ASCII_DIGIT }
-argument_register =  { "arg" ~ ASCII_DIGIT }
+program               =  { SOI ~ directive ~ EOI }
+WHITESPACE            = _{ " " | "\t" | "\r" | "\n" | "," }
+COMMENT               = _{ comment_line }
+comment_line          = @{ ";" ~ (!("\r" | "\n") ~ ANY)* }
+general_register      =  { "reg" ~ register }
+argument_register     =  { "arg" ~ register }
+register              = @{ int }
 
 directive             = _{ include_directive* ~ data_directive? ~ text_directive ~ end_directive }
 definition            =  { label ~ ":" }
@@ -11,7 +12,7 @@ label                 = @{ ASCII_ALPHA ~ ("_" | ASCII_ALPHANUMERIC)* }
 func_definition       =  { func_label ~ ":" }
 func_label            = @{ "_" ~ label }
 include_directive     =  { ".include" ~ "<" ~ file ~ ">" }
-file                  =  { ASCII_ALPHANUMERIC* ~ ".asr" }
+file                  =  { (ASCII_ALPHANUMERIC | "_")* ~ ".asr" }
 data_directive        =  { ".data" ~ (variable)* }
 variable              =  { definition ~ type_directive }
 type_directive        =  {
@@ -40,9 +41,10 @@ char_directive        =  { ".char" ~ "'" ~ ASCII_ALPHA ~ "'" }
 array_i32_directive   =  { ".array_i32" ~ array_size? ~ "{" ~ int* ~ "}" }
 array_u32_directive   =  { ".array_u32" ~ array_size? ~ "{" ~ uint* ~ "}" }
 array_f32_directive   =  { ".array_f32" ~ array_size? ~ "{" ~ float* ~ "}" }
-text_directive        =  { ".text" ~ global_directive ~ function+ }
+text_directive        =  { ".text" ~ (global_directive | library_directive) ~ function+ }
 end_directive         =  { ".end" }
 global_directive      =  { ".global" ~ func_label }
+library_directive     =  { ".library" }
 function              =  { func_definition ~ (definition | instruction)* }
 instruction_directive =  { ".instruction" ~ (argument_register)* ~ general_register }
 array_size            = @{ uint }
@@ -69,6 +71,7 @@ instruction           =  {
   | jmp_ins
   | jmc_ins
   | sys_ins
+  | cst_ins
 }
 nop_ins               =  { "nop" }
 add_ins               =  { "add" ~ type ~ general_register ~ general_register ~ general_register }
@@ -99,7 +102,7 @@ float = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
 
 compare_flag = { "eq" | "ne" | "lt" | "lte" | "gt" | "gte" }
 
-type      = {
+type      =  {
     i8_type
   | i16_type
   | i32_type
@@ -109,11 +112,11 @@ type      = {
   | f32_type
   | char_type
 }
-i8_type   = { "i8" }
-i16_type  = { "i16" }
-i32_type  = { "i32" }
-u8_type   = { "u8" }
-u16_type  = { "u16" }
-u32_type  = { "u32" }
-f32_type  = { "f32" }
-char_type = { "char" }
+i8_type   = _{ "i8" }
+i16_type  = _{ "i16" }
+i32_type  = _{ "i32" }
+u8_type   = _{ "u8" }
+u16_type  = _{ "u16" }
+u32_type  = _{ "u32" }
+f32_type  = _{ "f32" }
+char_type = _{ "char" }

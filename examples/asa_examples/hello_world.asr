@@ -1,11 +1,10 @@
 .include <stdlib.asr>
-.include <stdio.asr>
+
 .data
-msg: .string "Hello World" ; '\0' is added by default
-test: .array_i32 5 {0, 2, 3, 5, 4}
-number: .i8 -5000
+    msg: .string "Hello World" ; '\0' is added by default
+    test: .i8 -5000
 .text
-.global _start 
+.global _start
 _start:
   mov reg1, msg ; mov the start address of the string in reg1
   ; NB: The compiler automatically replace "msg" by the starting address of the string
@@ -14,4 +13,5 @@ _start:
   
   mov reg1, 0   ; mov the ok code for the exit syscall.
   sys 6         ; Exit the program
+  cst i32, i32, reg2
 .end
