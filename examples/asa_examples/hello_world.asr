@@ -1,8 +1,6 @@
-.include <stdlib.asr>
-
 .data
     msg: .string "Hello World" ; '\0' is added by default
-    test: .i8 -5000
+
 .text
 .global _start
 _start:

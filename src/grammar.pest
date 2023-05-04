@@ -93,14 +93,14 @@ cal_ins               =  { "cal" ~ func_label }
 ret_ins               =  { "ret" }
 cst_ins               =  { "cst" ~ type ~ type ~ general_register }
 jmp_ins               =  { "jmp" ~ label }
-jmc_ins               =  { "jmc" ~ compare_flag ~ (label | func_label) }
+jmc_ins               =  { "jmc" ~ compare_flag ~ label }
 sys_ins               =  { "sys" ~ uint }
 
 int   = @{ "-"? ~ ASCII_DIGIT+ }
 uint  = @{ ASCII_DIGIT+ }
 float = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
 
-compare_flag = { "eq" | "ne" | "lt" | "lte" | "gt" | "gte" }
+compare_flag = { "eq" | "ne" | "lte" | "lt" | "gte" | "gt" }
 
 type      =  {
     i8_type

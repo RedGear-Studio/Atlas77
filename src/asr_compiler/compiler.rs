@@ -1,4 +1,4 @@
-use std::vec;
+use std::{vec, fmt::format};
 
 use pest::{iterators::Pair, error::Error};
 use colored::Colorize;
@@ -31,14 +31,19 @@ enum Value {
     Str(String),
     None,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Function {
     name: String,
     address: usize,
-    content: Vec<(String, Vec<IntermediateInstruction>)>,
+    content: Vec<(Label, Vec<IntermediateInstruction>)>,
     current_label: usize,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+struct Label {
+    name: String,
+    address: usize,
+}
+#[derive(Debug, Clone)]
 struct Data {
     name: String,
     address: usize,
@@ -50,6 +55,7 @@ pub struct ASMContext {
     entry_point: Option<String>, //Function define in the .global directive
     data: Vec<Data>,
     data_segment: Vec<u8>,
+    program: Vec<u32>,
 }
 impl ASMContext {
     pub fn new() -> Self {
@@ -58,6 +64,7 @@ impl ASMContext {
             entry_point: None,
             data: vec![],
             data_segment: vec![],
+            program: vec![],
         }
     }
     pub fn compile(&mut self, program: Pair<Rule>) -> VirtualCPU {
@@ -79,12 +86,28 @@ impl ASMContext {
                     let result = self.compile_program(directive);
                     messages.warnings.extend(result.warnings);
                     messages.errors.extend(result.errors);
+                    if !self.functions.is_empty() {
+                        let mut address = 0;
+                        for function in self.functions.iter_mut() {
+                            function.address = address;
+                            for (label, v) in function.content.iter_mut() {
+                                label.address = address;
+                                address += v.len();
+                            }
+                        }
+                    }
                 },
                 Rule::end_directive => {
-                    //TODO!: Modify all the label in code by their respective address
+                    let data = self.data.clone();
+                    let data_slice = data.as_slice();
+                    let function = self.functions.clone();
+                    let function_slice = function.as_slice();
+                    self.clean_functions(data_slice, function_slice);
+                    self.program.extend(Self::process_functions(function_slice));
+                    vm.program = self.program.to_owned();
                 },
                 Rule::EOI => {
-                    vm.memory = self.data_segment.clone();
+                    vm.memory = self.data_segment.to_owned();
                     vm.base_pointer = self.data_segment.len();
                     vm.frame_pointer = self.data_segment.len();
                     vm.stack_pointer = self.data_segment.len();
@@ -93,7 +116,9 @@ impl ASMContext {
                 _ => unreachable!()
             }
         }
-        println!("{:?}", self);
+        for instruction in vm.program.iter() {
+            println!("{:#08x}", instruction);
+        }
         for warning in messages.warnings {
             println!("{}:", "Warning".bold().yellow());
             println!("{}", warning);
@@ -111,7 +136,85 @@ impl ASMContext {
         }
         vm
     }
-    
+    //return an Option that contains the address of the label
+    fn find_data_address(data: &[Data], label: &str) -> Option<usize> {
+        if let Some(data) = data.iter().find(|d| d.name == label) {
+            return Some(data.address.clone());
+        }
+        None
+    }
+    fn find_label_address(functions: &[Function], label: &str) -> Option<usize> {
+        for function in functions.iter() {
+            if let Some(data) = function.content.iter().find(|d| d.0.name == label) {
+                return Some(data.0.address);
+            }
+        }
+        None
+    }
+
+    fn movl_to_movi(instruction: &mut IntermediateInstruction, data: &[Data]) {
+        if let IntermediateInstruction::Movl(reg1, l) = instruction {
+            if let Some(later) = Self::find_data_address(data, l) {
+                *instruction = IntermediateInstruction::Movi(*reg1, later as u16);
+            } else {
+                panic!("{}:\n  |\n  = Label {} not found", "Error".bold().red(), l);
+            }
+        }
+    }
+
+    fn jmcl_to_jmci(instruction: &mut IntermediateInstruction, functions: &[Function]) {
+        if let IntermediateInstruction::Jmcl(c, l) = instruction {
+            if let Some(later) = Self::find_label_address(functions, l) {
+                *instruction = IntermediateInstruction::Jmci(c.clone(), later as u16);
+            } else {
+                panic!("{}:\n  |\n  = Label {} not found", "Error".bold().red(), l);
+            }
+        }
+    }
+
+    fn jmpl_to_jmpi(instruction: &mut IntermediateInstruction, functions: &[Function]) {
+        if let IntermediateInstruction::Jmpl(l) = instruction {
+            if let Some(later) = Self::find_label_address(functions, l) {
+                *instruction = IntermediateInstruction::Jmpi(later as u16);
+            } else {
+                panic!("{}:\n  |\n  = Label {} not found", "Error".bold().red(), l);
+            }
+        }
+    }
+
+    fn clean_functions(&mut self, data: &[Data], function_slice: &[Function]) {
+        for function in self.functions.iter_mut() {
+            for (_label, instructions) in function.content.iter_mut() {
+                for instruction in instructions {
+                    match instruction {
+                        IntermediateInstruction::Movl(_, _) => {
+                            Self::movl_to_movi(instruction, data);
+                        },
+                        IntermediateInstruction::Jmpl(_) => {
+                            Self::jmpl_to_jmpi(instruction, function_slice);
+                        },
+                        IntermediateInstruction::Jmcl(_, _) => {
+                            Self::jmcl_to_jmci(instruction, function_slice)
+                        }
+                        _ => (),
+                    }
+                }
+            }
+        }
+    }
+
+    fn process_functions(functions: &[Function]) -> Vec<u32> {
+        let mut result: Vec<u32> = Vec::new();
+        for function in functions {
+            for (_label, instructions) in function.content.iter() {
+                for instruction in instructions {
+                    result.push(u32::from(instruction.clone()));
+                }
+            }
+        }
+        result
+    }
+
     fn compile_include_directive(&mut self, include: Pair<Rule>) -> Message {
         let mut messages: Message = Message::new();
         for file in include.into_inner() {
@@ -132,7 +235,6 @@ impl ASMContext {
         }
         messages
     }
-
     fn compile_data_segment(&mut self, data: Pair<Rule>) -> Message {
         let mut messages: Message = Message::new();
         for variable in data.into_inner() {
@@ -391,13 +493,19 @@ impl ASMContext {
         let mut current_function = Function {
             name: name.clone(),
             address: 0,
-            content: vec![(name, vec![])],
+            content: vec![(Label {name, address: 0}, vec![])],
             current_label: 0,
         };
-        for something in inner_pairs.next().into_iter() {
+        for something in inner_pairs {
             match something.as_rule() {
                 Rule::definition => {
-                    current_function.content.push((something.into_inner().next().unwrap().as_str().to_owned(), vec![]));
+                    current_function.content.push((
+                        Label {
+                            name: something.into_inner().next().unwrap().as_str().to_owned(),
+                            address: current_function.current_label
+                        },
+                        vec![]
+                    ));
                     current_function.current_label += 1;
                 },
                 Rule::instruction => {
@@ -411,17 +519,6 @@ impl ASMContext {
                 _ => unreachable!()
             }
         }
-        current_function.address = if self.functions.len() >= 1 {
-            let mut address = 0;
-            for function in self.functions.iter() {
-                for label in function.content.iter() {
-                    address += label.1.len();
-                }
-            }
-            address
-        } else {
-            0
-        };
         (messages, current_function)
     }
     fn compile_instruction(&mut self, current_function: &mut Function, instruction: Pair<Rule>) -> Message {
@@ -478,12 +575,33 @@ impl ASMContext {
             },
             Rule::mov_ins => {
                 let mut inner = instruction.into_inner();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Mov(
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().as_str().to_owned(),
+                let reg = inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap();
+                let ir_value = inner.next().unwrap();
+                if let Ok(value) = ir_value.as_str().parse::<usize>() {
+                    if value > u16::MAX.into() {
+                        messages.notices.push(Error::new_from_span(
+                            pest::error::ErrorVariant::<crate::Rule>::CustomError {
+                                message: format!("The mov instruction has been split in 2 separate instructions, mov reg{}, {} and nxt reg{}, {}", reg, ((value as u32) >> 16) as u16, reg, value as u16),
+                            },
+                            ir_value.as_span()
+                        ));
+                        current_function.content[current_function.current_label].1.extend(
+                            [IntermediateInstruction::Movi(reg, ((value as u32) >> 16) as u16),
+                            IntermediateInstruction::Nxt(reg, value as u16)]
+                        )
+                    } else {
+                        current_function.content[current_function.current_label].1.push(
+                            IntermediateInstruction::Movi(reg, value as u16)
+                       )
+                    }
+                } else {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Movl(
+                            reg,
+                            ir_value.as_str().to_owned(),
+                        )
                     )
-                )
+                }
             },
             Rule::sys_ins => {
                 current_function.content[current_function.current_label].1.push(
@@ -524,14 +642,14 @@ impl ASMContext {
             Rule::inc_ins => {
                 current_function.content[current_function.current_label].1.push(
                     IntermediateInstruction::Inc(
-                        instruction.into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        instruction.into_inner().next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
                     )
                 );
             },
             Rule::dec_ins => {
                 current_function.content[current_function.current_label].1.push(
                     IntermediateInstruction::Dec(
-                        instruction.into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        instruction.into_inner().next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
                     )
                 );
             },
@@ -539,8 +657,8 @@ impl ASMContext {
                 let mut inner = instruction.into_inner();
                 current_function.content[current_function.current_label].1.push(
                     IntermediateInstruction::Swp(
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
                     )
                 );
             },
@@ -549,8 +667,8 @@ impl ASMContext {
                 current_function.content[current_function.current_label].1.push(
                     IntermediateInstruction::Lod(
                         inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap(), 
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
                     )
                 )
             },
@@ -559,24 +677,24 @@ impl ASMContext {
                 current_function.content[current_function.current_label].1.push(
                     IntermediateInstruction::Str(
                         inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap(), 
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
                     )
                 )
             },
             Rule::jmp_ins => {
                 current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Jmp(
-                        instruction.into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
+                    IntermediateInstruction::Jmpl(
+                        instruction.into_inner().next().unwrap().as_str().to_owned()
                     )
                 );
             },
             Rule::jmc_ins => {
                 let mut inner = instruction.into_inner();
                 current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Jmc(
+                    IntermediateInstruction::Jmcl(
                         inner.next().unwrap().as_str().parse::<CmpFlag>().unwrap(), 
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                        inner.next().unwrap().as_str().to_owned()
                     )
                 );
             },
@@ -585,8 +703,8 @@ impl ASMContext {
                 current_function.content[current_function.current_label].1.push(
                     IntermediateInstruction::Psh(
                         inner.next().unwrap().as_str().parse::<Type>().unwrap(),
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
                     )
                 );
             },
@@ -595,7 +713,7 @@ impl ASMContext {
                 current_function.content[current_function.current_label].1.push(
                     IntermediateInstruction::Pop(
                         inner.next().unwrap().as_str().parse::<Type>().unwrap(),
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap(),
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
                     )
                 );
             },
@@ -616,7 +734,8 @@ impl ASMContext {
                 current_function.content[current_function.current_label].1.push(
                     IntermediateInstruction::Cst(
                         inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
-                        inner.next().unwrap().as_str().parse::<usize>().unwrap()
+                        inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
+                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
                     )
                 );
             },
