@@ -265,34 +265,6 @@ impl ASMContext {
                     };
                     data = Value::I32(number);
                 },
-                Rule::i16_directive => {
-                    let ir = value.clone().into_inner().next().unwrap();
-                    let Ok(number) = ir.as_str().parse::<i16>() else {
-                        let war = Error::new_from_span(
-                            pest::error::ErrorVariant::<crate::Rule>::CustomError {
-                                message: "Value out of range".to_owned()
-                            },
-                            value.as_span()
-                        );
-                        messages.errors.push(war);
-                        continue;
-                    };
-                    data = Value::I16(number);
-                },
-                Rule::i8_directive => {
-                    let ir = value.clone().into_inner().next().unwrap();
-                    let Ok(number) = ir.as_str().parse::<i8>() else {
-                        let war = Error::new_from_span(
-                            pest::error::ErrorVariant::<crate::Rule>::CustomError {
-                                message: "Value out of range".to_owned()
-                            },
-                            value.as_span()
-                        );
-                        messages.errors.push(war);
-                        continue;
-                    };
-                    data = Value::I8(number);
-                },
                 Rule::f32_directive => {
                     let ir = value.clone().into_inner().next().unwrap();
                     let Ok(number) = ir.as_str().parse::<f32>() else {
@@ -320,64 +292,6 @@ impl ASMContext {
                         continue;
                     };
                     data = Value::U32(number);
-                },
-                Rule::u16_directive => {
-                    let ir = value.clone().into_inner().next().unwrap();
-                    let Ok(number) = ir.as_str().parse::<u16>() else {
-                        let war = Error::new_from_span(
-                            pest::error::ErrorVariant::<crate::Rule>::CustomError {
-                                message: "Value out of range".to_owned()
-                            },
-                            value.as_span()
-                        );
-                        messages.errors.push(war);
-                        continue;
-                    };
-                    data = Value::U16(number);
-                },
-                Rule::u8_directive => {
-                    let ir = value.clone().into_inner().next().unwrap();
-                    let Ok(number) = ir.as_str().parse::<u8>() else {
-                        let war = Error::new_from_span(
-                            pest::error::ErrorVariant::<crate::Rule>::CustomError {
-                                message: "Value out of range".to_owned()
-                            },
-                            value.as_span()
-                        );
-                        messages.errors.push(war);
-                        continue;
-                    };
-                    data = Value::U8(number);
-                },
-                Rule::array_u32_directive => {
-                    let war = Error::new_from_span(
-                        pest::error::ErrorVariant::<crate::Rule>::CustomError {
-                            message: "array_u32 aren't supported yet".to_owned()
-                        },
-                        value.as_span()
-                    );
-                    messages.warnings.push(war);
-                    data = Value::None;
-                },
-                Rule::array_f32_directive => {
-                    let war = Error::new_from_span(
-                        pest::error::ErrorVariant::<crate::Rule>::CustomError {
-                            message: "array_f32 aren't supported yet".to_owned()
-                        },
-                        value.as_span()
-                    );
-                    messages.warnings.push(war);
-                    data = Value::None;
-                },
-                Rule::array_i32_directive => {
-                    let war = Error::new_from_span(
-                        pest::error::ErrorVariant::<crate::Rule>::CustomError {
-                            message: "array_i32 aren't supported yet".to_owned()
-                        },
-                        value.as_span()
-                    );
-                    messages.warnings.push(war);
-                    data = Value::None;
                 },
                 _ => unreachable!()
             }
