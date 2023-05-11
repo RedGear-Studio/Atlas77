@@ -23,44 +23,83 @@
 
 # VM Architecture/Instruction Set Specification
 
-The VM is a stack-based virtual machine that operates on a custom instruction set. It has a 32-bit address space, 16 registers, and a memory stack-based.
+The VM is a stack-based virtual machine that operates on a custom instruction set. It has a 32-bit address space, 32 registers, and a memory stack-based.
 
 ## Registers
 
-The VM has 16 general-purpose registers, named `reg0` to `reg15` (`reg0` is the zero register, it's read-only and contains the value 0), each with a width of 32 bits. It also has a temporary register named `t_reg`, which is used by some instructions as a temporary storage location.
+### Integers
+
+The VM has 16 registers dedicated to Integers:
+
+- `$zero`: holds the value zero as a constant and cannot be changed (`$0`)
+- `$a0` to `$a3`: registers that store integer arguments for function calls (`$1` to `$4`)
+- `$t0` to `$t3`: temporary registers that allow modification of their stored value (`$5` to `$8`).
+> The value of these registers can change quickly depending on the program needs.
+- `$s0` to `$s6`: registers that hold values across function calls, and their value remains unchanged until no longer needed (`$10` to `$16`).
+> By this, we mean that if you don't change the value explicitely, the program won't change it.
+
+### Floats
+
+The VM has 16 registers dedicated to Floats:
+
+`$fa0` to `$fa3`: registers that store float arguments for function calls (`$16` to `$19`)
+`$ft0` to `$ft3`: temporary registers that allow modification of their stored value (`$20` to `$23`).
+> The value of these registers can change quickly depending on the program needs.
+`$f0` to `$f7`: registers that hold values across function calls, and their value remains unchanged until no longer needed (`$24` to `$31`).
+> By this, we mean that if you don't change the value explicitely, the program won't change it.
+
 
 ## Memory
 
-The memory of the VM is a stack but with a size not defined (32 GB max). It behaves like a stack most of the time with the PUSH (psh) and POP (pop) instructions, but if needed, you can access to inner data using the LOAD (lod) and STORE (str) instructions, these instructions let you read and write wherever you want in the memory (when you use str, you overwrite what's at that address).
+The memory of the VM is a stack that has no predefined size (maximum 32 GB). It behaves like a stack most of the time with the PUSH (`psh`) and POP (`pop`) instructions. However, you can access data within the memory using the LOAD (`lod`) and STORE (`str`) instructions, which allow you to read and write data from anywhere in the memory. If you use the STORE instruction, it overwrites any data already stored at that address.
 
 ## Instruction Set
 
-> No documentation available yet.
+- `add <register>, <register>, <register>`: Performs addition on the first two registers and stores the result in the third register.
+- `sub <register>, <register>, <register>`: Performs subtraction on the first two registers and stores the result in the third register.
+- `div <register>, <register>, <register>`: Performs division on the first two registers and stores the result in the third register.
+- `mul <register>, <register>, <register>`: Performs multiplication on the first two registers and stores the result in the third register.
+- `or  <register>, <register>, <register>`: Performs the OR operation on the first two registers and stores the result in the third register.
+- `and <register>, <register>, <register>`: Performs the AND operation on the first two registers and stores the result in the third register.
+- `mov <register>, [<data_label> | <int> | <float> | <register>]`: Moves a value to a register, either from the data segment (data_label), an immediate value (int or float), or another register.
+- `inc <register>`: Increments the value stored in a register by one.
+- `dec <register>`: Decrement the value in a register by one.
+- `swp <register>, <register>`: Swaps the values stored in two registers, using `$t0` as a temporary register.
+> If there was already a value in `$t0`, it gets overwritten.
+- `cmp <register>, <register>`: Compares the value of 2 registers and set a flag in the VM (Eq, Lt, Gt, Ne)
+- `jmc <flag>, [<label> | <function_label>]`: Jumps to a function or an inner label if the latest comparison has the same flag as the one in the instruction
+- `jmp [<label> | <function_label>]`: Jumps unconditionnaly to a function or an inner label
+- `cal <function_label>`: Calls a function by creating a new stack frame and storing the next instruction of the current function as the first element in the stack
+- `ret`: Return from a function by jumping to the first element in the stack previously stored by the `cal` instruction
+- `sys <immediate>`: Performs a Syscall based on the immediate value, the 
+- `lod <register>, <register>`: Loads from memory at the address in the first register to the second register
+- `str <register>, <register>`: Stores to memory at the address in the first register the value in the second one
+> Overwrite what's already there
+- `psh <register>, <register>`: Pushes to the stack the value of the first register and store the address in the second register
+- `pop <register>`: Pops from the stack the top value to the register
 
 ### Existing Syscalls :
 
-- 0: Print integer, the integer is found in reg1.
-- 1: Print float, the float is found in reg1.
-- 2: Print string, the string address is found in reg1. (The string needs to be null terminated)
-- 3: Read integer, store the integer in reg1.
-- 4: Read float, store the float in reg1.
-- 5: Read string, store the string on top of the stack and store its address in reg1. (The string needs to be null terminated)
-- 6: Exit the program, found the exit code in reg1 (0 for success, 1 for failure).
+- 0: Print integer, the integer is found in `$a0`.
+- 1: Print float, the float is found in `$a0`.
+- 2: Print string, the string address is found in `$a0`. (The string needs to be null terminated)
+- 3: Read integer, store the integer in `$a0`.
+- 4: Read float, store the float in `$a0`.
+- 5: Read string, store the string on top of the stack and store its address in `$a0`. (The string needs to be null terminated)
+- 6: Exit the program, found the exit code in `$a0` (0 for success, 1 for failure).
 
 ### Supported types:
-> This is the value of a type in the VM. The type is used to know how to interpret the value in a register.
-`u8`(0), `u16`(1), `u32`(2), `i8`(3), `i16`(4), `i32`(5), `f32`(6), `char`(7)
-> Arrays are not supported yet.
+- u32: Unsigned int, 32-bit long
+- i32: Signed int, 32-bit long
+- f32: Floating points number, 32-bit long
 
-### cmp_flag:
-The cmp_flag is a 4-bit register used for comparison operations. It contains four individual flags, each represented by a single bit:
+### Compare flag:
+The Compare flag is a 3-bit register used for comparison operations. It contains three individual flags (Greater Than, Less Than, Equal) + one virtual flag (Not Equal), each represented by a single bit:
 
-- The Neq flag, representing "Not Equal", is set to 1 if the two compared values are not equal.
-- The Gt flag, representing "Greater Than", is set to 1 if the first compared value is greater than the second.
-- The Lt flag, representing "Less Than", is set to 1 if the first compared value is less than the second.
-- The Eq flag, representing "Equal", is set to 1 if the two compared values are equal.
-
-During a comparison operation, one or more of these flags will be set based on the result of the comparison. For example, if the first value is greater than the second, the Gt flag will be set to 1 and the Neq flag will also be set. These flags can then be used in conjunction with the jmc instruction to control program flow based on the outcome of the comparison.
+- The Gt flag, representing "Greater Than", is set to 1 if the first compared value is greater than the second. (001)
+- The Lt flag, representing "Less Than", is set to 1 if the first compared value is less than the second. (010)
+- The Eq flag, representing "Equal", is set to 1 if the two compared values are equal. (100)
+- The Neq flag is a virtual flag, representing "Not Equal", it's both Gt and Lt flags at the same time. (011)
 
 # Contributing
 Thank you for your interest in contributing to our project! We welcome all contributions, whether they be bug fixes, new features, or improvements to the documentation.

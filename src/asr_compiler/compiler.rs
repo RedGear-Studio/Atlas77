@@ -1,5 +1,3 @@
-use std::{vec, fmt::format};
-
 use pest::{iterators::Pair, error::Error};
 use colored::Colorize;
 use crate::Rule;
