@@ -50,27 +50,29 @@ array_size        = @{ uint }
 string            =  { characters* }
 characters        = _{ ASCII_ALPHANUMERIC | "!" | ";" | "." | ":" | "(" | ")" | "{" | "}" | "&" | "|" | "'" | "@" | "^" | "*" | "[" | "]" | "$" | "%" | "£" | "/" | "+" | "=" | "-°" | "~" | "?" | "<" | ">" | "°" }
 instruction       =  {
-    nop_ins
-  | add_ins
-  | sub_ins
-  | mul_ins
-  | div_ins
-  | or_ins
-  | cmp_ins
-  | mov_ins
-  | inc_ins
-  | dec_ins
-  | swp_ins
-  | lod_ins
-  | str_ins
-  | psh_ins
-  | pop_ins
-  | cal_ins
-  | ret_ins
-  | jmp_ins
-  | jmc_ins
-  | sys_ins
-  | cst_ins
+  nop_ins |
+  add_ins |
+  sub_ins |
+  mul_ins |
+  div_ins |
+  and_ins |
+  or_ins  |
+  cmp_ins |
+  mov_ins |
+  inc_ins |
+  dec_ins |
+  swp_ins |
+  lod_ins |
+  str_ins |
+  psh_ins |
+  pop_ins |
+  cal_ins |
+  ret_ins |
+  jmp_ins |
+  jmc_ins |
+  shr_ins |
+  shl_ins |
+  sys_ins
 }
 nop_ins           =  { "nop" }
 add_ins           =  { "add" ~ register ~ register ~ register }
@@ -78,21 +80,22 @@ sub_ins           =  { "sub" ~ register ~ register ~ register }
 mul_ins           =  { "mul" ~ register ~ register ~ register }
 div_ins           =  { "div" ~ register ~ register ~ register }
 and_ins           =  { "and" ~ register ~ register ~ register }
-or_ins            =  { "or" ~ register ~ register ~ register }
+lor_ins            =  { "lor"  ~ register ~ register ~ register }
 cmp_ins           =  { "cmp" ~ register ~ register }
 mov_ins           =  { "mov" ~ register ~ (int | float | label | register) }
 inc_ins           =  { "inc" ~ register }
 dec_ins           =  { "dec" ~ register }
 swp_ins           =  { "swp" ~ register ~ register }
-lod_ins           =  { "lod" ~ type ~ register ~ register }
-str_ins           =  { "str" ~ type ~ register ~ register }
-psh_ins           =  { "psh" ~ type ~ register ~ register }
-pop_ins           =  { "pop" ~ type ~ register }
+lod_ins           =  { "lod" ~ register ~ register }
+str_ins           =  { "str" ~ register ~ register }
+psh_ins           =  { "psh" ~ register ~ register }
+pop_ins           =  { "pop" ~ register }
 cal_ins           =  { "cal" ~ func_label }
 ret_ins           =  { "ret" }
-cst_ins           =  { "cst" ~ type ~ type ~ register }
 jmp_ins           =  { "jmp" ~ label }
 jmc_ins           =  { "jmc" ~ compare_flag ~ label }
+shr_ins           =  { "shr" ~ register ~ uint }
+shl_ins           =  { "shl" ~ register ~ uint }
 sys_ins           =  { "sys" ~ uint }
 
 int   = @{ "-"? ~ ASCII_DIGIT+ }
@@ -100,22 +103,3 @@ uint  = @{ ASCII_DIGIT+ }
 float = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
 
 compare_flag = { "eq" | "ne" | "lte" | "lt" | "gte" | "gt" }
-
-type      =  {
-    i8_type
-  | i16_type
-  | i32_type
-  | u8_type
-  | u16_type
-  | u32_type
-  | f32_type
-  | char_type
-}
-i8_type   = _{ "i8" }
-i16_type  = _{ "i16" }
-i32_type  = _{ "i32" }
-u8_type   = _{ "u8" }
-u16_type  = _{ "u16" }
-u32_type  = _{ "u32" }
-f32_type  = _{ "f32" }
-char_type = _{ "char" }

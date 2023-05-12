@@ -53,13 +53,59 @@ The VM has 16 registers dedicated to Floats:
 
 The memory of the VM is a stack that has no predefined size (maximum 32 GB). It behaves like a stack most of the time with the PUSH (`psh`) and POP (`pop`) instructions. However, you can access data within the memory using the LOAD (`lod`) and STORE (`str`) instructions, which allow you to read and write data from anywhere in the memory. If you use the STORE instruction, it overwrites any data already stored at that address.
 
+## Directives
+
+### .include
+
+This directive let you include/import external file to allows you a multi-files and library system.
+Here's an example of how to use the `.include` directive:
+> NB: Currently not implemented yet
+`.include <filename.asr>`
+> When this directive will be implemented, you'll be able to natively import some built-in library such as `stdlib.asr` that hold several useful datas and functions
+
+### .data
+
+This directive defines the data section of your program, which is where you can define variables and allocate memory for them. The data section is typically located at the beginning of the program.
+
+Here's an example of how to use the .data directive:
+```
+.data
+  msg: .string "Hello World"
+  int: .i32 -8
+  uint: .u32 8
+  float: .f32 8.0
+```
+In this example, we define four variables: `msg` which is a string, `int` which is a signed 32-bit integer, `uint` which is an unsigned 32-bit integer, and `float` which is a 32-bit floating-point number.
+
+### .text
+
+This directive defines the code section of your program, which is where you can write your program's instructions. The code section typically comes after the data section.
+To use it, you just have to write `.text` at the beginning of your program
+> This directive needs to be after the data section.
+
+### .global or .library
+
+These directives either define the entry-point of your program (`.global`) or define a library without entry-point (`.library`), to use it you need to do it like this:
+Here's an example with the global one:
+```
+.text         ; The directive have to be right after the `.text` one
+.global _main ; The function name can differ with your needs
+```
+Here's an example with the library one:
+```
+.text    ; The directive have to be right after the `.text` one
+.library ; There's no need to add additional data.
+```
+
+### .end
+
 ## Instruction Set
 
 - `add <register>, <register>, <register>`: Performs addition on the first two registers and stores the result in the third register.
 - `sub <register>, <register>, <register>`: Performs subtraction on the first two registers and stores the result in the third register.
 - `div <register>, <register>, <register>`: Performs division on the first two registers and stores the result in the third register.
 - `mul <register>, <register>, <register>`: Performs multiplication on the first two registers and stores the result in the third register.
-- `or  <register>, <register>, <register>`: Performs the OR operation on the first two registers and stores the result in the third register.
+- `lor  <register>, <register>, <register>`: Performs the (Logical) OR operation on the first two registers and stores the result in the third register.
 - `and <register>, <register>, <register>`: Performs the AND operation on the first two registers and stores the result in the third register.
 - `mov <register>, [<data_label> | <int> | <float> | <register>]`: Moves a value to a register, either from the data segment (data_label), an immediate value (int or float), or another register.
 - `inc <register>`: Increments the value stored in a register by one.
@@ -77,6 +123,8 @@ The memory of the VM is a stack that has no predefined size (maximum 32 GB). It 
 > Overwrite what's already there
 - `psh <register>, <register>`: Pushes to the stack the value of the first register and store the address in the second register
 - `pop <register>`: Pops from the stack the top value to the register
+- `shr <register>, <int>`: Shifts right the value of the register by the given immediate value (int).
+- `shl <register>, <int>`: Shifts left the value of the register by the given immediate value (int).
 
 ### Existing Syscalls :
 
@@ -94,12 +142,13 @@ The memory of the VM is a stack that has no predefined size (maximum 32 GB). It 
 - f32: Floating points number, 32-bit long
 
 ### Compare flag:
-The Compare flag is a 3-bit register used for comparison operations. It contains three individual flags (Greater Than, Less Than, Equal) + one virtual flag (Not Equal), each represented by a single bit:
+The Compare flag is a 3-bit register used for comparison operations. It contains three individual flags (Greater Than, Less Than, Equal), each represented by a single bit:
 
 - The Gt flag, representing "Greater Than", is set to 1 if the first compared value is greater than the second. (001)
 - The Lt flag, representing "Less Than", is set to 1 if the first compared value is less than the second. (010)
 - The Eq flag, representing "Equal", is set to 1 if the two compared values are equal. (100)
-- The Neq flag is a virtual flag, representing "Not Equal", it's both Gt and Lt flags at the same time. (011)
+
+> When you use the `jmc` instruction you can use more than these 3 flags. Gte, Lte and Ne can be used, they are just combinations of existing flags.
 
 # Contributing
 Thank you for your interest in contributing to our project! We welcome all contributions, whether they be bug fixes, new features, or improvements to the documentation.
