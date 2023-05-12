@@ -1,8 +1,11 @@
-use pest::{iterators::Pair, error::Error};
+use core::panic;
+use std::collections::HashMap;
+
+use pest::{iterators::Pair, error::Error, Span};
 use colored::Colorize;
 use crate::Rule;
 use crate::vm::virtual_cpu::VirtualCPU;
-use super::intermediate_instruction::{IntermediateInstruction, Type, CmpFlag};
+use super::intermediate_instruction::{IntermediateInstruction, CmpFlag};
 #[derive(Default)]
 struct Message {
     ///Used to report potential issues
@@ -20,14 +23,9 @@ impl Message {
 #[derive(Debug, Clone)]
 enum Value {
     I32(i32),
-    I16(i16),
-    I8(i8),
     F32(f32),
     U32(u32),
-    U16(u16),
-    U8(u8),
     Str(String),
-    None,
 }
 #[derive(Debug, Clone)]
 struct Function {
@@ -101,7 +99,8 @@ impl ASMContext {
                     let function = self.functions.clone();
                     let function_slice = function.as_slice();
                     self.clean_functions(data_slice, function_slice);
-                    self.program.extend(Self::process_functions(function_slice));
+                    self.program.extend(Self::process_functions(&self.functions));
+
                     vm.program = self.program.to_owned();
                 },
                 Rule::EOI => {
@@ -113,9 +112,6 @@ impl ASMContext {
                 }
                 _ => unreachable!()
             }
-        }
-        for instruction in vm.program.iter() {
-            println!("{:#08x}", instruction);
         }
         for warning in messages.warnings {
             println!("{}:", "Warning".bold().yellow());
@@ -150,49 +146,66 @@ impl ASMContext {
         None
     }
 
-    fn movl_to_movi(instruction: &mut IntermediateInstruction, data: &[Data]) {
-        if let IntermediateInstruction::Movl(reg1, l) = instruction {
+    fn movl_to_movi(instruction: &IntermediateInstruction, data: &[Data]) -> IntermediateInstruction{
+        if let IntermediateInstruction::MovL(reg1, l) = instruction {
             if let Some(later) = Self::find_data_address(data, l) {
-                *instruction = IntermediateInstruction::Movi(*reg1, later as u16);
+                return IntermediateInstruction::MovI(*reg1, later as u16);
             } else {
                 panic!("{}:\n  |\n  = Label {} not found", "Error".bold().red(), l);
             }
         }
+        panic!("Wtf Bro ?")
     }
 
-    fn jmcl_to_jmci(instruction: &mut IntermediateInstruction, functions: &[Function]) {
-        if let IntermediateInstruction::Jmcl(c, l) = instruction {
+    fn jmcl_to_jmci(instruction: &IntermediateInstruction, functions: &[Function]) -> IntermediateInstruction {
+        if let IntermediateInstruction::JmcL(c, l) = instruction {
             if let Some(later) = Self::find_label_address(functions, l) {
-                *instruction = IntermediateInstruction::Jmci(c.clone(), later as u16);
+                return IntermediateInstruction::JmcI(c.clone(), later as u16);
             } else {
                 panic!("{}:\n  |\n  = Label {} not found", "Error".bold().red(), l);
             }
         }
+        panic!("Wtf Bro ?")
     }
 
-    fn jmpl_to_jmpi(instruction: &mut IntermediateInstruction, functions: &[Function]) {
-        if let IntermediateInstruction::Jmpl(l) = instruction {
+    fn jmpl_to_jmpi(instruction: &IntermediateInstruction, functions: &[Function]) -> IntermediateInstruction {
+        if let IntermediateInstruction::JmpL(l) = instruction {
             if let Some(later) = Self::find_label_address(functions, l) {
-                *instruction = IntermediateInstruction::Jmpi(later as u16);
+                return IntermediateInstruction::JmpI(later as u16);
             } else {
                 panic!("{}:\n  |\n  = Label {} not found", "Error".bold().red(), l);
             }
         }
+        panic!("Wtf Bro ?")
+    }
+
+    fn call_to_cali(instruction: &IntermediateInstruction, functions: &[Function]) -> IntermediateInstruction {
+        if let IntermediateInstruction::CalL(l) = instruction {
+            if let Some(later) = Self::find_label_address(functions, l) {
+                return IntermediateInstruction::CalI(later as u16);
+            } else {
+                panic!("{}:\n  |\n  = Label {} not found", "Error".bold().red(), l);
+            }
+        }
+        panic!("Wtf Bro ?")
     }
 
     fn clean_functions(&mut self, data: &[Data], function_slice: &[Function]) {
-        for function in self.functions.iter_mut() {
-            for (_label, instructions) in function.content.iter_mut() {
-                for instruction in instructions {
-                    match instruction {
-                        IntermediateInstruction::Movl(_, _) => {
-                            Self::movl_to_movi(instruction, data);
+        for (i, function) in function_slice.iter().enumerate() {
+            for (j, (_label, instructions)) in function.content.iter().enumerate() {
+                for (k, instruction) in instructions.iter().enumerate() {
+                    match *instruction {
+                        IntermediateInstruction::MovL(_, _) => {
+                            self.functions[i].content[j].1[k] = Self::movl_to_movi(instruction, data);
                         },
-                        IntermediateInstruction::Jmpl(_) => {
-                            Self::jmpl_to_jmpi(instruction, function_slice);
+                        IntermediateInstruction::JmpL(_) => {
+                            self.functions[i].content[j].1[k] = Self::jmpl_to_jmpi(instruction, function_slice);
                         },
-                        IntermediateInstruction::Jmcl(_, _) => {
-                            Self::jmcl_to_jmci(instruction, function_slice)
+                        IntermediateInstruction::JmcL(_, _) => {
+                            self.functions[i].content[j].1[k] = Self::jmcl_to_jmci(instruction, function_slice);
+                        },
+                        IntermediateInstruction::CalL(_) => {
+                            self.functions[i].content[j].1[k] = Self::call_to_cali(instruction, function_slice);
                         }
                         _ => (),
                     }
@@ -314,23 +327,6 @@ impl ASMContext {
                     let byte = i.to_be_bytes();
                     self.data_segment.extend(byte);
                 },
-                Value::I16(i) => {
-                    self.data.push(Data {
-                        name: label.as_str().to_string(),
-                        address: self.data_segment.len(),
-                        value: data
-                    });
-                    let byte = i.to_be_bytes();
-                    self.data_segment.extend(byte);
-                },
-                Value::I8(i) => {
-                    self.data.push(Data {
-                        name: label.as_str().to_string(),
-                        address: self.data_segment.len(),
-                        value: data
-                    });
-                    self.data_segment.push(i as u8);
-                },
                 Value::U32(u) => {
                     self.data.push(Data {
                         name: label.as_str().to_string(),
@@ -340,28 +336,11 @@ impl ASMContext {
                     let byte = u.to_be_bytes();
                     self.data_segment.extend(byte);
                 },
-                Value::U16(u) => {
-                    self.data.push(Data {
-                        name: label.as_str().to_string(),
-                        address: self.data_segment.len(),
-                        value: data
-                    });
-                    let byte = u.to_be_bytes();
-                    self.data_segment.extend(byte);
-                },
-                Value::U8(u) => {
-                    self.data.push(Data {
-                        name: label.as_str().to_string(),
-                        address: self.data_segment.len(),
-                        value: data
-                    });
-                    self.data_segment.push(u);
-                },
                 Value::Str(s) => {
                     self.data_segment.extend(s.as_bytes());
                     self.data_segment.push(0);
                 },
-                Value::None => (),
+                _ => ()
             }
         }
         messages
@@ -438,81 +417,117 @@ impl ASMContext {
 
         match instruction.as_rule() {
             Rule::add_ins => {
-                let mut inner = instruction.into_inner();
-                let _type = inner.next().unwrap().as_str().parse::<Type>().unwrap();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Add(
-                        _type,
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2), Ok(r3)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Add(r1, r2, r3)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::sub_ins => {
-                let mut inner = instruction.into_inner();
-                let _type = inner.next().unwrap().as_str().parse::<Type>().unwrap();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Sub(
-                        _type,
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2), Ok(r3)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Sub(r1, r2, r3)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::mul_ins => {
-                let mut inner = instruction.into_inner();
-                let _type = inner.next().unwrap().as_str().parse::<Type>().unwrap();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Mul(
-                        _type,
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2), Ok(r3)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Mul(r1, r2, r3)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::div_ins => {
-                let mut inner = instruction.into_inner();
-                let _type = inner.next().unwrap().as_str().parse::<Type>().unwrap();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Div(
-                        _type,
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2), Ok(r3)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Div(r1, r2, r3)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::mov_ins => {
-                let mut inner = instruction.into_inner();
-                let reg = inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap();
+                let mut inner = instruction.clone().into_inner();
+                let reg = inner.next().unwrap().into_inner().next().unwrap();
                 let ir_value = inner.next().unwrap();
-                if let Ok(value) = ir_value.as_str().parse::<usize>() {
-                    if value > u16::MAX.into() {
-                        messages.notices.push(Error::new_from_span(
-                            pest::error::ErrorVariant::<crate::Rule>::CustomError {
-                                message: format!("The mov instruction has been split in 2 separate instructions, mov reg{}, {} and nxt reg{}, {}", reg, ((value as u32) >> 16) as u16, reg, value as u16),
-                            },
-                            ir_value.as_span()
-                        ));
-                        current_function.content[current_function.current_label].1.extend(
-                            [IntermediateInstruction::Movi(reg, ((value as u32) >> 16) as u16),
-                            IntermediateInstruction::Nxt(reg, value as u16)]
-                        )
-                    } else {
+                match ir_value.as_rule() {
+                    Rule::int => {
                         current_function.content[current_function.current_label].1.push(
-                            IntermediateInstruction::Movi(reg, value as u16)
-                       )
-                    }
-                } else {
-                    current_function.content[current_function.current_label].1.push(
-                        IntermediateInstruction::Movl(
-                            reg,
-                            ir_value.as_str().to_owned(),
+                            if let Ok(r) = Self::get_register(reg.clone()) {
+                                IntermediateInstruction::MovI(r, ir_value.as_str().parse::<i16>().unwrap() as u16)    
+                            } else {
+                                messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "The register doesn't exist.".to_owned() }, reg.as_span()));
+                                IntermediateInstruction::Ilg
+                            }
                         )
-                    )
+                    },
+                    Rule::label => {
+                        current_function.content[current_function.current_label].1.push(
+                            if let Ok(r) = Self::get_register(reg.clone()) {
+                                IntermediateInstruction::MovL(r, ir_value.as_str().to_owned())    
+                            } else {    
+                                messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "The register doesn't exist.".to_owned() }, reg.as_span()));
+                                IntermediateInstruction::Ilg
+                            }
+                        )
+                    },
+                    Rule::register => {
+                        if let (Ok(r1), Ok(r2)) = (
+                            Self::get_register(reg),
+                            Self::get_register(ir_value)
+                        ) {
+                            current_function.content[current_function.current_label].1.push(
+                                IntermediateInstruction::MovR(r1, r2)
+                            )
+                        } else {
+                            current_function.content[current_function.current_label].1.push(
+                                {
+                                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                                    IntermediateInstruction::Ilg
+                                }
+                            )
+                        }
+                        
+                    }
+                    _ => unreachable!()
                 }
             },
             Rule::sys_ins => {
@@ -522,81 +537,133 @@ impl ASMContext {
                     )
                 )
             },
-            Rule::or_ins => {
-                let mut inner = instruction.into_inner();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Or(
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
-                    )
-                );
+            Rule::lor_ins => {
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2), Ok(r3)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::LOr(r1, r2, r3)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::and_ins => {
-                let mut inner = instruction.into_inner();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::And(
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2), Ok(r3)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::And(r1, r2, r3)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::cmp_ins => {
-                let mut inner = instruction.into_inner();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Cmp(
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Cmp(r1, r2)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::inc_ins => {
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Inc(
-                        instruction.into_inner().next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let Ok(r1) = Self::get_register(inner.next().unwrap().into_inner().next().unwrap()) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Inc(r1)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::dec_ins => {
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Dec(
-                        instruction.into_inner().next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let Ok(r1) = Self::get_register(inner.next().unwrap().into_inner().next().unwrap()) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Dec(r1)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::swp_ins => {
-                let mut inner = instruction.into_inner();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Swp(
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Swp(r1, r2)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::lod_ins => {
-                let mut inner = instruction.into_inner();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Lod(
-                        inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(), 
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                    )
-                )
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Lod(r1, r2)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::str_ins => {
-                let mut inner = instruction.into_inner();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Str(
-                        inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                    )
-                )
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Str(r1, r2)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::jmp_ins => {
                 current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Jmpl(
+                    IntermediateInstruction::JmpL(
                         instruction.into_inner().next().unwrap().as_str().to_owned()
                     )
                 );
@@ -604,34 +671,44 @@ impl ASMContext {
             Rule::jmc_ins => {
                 let mut inner = instruction.into_inner();
                 current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Jmcl(
+                    IntermediateInstruction::JmcL(
                         inner.next().unwrap().as_str().parse::<CmpFlag>().unwrap(), 
                         inner.next().unwrap().as_str().to_owned()
                     )
                 );
             },
             Rule::psh_ins => {
-                let mut inner = instruction.into_inner();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Psh(
-                        inner.next().unwrap().as_str().parse::<Type>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let (Ok(r1), Ok(r2)) = (
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap()),
+                    Self::get_register(inner.next().unwrap().into_inner().next().unwrap())
+                ) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Psh(r1, r2)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::pop_ins => {
-                let mut inner = instruction.into_inner();
-                current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Pop(
-                        inner.next().unwrap().as_str().parse::<Type>().unwrap(),
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap(),
-                    )
-                );
+                let mut inner = instruction.clone().into_inner();
+                if let Ok(r1) = Self::get_register(inner.next().unwrap().into_inner().next().unwrap()) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Pop(r1)
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             Rule::cal_ins => {
                 current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Cal(
+                    IntermediateInstruction::CalL(
                         instruction.into_inner().next().unwrap().as_str().to_owned()
                     )
                 )
@@ -641,15 +718,36 @@ impl ASMContext {
                     IntermediateInstruction::Ret
                 );
             },
-            Rule::cst_ins => {
-                let mut inner = instruction.into_inner();
+            Rule::nop_ins => {
                 current_function.content[current_function.current_label].1.push(
-                    IntermediateInstruction::Cst(
-                        inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
-                        inner.next().unwrap().as_str().parse::<Type>().unwrap(), 
-                        inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap()
-                    )
+                    IntermediateInstruction::Nop
                 );
+            },
+            Rule::shl_ins => {
+                let mut inner = instruction.clone().into_inner();
+                if let Ok(r1) = Self::get_register(inner.next().unwrap().into_inner().next().unwrap()) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Shl(r1, inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap())
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
+            },
+            Rule::shr_ins => {
+                let mut inner = instruction.clone().into_inner();
+                if let Ok(r1) = Self::get_register(inner.next().unwrap().into_inner().next().unwrap()) {
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Shr(r1, inner.next().unwrap().into_inner().next().unwrap().as_str().parse::<usize>().unwrap())
+                    ) 
+                } else {
+                    messages.errors.push(Error::new_from_span(pest::error::ErrorVariant::CustomError { message: "One of these registers don't exist.".to_owned() }, instruction.as_span()));
+                    current_function.content[current_function.current_label].1.push(
+                        IntermediateInstruction::Ilg
+                    ) 
+                }
             },
             _ => {
                 let err = Error::new_from_span(
@@ -662,5 +760,19 @@ impl ASMContext {
             },
         }
         messages
+    }
+    fn get_register(register: Pair<Rule>) -> Result<usize, Span> {
+        let str_register = register.as_str();
+        let register_names = [
+            "zero", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3", "s0", "s1","s2", "s3", "s4", "s5", "s6",
+            "fa0", "fa1", "fa2", "fa3", "ft0", "ft1", "ft2", "ft3", "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7"
+        ];
+        let registers: HashMap<&str, u8>  = register_names.iter().enumerate().map(|(i, r)| (*r, i as u8)).collect();
+        if let Some(value) = registers.get(&str_register) {
+            return Ok(*value as usize);
+        } else if let Ok(r) = str_register.parse::<usize>() {
+            return Ok(r)
+        }
+        Err(register.as_span())
     }
 }

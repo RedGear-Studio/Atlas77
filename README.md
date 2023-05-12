@@ -99,6 +99,8 @@ Here's an example with the library one:
 
 ### .end
 
+This directive is used to end a program. 
+
 ## Instruction Set
 
 - `add <register>, <register>, <register>`: Performs addition on the first two registers and stores the result in the third register.

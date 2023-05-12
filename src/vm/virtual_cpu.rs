@@ -31,6 +31,7 @@ impl VirtualCPU {
         }
     }
     pub fn run(&mut self) {
+        println!("{:?}", self.program);
         loop {
             match self.execute_instructions() {
                 Some(VMEvent::IllegalOpCode) => {
@@ -57,13 +58,14 @@ impl VirtualCPU {
                     match self.registers[1] {
                         0 => {
                             println!("{}:\n  |\n  = Success, exit with code {}", "Finished:".bold().green(), self.registers[1]);
+                            break;
                         }
                         _ => {
                             //TODO!: Add more information about the error
                             println!("{}:\n  |\n  = Exit with code {}: Failure", "Runtime Error:".bold().red(), self.registers[1]);
+                            break;
                         }
                     }
-                    break;
                 },
                 _ => (),
             }
@@ -78,7 +80,6 @@ impl VirtualCPU {
                 self.pc += 1;
             },
             OpCode::Add => {
-                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
                 let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
                 let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
                 let reg3: usize = ((self.program[self.pc] >> 6) & 0b0001_1111) as usize;
@@ -86,7 +87,6 @@ impl VirtualCPU {
                 self.pc += 1;
             },
             OpCode::Sub => {
-                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
                 let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
                 let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
                 let reg3: usize = ((self.program[self.pc] >> 6) & 0b0001_1111) as usize;
@@ -94,7 +94,6 @@ impl VirtualCPU {
                 self.pc += 1;
             },
             OpCode::Mul => {
-                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
                 let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
                 let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
                 let reg3: usize = ((self.program[self.pc] >> 6) & 0b0001_1111) as usize;
@@ -102,7 +101,6 @@ impl VirtualCPU {
                 self.pc += 1;
             },
             OpCode::Div => {
-                let t: usize = ((self.program[self.pc] >> 22) & 0b0000_0111) as usize;
                 let reg1: usize = ((self.program[self.pc] >> 16) & 0b0001_1111) as usize;
                 let reg2: usize = ((self.program[self.pc] >> 11) & 0b0001_1111) as usize;
                 let reg3: usize = ((self.program[self.pc] >> 6) & 0b0001_1111) as usize;
@@ -126,12 +124,6 @@ impl VirtualCPU {
                 let reg1: usize = ((self.program[self.pc] >> 19) & 0b0001_1111) as usize;
                 let im: u16 = self.program[self.pc] as u16;
                 self.registers[reg1] = im as u32;
-                self.pc += 1;
-            },
-            OpCode::Nxt => {
-                let reg1: usize = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
-                let im: u16 = self.program[self.pc] as u16;
-                self.registers[reg1] = (self.registers[reg1] << 16) + im as u32;
                 self.pc += 1;
             },
             OpCode::Swp => {
@@ -364,22 +356,6 @@ impl VirtualCPU {
                 }
                 self.pc += 1;
             },
-            OpCode::Cst => {
-                let (t1, t2) = (((self.program[self.pc] >> 22) & 0b0000_0111) as usize,
-                    ((self.program[self.pc] >> 19) & 0b0000_0111) as usize);
-                let reg: usize = ((self.program[self.pc] >> 14) & 0b0001_1111) as usize;
-                //0 = u8, 1 = u16, 2 = u32, 3 = i8, 4 = i16, 5 = i32, 6 = f32, 7 = char
-                //Can't cast to a char
-                unimplemented!("Cst opcode not implemented yet");
-                match (t1, t2) {
-                    (0, 0) | (1, 1) | (2, 2) | (3, 3) | (4, 4) | (5, 5) | (6, 6) => (), //Cast of the same type
-                    (0, 1) | (0, 2) => (), //Cast of a more precise Uint type
-                    (3, 4) => {
-
-                    },
-                    _ => unreachable!()
-                }
-            }
             OpCode::Jmp => {
                 let reg1 = ((self.program[self.pc] >> 19) as u8 & 0b0001_1111) as usize;
                 self.pc = self.registers[reg1] as usize;
@@ -396,6 +372,7 @@ impl VirtualCPU {
             },
             OpCode::Sys => {
                 let value = self.program[self.pc] as u8;
+                println!("{}", value);
                 match value {
                     0 => print!("{}", self.registers[1]), // Print integer, found the integer in the register 1
                     1 => print!("{}", self.registers[1] as f32), // Print float, found the float in the register 1 (currently non usable because float support isn't implemented)
@@ -412,6 +389,7 @@ impl VirtualCPU {
                     6 => return Some(VMEvent::ExitSyscall), // Exit the program with the error code found in the register 1
                     _ => unreachable!(),
                 }
+                self.pc += 1;
             },
             _ => return Some(VMEvent::IllegalOpCode),
         }
@@ -420,7 +398,7 @@ impl VirtualCPU {
 
     fn decode_instruction(&mut self) -> OpCode {
         let instruction = self.program[self.pc];
-        //first 6-bit are for the current opcode, and then based on the opcode, the args may differ
+        //first 8-bit are for the current opcode, and then based on the opcode, the args may differ
         OpCode::from((instruction >> 24) as u8)
     }
 }

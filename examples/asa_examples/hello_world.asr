@@ -4,12 +4,12 @@
 .text
 .global _start
 _start:
-  mov reg1, msg ; mov the start address of the string in reg1
+  mov $0, msg ; mov the start address of the string in reg1
   ; NB: The compiler automatically replace "msg" by the starting address of the string
   ; msg isn't at address 0 because they may already be some built-in data in the memory
   sys 3         ; syscall to print, the address of the string is found in reg1
   
-  mov reg1, 0   ; mov the ok code for the exit syscall.
+  mov $a0, 0   ; mov the ok code for the exit syscall.
   sys 6         ; Exit the program
-  cst i32, i32, reg2
+
 .end
