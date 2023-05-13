@@ -101,7 +101,7 @@ impl ASMContext {
                     self.clean_functions(data_slice, function_slice);
                     self.program.extend(Self::process_functions(&self.functions));
 
-                    vm.program = self.program.to_owned();
+                    //vm.program = self.program.to_owned();
                 },
                 Rule::EOI => {
                     vm.memory = self.data_segment.to_owned();

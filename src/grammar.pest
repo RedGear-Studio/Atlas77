@@ -6,19 +6,10 @@ register        =  { dollar ~ register_value }
 dollar          = _{ ^"$" }
 register_value  = @{
     uint
-  | int_argument
-  | int_temporary
-  | int_general
-  | float_argument
-  | float_temporary
-  | float_general
+  | (register_type ~ uint)
 }
-int_argument    =  { "a" ~ uint }
-int_temporary   =  { "t" ~ uint }
-int_general     =  { "s" ~ uint }
-float_argument  =  { "fa" ~ uint }
-float_temporary =  { "ft" ~ uint }
-float_general   =  { "f" ~ uint }
+register_type   = _{ "a" | "t" | "s" | "fa" | "ft" | "f" }
+
 
 directive         = _{ include_directive* ~ data_directive? ~ text_directive ~ end_directive }
 definition        =  { label ~ ":" }

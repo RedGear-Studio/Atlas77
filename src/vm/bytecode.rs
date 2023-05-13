@@ -1,60 +1,41 @@
-/// Instruction of the virtual machine, 32-bit, and each OpCode is 8-bit. Refer to README.md to a more detailed documentation about each OpCode
+/// Instruction of the virtual machine, 32-bit, and each OpCode is 8-bit. Refer to README.md to a more detailed documentation about each Instruction
 #[repr(u8)]
 #[derive(Debug)]
-pub enum OpCode {
-    Nop = 0,
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mov,
-    Swp,
-    Lod,
-    Str,
-    And,
-    Psh,
-    Pop,
-    Cal,
+pub enum Instruction {
+    Nop,
+    Add(u8, u8, u8),
+    Sub(u8, u8, u8),
+    Mul(u8, u8, u8),
+    Div(u8, u8, u8),
+    Mov(u8, u16),// Need to check if it'll be better to separate it in each possible case for the Mov. Like Mov a register to another or mov an immediate value in a register, or mov an address in it...
+    Nxt(u8, u16),// Somewhat similar because this instruction is used to sort of complete the moved value by the mov instruction.
+    Swp(u8, u8),
+    Lod(u8, u8),
+    Str(u8, u8),
+    And(u8, u8, u8),
+    Psh(u8, u8),
+    Pop(u8),
+    Cal(u16),
     Ret,
-    Cmp,
-    Jmp,
-    Jmc,
-    Sys,
-    Inc,
-    Dec,
-    LOr,
-    Shl,
-    Shr,
-    Ilg = 255,
+    Cmp(u8, u8),
+    Jmp(u16),
+    Jmc(u8, u16),
+    Sys(u16),
+    Inc(u8),
+    Dec(u8),
+    LOr(u8, u8, u8),
+    Shl(u8, u16),
+    Shr(u8, u16),
+    Ilg,
 }
 
-impl From<u8> for OpCode {
-    fn from(v: u8) -> OpCode {
-        match v {
-            0 => OpCode::Nop,
-            1 => OpCode::Add,
-            2 => OpCode::Sub,
-            3 => OpCode::Mul,
-            4 => OpCode::Div,
-            5 => OpCode::Mov,
-            6 => OpCode::Swp,
-            7 => OpCode::Lod,
-            8 => OpCode::Str,
-            9 => OpCode::And,
-            10 => OpCode::Psh,
-            11 => OpCode::Pop,
-            12 => OpCode::Cal,
-            13 => OpCode::Ret,
-            14 => OpCode::Cmp,
-            15 => OpCode::Jmp,
-            16 => OpCode::Jmc,
-            17 => OpCode::Sys,
-            18 => OpCode::Inc,
-            19 => OpCode::Dec,
-            20 => OpCode::LOr,
-            21 => OpCode::Shl,
-            22 => OpCode::Shr,
-            _ => OpCode::Ilg,
-        }
-    }
+#[repr(u8)]
+#[derive(Debug)]
+pub enum InstructionTest {
+    Add(u8, u8, u8),
+}
+
+#[test]
+fn is_32_bits() {
+    assert_eq!(std::mem::size_of::<InstructionTest>(), 4);
 }
