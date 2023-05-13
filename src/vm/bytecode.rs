@@ -28,14 +28,3 @@ pub enum Instruction {
     Shr(u8, u16),
     Ilg,
 }
-
-#[repr(u8)]
-#[derive(Debug)]
-pub enum InstructionTest {
-    Add(u8, u8, u8),
-}
-
-#[test]
-fn is_32_bits() {
-    assert_eq!(std::mem::size_of::<InstructionTest>(), 4);
-}

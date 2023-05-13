@@ -3,7 +3,6 @@ pub mod vm;
 
 use std::fs;
 use colored::Colorize;
-use vm::bytecode::InstructionTest;
 use crate::asr_compiler::compiler::ASMContext;
 
 use crate::pest::Parser;
