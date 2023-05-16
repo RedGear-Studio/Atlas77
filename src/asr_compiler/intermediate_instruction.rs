@@ -1,180 +1,121 @@
 use std::str::FromStr;
 
+use crate::vm::bytecode::{Instruction, Syscall};
+
 #[derive(Debug, Clone)]
 pub enum IntermediateInstruction {
     Nop,
-    Add(usize, usize, usize), // reg1, reg2, reg3
-    Sub(usize, usize, usize), // reg1, reg2, reg3
-    Mul(usize, usize, usize), // reg1, reg2, reg3
-    Div(usize, usize, usize), // reg1, reg2, reg3
-    Inc(usize), // reg1
-    Dec(usize), // reg1
-    MovL(usize, String), // reg1, Label
-    MovR(usize, usize), // reg1, reg2
-    MovI(usize, u16), //reg1, im
-    Swp(usize, usize), // reg1, reg2
-    Lod(usize, usize), // reg1, reg2
-    Str(usize, usize), // reg1, reg2
-    And(usize, usize, usize), // reg1, reg2, reg3
-    LOr(usize, usize, usize), // reg1, reg2, reg3
-    Cmp(usize, usize), // reg1, reg2
+    Add(usize, usize, usize), // r1, r2, r3
+    Sub(usize, usize, usize), // r1, r2, r3
+    Mul(usize, usize, usize), // r1, r2, r3
+    Div(usize, usize, usize), // r1, r2, r3
+    Inc(usize), // r1
+    Dec(usize), // r1
+    MovL(usize, String), // r1, Label
+    MovR(usize, usize), // r1, r2
+    MovI(usize, u16), //r1, im
+    Swp(usize, usize), // r1, r2
+    Lod(usize, usize), // r1, r2
+    Str(usize, usize), // r1, r2
+    And(usize, usize, usize), // r1, r2, r3
+    LOr(usize, usize, usize), // r1, r2, r3
+    Cmp(usize, usize), // r1, r2
     JmpL(String), // label
     JmpI(u16), // im
     JmcL(CmpFlag, String), // Label
     JmcI(CmpFlag, u16), // im
-    Psh(usize, usize), // reg1, reg2
-    Pop(usize), // reg1
+    Psh(usize, usize), // r1, r2
+    Pop(usize), // r1
     CalL(String), // Label
     CalI(u16), // address
     Ret,
     Sys(usize), // syscall
-    Shl(usize, usize), // reg1, amount
-    Shr(usize, usize), // reg1, amount
+    Shl(usize, usize), // r1, amount
+    Shr(usize, usize), // r1, amount
     Ilg
 }
-impl From<IntermediateInstruction> for u32 {
-    fn from(v: IntermediateInstruction) -> u32 {
+impl From<IntermediateInstruction> for Instruction {
+    fn from(v: IntermediateInstruction) -> Instruction {
+        use Instruction::*;
         match v {
-            IntermediateInstruction::Nop => 0,
-            IntermediateInstruction::Add(reg1, reg2, reg3) => {
-                let mut instruction = 0b00000001_00000000_00000000_00000000; // 1
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction += (reg3 as u32) << 9;
-                instruction
+            IntermediateInstruction::Nop => Nop,
+            IntermediateInstruction::Add(r1, r2, r3) => {
+                Add(r1 as u8, r2 as u8, r3 as u8)
             },
-            IntermediateInstruction::Sub(reg1, reg2, reg3) => {
-                let mut instruction = 0b00000010_00000000_00000000_00000000; // 2
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction += (reg3 as u32) << 9;
-                instruction
+            IntermediateInstruction::Sub(r1, r2, r3) => {
+                Sub(r1 as u8, r2 as u8, r3 as u8)
             },
-            IntermediateInstruction::Mul(reg1, reg2, reg3) => {
-                let mut instruction = 0b00000011_00000000_00000000_00000000; // 3
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction += (reg3 as u32) << 9;
-                instruction
+            IntermediateInstruction::Mul(r1, r2, r3) => {
+                Mul(r1 as u8, r2 as u8, r3 as u8)
             },
-            IntermediateInstruction::Div(reg1, reg2, reg3) => {
-                let mut instruction = 0b00000100_00000000_00000000_00000000; // 4
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction += (reg3 as u32) << 9;
-                instruction
+            IntermediateInstruction::Div(r1, r2, r3) => {
+                Div(r1 as u8, r2 as u8, r3 as u8)
             },
-            IntermediateInstruction::MovI(reg1, im) => {
-                let mut instruction = 0b00000101_00000000_00000000_00000000; // 5 The last bit = 0 to say that you mov an immediate value
-                instruction += (reg1 as u32) << 19;
-                instruction |= im as u32;
-                instruction
+            IntermediateInstruction::MovI(r1, im) => {
+                let rt: u8 = 0b00000000;
+                Mov(rt + r1 as u8, im)
             },
-            IntermediateInstruction::MovR(reg1, reg2) => {
-                let mut instruction = 0b00000101_00000000_00000000_00000001; // 5 The last bit = 1 to say that you mov a register
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction
+            IntermediateInstruction::MovR(r1, r2) => {
+                let rt: u8 = 0b00100000;
+                Mov(rt + r1 as u8, r2 as u16)
             },
-            IntermediateInstruction::Swp(reg1, reg2) => {
-                let mut instruction = 0b00000110_00000000_00000000_00000000; // 6
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction
+            IntermediateInstruction::Swp(r1, r2) => {
+                Swp(r1 as u8, r2 as u8)
             },
-            IntermediateInstruction::Lod(reg1, reg2) => {
-                let mut instruction = 0b00000111_00000000_00000000_00000000; // 7
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction
+            IntermediateInstruction::Lod(r1, r2) => {
+                Lod(r1 as u8, r2 as u8)
             },
-            IntermediateInstruction::Str(reg1, reg2) => {
-                let mut instruction = 0b00001000_00000000_00000000_00000000; // 8
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction
+            IntermediateInstruction::Str(r1, r2) => {
+                Str(r1 as u8, r2 as u8)
             },
-            IntermediateInstruction::And(reg1, reg2, reg3) => {
-                let mut instruction = 0b00001001_00000000_00000000_00000000; // 9
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction += (reg3 as u32) << 9;
-                instruction
+            IntermediateInstruction::And(r1, r2, r3) => {
+                And(r1 as u8, r2 as u8, r3 as u8)
             },
-            IntermediateInstruction::Psh(reg1, reg2) => {
-                let mut instruction = 0b00001010_00000000_00000000_00000000; // 10
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction
+            IntermediateInstruction::Psh(r1, r2) => {
+                Psh(r1 as u8, r2 as u8)
+
             },
-            IntermediateInstruction::Pop(reg1) => {
-                let mut instruction = 0b00001011_00000000_00000000_00000000; // 11
-                instruction += (reg1 as u32) << 19;
-                instruction
+            IntermediateInstruction::Pop(r1) => {
+                Pop(r1 as u8)
             },
             IntermediateInstruction::CalI(add) => {
-                let mut instruction = 0b00001100_00000000_00000000_00000000; // 12
-                instruction += add as u32;
-                instruction
+                Cal(add)
             },
             IntermediateInstruction::Ret => {
-                0b00001110_00000000_00000000_00000000 // 12
+                Ret
             },
-            IntermediateInstruction::Cmp(reg1, reg2) => {
-                let mut instruction = 0b00001101_00000000_00000000_00000000; // 13
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction
+            IntermediateInstruction::Cmp(r1, r2) => {
+                Cmp(r1 as u8, r2 as u8)
             },
-            IntermediateInstruction::JmpI(ad) => {
-                let mut instruction = 0b00001110_00000000_00000000_00000000; // 14
-                instruction += ad as u32;
-                instruction
+            IntermediateInstruction::JmpI(add) => {
+                Jmp(add)
             },
-            IntermediateInstruction::JmcI(cmp, ad) => {
-                let mut instruction = 0b00001111_00000000_00000000_00000000; // 15
-                instruction += (cmp as u32) << 18;
-                instruction += ad as u32;
-                instruction
+            IntermediateInstruction::JmcI(cmp, add) => {
+                Jmc(u8::from(cmp), add)
             },
             IntermediateInstruction::Sys(im) => {
-                let mut instruction = 0b00010000_00000000_00000000_00000000; // 16
-                instruction += im as u32;
-                instruction
+                Sys(Syscall::from(im as u8))
             },
-            IntermediateInstruction::Inc(reg1) => {
-                let mut instruction = 0b00010001_00000000_00000000_00000000; // 17
-                instruction += (reg1 as u32) << 19;
-                instruction
+            IntermediateInstruction::Inc(r1) => {
+                Inc(r1 as u8)
             },
-            IntermediateInstruction::Dec(reg1) => {
-                let mut instruction = 0b00010010_00000000_00000000_00000000; // 18
-                instruction += (reg1 as u32) << 19;
-                instruction
+            IntermediateInstruction::Dec(r1) => {
+                Dec(r1 as u8)
             },
-            IntermediateInstruction::LOr(reg1, reg2, reg3) => {
-                let mut instruction = 0b00010011_00000000_00000000_00000000; // 19
-                instruction += (reg1 as u32) << 19;
-                instruction += (reg2 as u32) << 14;
-                instruction += (reg3 as u32) << 9;
-                instruction
+            IntermediateInstruction::LOr(r1, r2, r3) => {
+                LOr(r1 as u8, r2 as u8, r3 as u8)
             },
-            IntermediateInstruction::Shl(reg1, im) => {
-                let mut instruction = 0b0001010_00000000_00000000_00000000; // 20
-                instruction += (reg1 as u32) << 19;
-                instruction += im as u32;
-                instruction
+            IntermediateInstruction::Shl(r1, im) => {
+                Shl(r1 as u8, im as u16)
             },
-            IntermediateInstruction::Shr(reg1, im) => {
-                let mut instruction = 0b0001010_00000000_00000000_00000000; // 20
-                instruction += (reg1 as u32) << 19;
-                instruction += im as u32;
-                instruction
+            IntermediateInstruction::Shr(r1, im) => {
+                Shr(r1 as u8, im as u16)
             },
-            _ => 0b11111111_00000000_00000000_00000000, //Illegal instruction
+            _ => Ilg, //Illegal instruction
         }
     }
 }
+#[repr(u8)]
 #[derive(Debug, Clone)]
 pub enum CmpFlag {
     Eq,
@@ -182,6 +123,17 @@ pub enum CmpFlag {
     Lt,
     Gt,
 }
+impl From<CmpFlag> for u8 {
+    fn from(value: CmpFlag) -> Self {
+        match value {
+            CmpFlag::Eq => 1,
+            CmpFlag::Ne => 0b110,
+            CmpFlag::Lt => 0b100,
+            CmpFlag::Gt => 0b010,
+        }
+    }
+}
+
 impl FromStr for CmpFlag {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {

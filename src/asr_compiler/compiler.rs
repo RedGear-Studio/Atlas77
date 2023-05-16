@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use pest::{iterators::Pair, error::Error, Span};
 use colored::Colorize;
-use crate::Rule;
+use crate::{Rule, vm::bytecode::Instruction};
 use crate::vm::virtual_cpu::VirtualCPU;
 use super::intermediate_instruction::{IntermediateInstruction, CmpFlag};
 #[derive(Default)]
@@ -51,7 +51,7 @@ pub struct ASMContext {
     entry_point: Option<String>, //Function define in the .global directive
     data: Vec<Data>,
     data_segment: Vec<u8>,
-    program: Vec<u32>,
+    program: Vec<Instruction>,
 }
 impl ASMContext {
     pub fn new() -> Self {
@@ -65,7 +65,7 @@ impl ASMContext {
     }
     pub fn compile(&mut self, program: Pair<Rule>) -> VirtualCPU {
         let mut messages = Message::new();
-        let mut vm: VirtualCPU = VirtualCPU::default();
+        let mut vm: VirtualCPU = VirtualCPU::new(false);
         for directive in program.into_inner() {
             match directive.as_rule() {
                 Rule::include_directive => {
@@ -101,13 +101,13 @@ impl ASMContext {
                     self.clean_functions(data_slice, function_slice);
                     self.program.extend(Self::process_functions(&self.functions));
 
-                    //vm.program = self.program.to_owned();
+                    vm.program = self.program.to_owned();
                 },
                 Rule::EOI => {
                     vm.memory = self.data_segment.to_owned();
-                    vm.base_pointer = self.data_segment.len();
-                    vm.frame_pointer = self.data_segment.len();
-                    vm.stack_pointer = self.data_segment.len();
+                    vm.base_pointer = self.data_segment.len() as u32;
+                    vm.frame_pointer = self.data_segment.len() as u32;
+                    vm.stack_pointer = self.data_segment.len() as u32;
                     break;
                 }
                 _ => unreachable!()
@@ -214,12 +214,12 @@ impl ASMContext {
         }
     }
 
-    fn process_functions(functions: &[Function]) -> Vec<u32> {
-        let mut result: Vec<u32> = Vec::new();
+    fn process_functions(functions: &[Function]) -> Vec<Instruction> {
+        let mut result: Vec<Instruction> = Vec::new();
         for function in functions {
             for (_label, instructions) in function.content.iter() {
                 for instruction in instructions {
-                    result.push(u32::from(instruction.clone()));
+                    result.push(Instruction::from(instruction.clone()));
                 }
             }
         }
