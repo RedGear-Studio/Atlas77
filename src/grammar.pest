@@ -1,54 +1,97 @@
-program = { SOI ~ (statement ~ semicolon)* ~ EOI }
-WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+program         =  { SOI ~ directive ~ EOI }
+WHITESPACE      = _{ " " | "\t" | "\r" | "\n" | "," }
+COMMENT         = _{ comment_line }
+comment_line    = @{ ";" ~ (!("\r" | "\n") ~ ANY)* }
+register        =  { dollar ~ register_value }
+dollar          = _{ ^"$" }
+register_value  = @{
+    uint
+  | (register_type ~ uint)
+}
+register_type   = _{ "a" | "t" | "s" | "fa" | "ft" | "f" }
 
-statement = { variable_declaration | assignment | print_statement | if_statement | while_loop | for_loop }
-block = { (statement ~ semicolon)* }
-variable_declaration = { "let" ~ identifier ~ ":" ~ type ~ ("=" ~ expression)? }
-assignment = { identifier ~ "=" ~ expression }
-print_statement = { "print" ~ expression }
-if_statement = { "if" ~ expression ~ "then" ~ block ~ ("else" ~ block)? ~ "end" }
-while_loop = { "while" ~ expression ~ "do" ~ block ~ "end" }
-for_loop = { "for" ~ identifier ~ "to" ~ expression ~ ( step? ~ direction?) ~ "iterate" ~ block ~ "end"}
 
-step = { "by" ~ expression }
-direction = { "direction" ~ (increase | decrease | both) }
-increase = { "increase" }
-decrease = { "decrease" }
-both = { "both" }
+directive         = _{ include_directive* ~ data_directive? ~ text_directive ~ end_directive }
+definition        =  { label ~ ":" }
+label             = @{ ASCII_ALPHA ~ ("_" | ASCII_ALPHANUMERIC)* }
+func_definition   =  { func_label ~ ":" }
+func_label        = @{ "_" ~ label }
+include_directive =  { ".include" ~ "<" ~ file ~ ">" }
+file              =  { (ASCII_ALPHANUMERIC | "_")* ~ ".asr" }
+data_directive    =  { ".data" ~ (variable)* }
+variable          =  { definition ~ type_directive }
+type_directive    =  {
+    i32_directive
+  | u32_directive
+  | f32_directive
+  | string_directive
+  | char_directive
+}
+i32_directive     =  { ".i32" ~ int }
+u32_directive     =  { ".u32" ~ uint }
+f32_directive     =  { ".f32" ~ float }
+string_directive  =  { ".string" ~ "\"" ~ string ~ "\"" }
+char_directive    =  { ".char" ~ "'" ~ ASCII_ALPHA ~ "'" }
+text_directive    =  { ".text" ~ (global_directive | library_directive) ~ function+ }
+end_directive     =  { ".end" }
+global_directive  =  { ".global" ~ func_label }
+library_directive =  { ".library" }
+function          =  { func_definition ~ (definition | instruction)* }
+array_size        = @{ uint }
+string            =  { characters* }
+characters        = _{ ASCII_ALPHANUMERIC | "!" | ";" | "." | ":" | "(" | ")" | "{" | "}" | "&" | "|" | "'" | "@" | "^" | "*" | "[" | "]" | "$" | "%" | "£" | "/" | "+" | "=" | "-°" | "~" | "?" | "<" | ">" | "°" }
+instruction       =  {
+    nop_ins
+  | add_ins
+  | sub_ins
+  | mul_ins
+  | div_ins
+  | and_ins
+  | lor_ins
+  | cmp_ins
+  | mov_ins
+  | inc_ins
+  | dec_ins
+  | swp_ins
+  | lod_ins
+  | str_ins
+  | psh_ins
+  | pop_ins
+  | cal_ins
+  | ret_ins
+  | jmp_ins
+  | jmc_ins
+  | shr_ins
+  | shl_ins
+  | sys_ins
+}
 
-expression = { literal | binary_expression | identifier | unary_expression }
+nop_ins = { "nop" }
+add_ins = { "add" ~ register ~ register ~ register }
+sub_ins = { "sub" ~ register ~ register ~ register }
+mul_ins = { "mul" ~ register ~ register ~ register }
+div_ins = { "div" ~ register ~ register ~ register }
+and_ins = { "and" ~ register ~ register ~ register }
+lor_ins = { "lor" ~ register ~ register ~ register }
+cmp_ins = { "cmp" ~ register ~ register }
+mov_ins = { "mov" ~ register ~ (int | label | register) }
+inc_ins = { "inc" ~ register }
+dec_ins = { "dec" ~ register }
+swp_ins = { "swp" ~ register ~ register }
+lod_ins = { "lod" ~ register ~ register }
+str_ins = { "str" ~ register ~ register }
+psh_ins = { "psh" ~ register ~ register }
+pop_ins = { "pop" ~ register }
+cal_ins = { "cal" ~ func_label }
+ret_ins = { "ret" }
+jmp_ins = { "jmp" ~ (label | func_label) }
+jmc_ins = { "jmc" ~ compare_flag ~ (label | func_label) }
+shr_ins = { "shr" ~ register ~ uint }
+shl_ins = { "shl" ~ register ~ uint }
+sys_ins = { "sys" ~ uint }
 
-binary_expression = { ^"(" ~ expression ~ operator ~ expression ~ ^")"}
-unary_expression = { unary_operator ~ expression }
+int   = @{ "-"? ~ ASCII_DIGIT+ }
+uint  = @{ ASCII_DIGIT+ }
+float = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
 
-unary_operator = { "-" }
-
-operator = { add | sub | mul | div | mod | eq | neq | lt | lte | gt | gte }
-add = _{ ^"+" }
-sub = _{ ^"-" }
-mul = _{ ^"*" }
-div = _{ ^"/" }
-mod = _{ ^"%" }
-eq = _{ ^"==" }
-neq = _{ ^"!=" }
-lt = _{ ^"<" }
-lte = _{ ^"<=" }
-gt = _{ ^">" }
-gte = _{ ^">=" }
-
-semicolon = _{ ^";" }
-
-literal = { number | string | boolean }
-number = @{ digit+ }
-string = _{ "\"" ~ string_value ~ "\"" }
-string_value = { character* }
-boolean = { "true" | "false" }
-reserved = { "true" | "false" | "int" | "string" | "boolean" | "let" | "print" | "if" | "then" | "else" | "end" | "while" | "do" | "for" | "to" | "increase" | "increase" | "direction" | "decrease" | "both" | "iterate" }
-
-type = { "int" | "string" | "boolean" }
-
-identifier = @{ !reserved ~ (letter ~ ( letter | digit )*) }
-
-letter = _{ 'a'..'z' | 'A'..'Z' }
-digit = _{ '0'..'9' }
-character = _{ letter | digit | " " | "." | "," | "!" | "?" | ";" | ":" }
+compare_flag = { "eq" | "ne" | "lte" | "lt" | "gte" | "gt" }

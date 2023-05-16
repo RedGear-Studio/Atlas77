@@ -1,10 +1,11 @@
-pub mod parser {
-    pub mod ast;
-    pub mod parser;
-    pub mod eval;
-}
+pub mod asr_compiler;
+pub mod vm;
 
-use crate::{pest::Parser, parser::{eval::{SymbolTable},parser::generate_ast}};
+use std::fs;
+use colored::Colorize;
+use crate::asr_compiler::compiler::ASMContext;
+
+use crate::pest::Parser;
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
@@ -13,27 +14,43 @@ extern crate pest_derive;
 #[grammar = "grammar.pest"]
 struct TestParser;
 
-fn main() {
-    let input: &str = "
-print \"Hello World!\";
-let i: int = 16;
-for i to 10 by 2 direction both iterate
-    print i;
-end;
-    ";
-    let program = TestParser::parse(Rule::program, input).unwrap_or_else(|e| panic!("{}", e));
-    for programs in program.into_iter() {
-        match programs.as_rule() {
-            Rule::program => {
-                let ast = generate_ast(programs);
-                let mut symbol_table = SymbolTable::new();
-                let result = symbol_table.eval(ast.statements, 1);
-                match result {
-                    Ok(_) => (),
-                    Err(e) => println!("{}", e),
-                }
-            },
-            _ => unreachable!(),
+fn main(){
+    let command = std::env::args().nth(1).unwrap_or_else(|| {
+        println!("Reg-Lang CLI v0.1.0
+  USAGE: asl <command> [args]
+  Commands:
+    - compile <path>: Compiles the given file.
+
+NB: Please note that you cannot include external files using the `.include` directive at this time. We apologize for any inconvenience this may cause. If you need to use external files, you can try using a different method of including them, such as copying and pasting the contents of the file into your source code.
+
+We are working to add support for the `.include` directive in a future version of the assembler. Thank you for your understanding.");
+        std::process::exit(0);
+    });
+
+    if command == "compile" {
+        let Some(path) = std::env::args().nth(2) else {
+            eprintln!("{}: You must specify a path to a file", "Error".bold().red());
+            std::process::exit(1);
+        };
+        if !path[..].ends_with(".asr") {
+            eprintln!("{}: You must specify a file with the {} extension", "Error".bold().red(), ".asr".bold());
+            std::process::exit(1);
         }
+        let content = fs::read_to_string(&path).unwrap_or_else(|e| {
+            eprintln!("Failed to read input file {}: {}", path, e);
+            std::process::exit(1);
+        });
+        println!("{}: {}", "Parsing".bold().blue(), path);
+        let result = TestParser::parse(Rule::program, &content).unwrap_or_else(|e| {
+            println!("{}:\n{}", "Error".bold().red(), e);
+            std::process::exit(0);
+        });
+        println!("{}", "Finished".bold().green());
+        println!("{} parsed result", "Compiling".bold().blue());
+        let mut context = ASMContext::new();
+        let mut vm = context.compile(result.into_iter().next().unwrap());
+        println!("{}", "Finished".bold().green());
+        println!("{}", "Running".bold().green());
+        vm.run();
     }
 }
