@@ -14,3 +14,4 @@ categories = ["language"]
 pest = "2.5.7"
 pest_derive = "2.5.7"
 colored = "2.0.0"
+antlr-rust = "0.2.2"

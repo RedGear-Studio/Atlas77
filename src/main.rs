@@ -1,12 +1,8 @@
 #![allow(unused)]
 pub mod compiler;
 pub mod tree_walker;
-//use std::path::PathBuf;
-
-//use clap::{arg, Command};
 
 use compiler::ir::builder::IRBuilder;
-
 use crate::pest::Parser;
 use crate::compiler::parser::parser::generate_ast;
 use crate::tree_walker::eval::SymbolTable;
@@ -19,18 +15,6 @@ extern crate pest_derive;
 struct TestParser;
 
 fn main() {
-    /*let matches = cli().get_matches();
-    match matches.subcommand() {
-        Some(("run", sub_matches)) => {
-            let path = sub_matches
-                .get_many::<PathBuf>("PATH")
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>();
-            println!("Paths: {:?}", path);
-        }
-        _ => unreachable!()
-    }*/
     let input: &str = "
     function salut(x: int, y: boolean): int
     begin
@@ -54,23 +38,3 @@ fn main() {
         }
     }
 }
-
-/*fn cli() -> Command {
-    Command::new("reg-lang")
-        .about(" A simple and in development programming language written in Rust.")
-        .subcommand_required(true)
-        .arg_required_else_help(true)
-        .allow_external_subcommands(true)
-        .subcommand(
-            Command::new("run")
-                .about("Run a program.")
-                .arg(arg!(-f --file <FILE> "File to run."))
-                .arg_required_else_help(true)
-        )
-        .subcommand(
-            Command::new("compile")
-                .about("Compile a program. Not usable for now.")
-                .arg(arg!(-f --file <FILE> "File to compile."))
-                .arg_required_else_help(true)
-        )
-}*/
