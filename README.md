@@ -8,126 +8,149 @@
 [![MIT License][license-shield]][license-url]
 
 
-<h3 align="center">Reg Lang</h3>
+<h3 align="center">ASL</h3>
 
   <p align="center">
-    A simple and in development programming language written in Rust.
+     [A Simple Language] is a programming language in development written in Rust 
     <br />
-    <a href="https://github.com/RedGear-Studio/Reg-Lang/issues">Report Bug</a>
+    <a href="https://github.com/RedGear-Studio/ASL/issues">Report Bug</a>
     ·
-    <a href="https://github.com/RedGear-Studio/Reg-Lang/issues">Request Feature</a>
+    <a href="https://github.com/RedGear-Studio/ASL/issues">Request Feature</a>
     ·
-    <a href="https://github.com/RedGear-Studio/Reg-Lang/pulls">Add Features</a>
+    <a href="https://github.com/RedGear-Studio/ASL/pulls">Add Features</a>
   </p>
 </div>
 
 # VM Architecture/Instruction Set Specification
 
-The VM is a stack-based virtual machine that operates on a custom instruction set. It has a 32-bit address space, 16 registers, and a memory stack-based.
+The VM is a stack-based virtual machine that operates on a custom instruction set. It has a 32-bit address space, 32 registers, and a memory stack-based.
 
 ## Registers
 
-The VM has 16 general-purpose registers, named `reg0` to `reg15` (`reg0` is the zero register, it's read-only and contains the value 0), each with a width of 32 bits. It also has a temporary register named `t_reg`, which is used by some instructions as a temporary storage location.
+### Integers
+
+The VM has 16 registers dedicated to Integers:
+
+- `$zero`: holds the value zero as a constant and cannot be changed (`$0`)
+- `$a0` to `$a3`: registers that store integer arguments for function calls (`$1` to `$4`)
+- `$t0` to `$t3`: temporary registers that allow modification of their stored value (`$5` to `$8`).
+> The value of these registers can change quickly depending on the program needs.
+- `$s0` to `$s6`: registers that hold values across function calls, and their value remains unchanged until no longer needed (`$10` to `$16`).
+> By this, we mean that if you don't change the value explicitely, the program won't change it.
+
+### Floats
+
+The VM has 16 registers dedicated to Floats:
+
+`$fa0` to `$fa3`: registers that store float arguments for function calls (`$16` to `$19`)
+`$ft0` to `$ft3`: temporary registers that allow modification of their stored value (`$20` to `$23`).
+> The value of these registers can change quickly depending on the program needs.
+`$f0` to `$f7`: registers that hold values across function calls, and their value remains unchanged until no longer needed (`$24` to `$31`).
+> By this, we mean that if you don't change the value explicitely, the program won't change it.
+
 
 ## Memory
 
-The memory of the VM is a stack but with a size not defined (32 GB max). It behaves like a stack most of the time with the PUSH (psh) and POP (pop) instructions, but if needed, you can access to inner data using the LOAD (lod) and STORE (str) instructions, these instructions let you read and write wherever you want in the memory (when you use str, you overwrite what's at that address).
+The memory of the VM is a stack that has no predefined size (maximum 32 GB). It behaves like a stack most of the time with the PUSH (`psh`) and POP (`pop`) instructions. However, you can access data within the memory using the LOAD (`lod`) and STORE (`str`) instructions, which allow you to read and write data from anywhere in the memory. If you use the STORE instruction, it overwrites any data already stored at that address.
+
+## Directives
+
+### .include
+
+This directive let you include/import external file to allows you a multi-files and library system.
+Here's an example of how to use the `.include` directive:
+> NB: Currently not implemented yet
+`.include <filename.asr>`
+> When this directive will be implemented, you'll be able to natively import some built-in library such as `stdlib.asr` that hold several useful datas and functions
+
+### .data
+
+This directive defines the data section of your program, which is where you can define variables and allocate memory for them. The data section is typically located at the beginning of the program.
+
+Here's an example of how to use the .data directive:
+```
+.data
+  msg: .string "Hello World"
+  int: .i32 -8
+  uint: .u32 8
+  float: .f32 8.0
+```
+In this example, we define four variables: `msg` which is a string, `int` which is a signed 32-bit integer, `uint` which is an unsigned 32-bit integer, and `float` which is a 32-bit floating-point number.
+
+### .text
+
+This directive defines the code section of your program, which is where you can write your program's instructions. The code section typically comes after the data section.
+To use it, you just have to write `.text` at the beginning of your program
+> This directive needs to be after the data section.
+
+### .global or .library
+
+These directives either define the entry-point of your program (`.global`) or define a library without entry-point (`.library`), to use it you need to do it like this:
+Here's an example with the global one:
+```
+.text         ; The directive have to be right after the `.text` one
+.global _main ; The function name can differ with your needs
+```
+Here's an example with the library one:
+```
+.text    ; The directive have to be right after the `.text` one
+.library ; There's no need to add additional data.
+```
+
+### .end
+
+This directive is used to end a program. 
 
 ## Instruction Set
 
-The following instructions are available in the VM:
-
-- `nop`: (Nope) Do nothing.
-
-- `add, t, reg1, reg2, reg3`: (Addition) Add the values in reg1 and reg2, and store the result in reg3. Interpret reg1 and reg2 as t.
-
-- `sub, t, reg1, reg2, reg3`: (Subtraction) Subtract the value in reg1 from the value in reg2, and store the result in reg3. Interpret reg1 and reg2 as t.
-
-- `mul, t, reg1, reg2, reg3`: (Multiplication) Multiply the values in reg1 and reg2, and store the result in reg3. Interpret reg1 and reg2 as t.
-
-- `div, t, reg1, reg2, reg3`: (Division) Divide the value in reg2 by the value in reg1, and store the result in reg3 if reg2 value == 0, the program will return an error and stop. Interpret reg1 and reg2 as t.
-
-- `inc, reg1`: (Increment) Increment the value in reg1 by 1.
-> Can only be done on integers and unsigned integers
-
-- `dec, reg1`: (Decrement) Decrement the value in reg1 by 1.
-> Can only be done on integers and unsigned integers
-
-- `swp, reg1, reg2`: (Swap) Swap the values of reg1 and reg2 by using the temporary register t_reg.
-
-- `mov, reg1, im`: (Move) Move a 16-bits immediate value to reg1.
-
-- `nxt, reg1, im`: (Next) Shift left reg1 by 16 bits and add a 16-bits immediate value to reg1.
-
-- `lod, t, reg1, reg2`: (Load) Load the value at the memory address found in reg1 in reg2. Interpret the value as t.
-
-- `str, t, reg1, reg2`: (Store) Store the value in reg2 at the memory address found in reg1 (if there's already something at that address, it's overwrited). Interpret the value as t.
-
-- `and, reg1, reg2, reg3`: (And) Perform a bitwise AND operation on the values in reg1 and reg2, and store the result in reg3.
-
-- `or, reg1, reg2, reg3`: (Or) Perform a bitwise OR operation on the values in reg1 and reg2, and store the result in reg3.
-
-- `psh, t, reg1, reg2`: (Push) Push the value from reg1 to the top of the stack and get its address in reg2. Interpret the value as t.
-
-- `pop, t, reg1`: (Pop) Pop the value from the top of the stack to reg1. Interpret the value as t.
-
-- `cal, reg1`: (Call) Change the program counter to the value in reg1 and create a new stack frame.
-
-- `ret`: (Return) Return from a function by using the bottom value of the stack frame as the address of where this function was called. 
-> Need to rework this, because if something in the stack needs to be return, you can't remove it from the stack.
-
-- `cmp, reg1, reg2`: (Compare) Compare the values in reg1 and reg2 and set the cmp_register based on the result.
-
-- `cst, t1, t2, reg1`: (Cast) Cast the value in reg1 from the first type (t1) to the seconde one (t2).
-
-- `jmp, reg1`: (Jump) Jump to the address specified in reg1. (Jump already moove the program counter by default to the new address)
-
-- `jmc, cmp_flag, reg1`: (Jump Compare) Jump to the address contained in reg1 if a certain flag is set in the cmp_register. (Jump already moove the program counter by default to the new address)
-
-- `ini, custom_instruction`: (Init) Initialize a custom instruction by pushing all the args registers used by that custom instruction to the stack to avoid losing data.
-> Initialize automatically based on the instruction definition.
-> NB: Custom instructions aren't implemented yet
-
-- `cle, arg1, reg1`: (Clear) Move the value in arg1 to reg1 as the result value, then pop all the args registers from the stack to restore the previous state of registers.
-> Clear automatically based on the instruction definition.
-> NB: Custom instructions aren't implemented yet
-
-- `custom_instruction, reg1, reg2, ...`: (Custom Instruction) Perform a custom instruction, similar to a function call, but with the possibility to easily add arguments and without creating a new stack frame.
-> Nota Bene: A custom instruction call is coded on 64 bits, the first 32 bits are used to store the address of the custom instruction and the number of arguments, and the second 32 bits are used to store the used registers.
-> NB: Custom instructions aren't implemented yet
-
-- `sys, im`: (Syscall) Call the system function identified by the immediate value.
+- `add <register>, <register>, <register>`: Performs addition on the first two registers and stores the result in the third register.
+- `sub <register>, <register>, <register>`: Performs subtraction on the first two registers and stores the result in the third register.
+- `div <register>, <register>, <register>`: Performs division on the first two registers and stores the result in the third register.
+- `mul <register>, <register>, <register>`: Performs multiplication on the first two registers and stores the result in the third register.
+- `lor  <register>, <register>, <register>`: Performs the (Logical) OR operation on the first two registers and stores the result in the third register.
+- `and <register>, <register>, <register>`: Performs the AND operation on the first two registers and stores the result in the third register.
+- `mov <register>, [<data_label> | <int> | <float> | <register>]`: Moves a value to a register, either from the data segment (data_label), an immediate value (int or float), or another register.
+- `inc <register>`: Increments the value stored in a register by one.
+- `dec <register>`: Decrement the value in a register by one.
+- `swp <register>, <register>`: Swaps the values stored in two registers, using `$t0` as a temporary register.
+> If there was already a value in `$t0`, it gets overwritten.
+- `cmp <register>, <register>`: Compares the value of 2 registers and set a flag in the VM (Eq, Lt, Gt, Ne)
+- `jmc <flag>, [<label> | <function_label>]`: Jumps to a function or an inner label if the latest comparison has the same flag as the one in the instruction
+- `jmp [<label> | <function_label>]`: Jumps unconditionnaly to a function or an inner label
+- `cal <function_label>`: Calls a function by creating a new stack frame and storing the next instruction of the current function as the first element in the stack
+- `ret`: Return from a function by jumping to the first element in the stack previously stored by the `cal` instruction
+- `sys <immediate>`: Performs a Syscall based on the immediate value, the 
+- `lod <register>, <register>`: Loads from memory at the address in the first register to the second register
+- `str <register>, <register>`: Stores to memory at the address in the first register the value in the second one
+> Overwrite what's already there
+- `psh <register>, <register>`: Pushes to the stack the value of the first register and store the address in the second register
+- `pop <register>`: Pops from the stack the top value to the register
+- `shr <register>, <int>`: Shifts right the value of the register by the given immediate value (int).
+- `shl <register>, <int>`: Shifts left the value of the register by the given immediate value (int).
 
 ### Existing Syscalls :
 
-- 0: Print integer, the integer is found in reg1.
-- 1: Print float, the float is found in reg1.
-- 2: Print string, the string address is found in reg1. (The string needs to be null terminated)
-- 3: Read integer, store the integer in reg1.
-- 4: Read float, store the float in reg1.
-- 5: Read string, store the string on top of the stack and store its address in reg1. (The string needs to be null terminated)
-- 6: Exit the program, found the exit code in reg1 (0 for success, 1 for failure).
+- 0: Print integer, the integer is found in `$a0`.
+- 1: Print float, the float is found in `$a0`.
+- 2: Print string, the string address is found in `$a0`. (The string needs to be null terminated)
+- 3: Read integer, store the integer in `$a0`.
+- 4: Read float, store the float in `$a0`.
+- 5: Read string, store the string on top of the stack and store its address in `$a0`. (The string needs to be null terminated)
+- 6: Exit the program, found the exit code in `$a0` (0 for success, 1 for failure).
 
-### Types for the instructions:
-> This is the value of a type in the VM. The type is used to know how to interpret the value in a register.
-- 0: `u8`
-- 1: `u16`
-- 2: `u32`
-- 3: `i8`
-- 4: `i16`
-- 5: `i32`
-- 6: `f32`
-- 7: `char`
+### Supported types:
+- u32: Unsigned int, 32-bit long
+- i32: Signed int, 32-bit long
+- f32: Floating points number, 32-bit long
 
-### cmp_flag:
-The cmp_flag is a 4-bit register used for comparison operations. It contains four individual flags, each represented by a single bit:
+### Compare flag:
+The Compare flag is a 3-bit register used for comparison operations. It contains three individual flags (Greater Than, Less Than, Equal), each represented by a single bit:
 
-- The Neq flag, representing "Not Equal", is set to 1 if the two compared values are not equal.
-- The Gt flag, representing "Greater Than", is set to 1 if the first compared value is greater than the second.
-- The Lt flag, representing "Less Than", is set to 1 if the first compared value is less than the second.
-- The Eq flag, representing "Equal", is set to 1 if the two compared values are equal.
+- The Gt flag, representing "Greater Than", is set to 1 if the first compared value is greater than the second. (001)
+- The Lt flag, representing "Less Than", is set to 1 if the first compared value is less than the second. (010)
+- The Eq flag, representing "Equal", is set to 1 if the two compared values are equal. (100)
 
-During a comparison operation, one or more of these flags will be set based on the result of the comparison. For example, if the first value is greater than the second, the Gt flag will be set to 1 and the Neq flag will also be set. These flags can then be used in conjunction with the jmc instruction to control program flow based on the outcome of the comparison.
+> When you use the `jmc` instruction you can use more than these 3 flags. Gte, Lte and Ne can be used, they are just combinations of existing flags.
 
 # Contributing
 Thank you for your interest in contributing to our project! We welcome all contributions, whether they be bug fixes, new features, or improvements to the documentation.
@@ -145,7 +168,7 @@ Once you have submitted your pull request, one of our maintainers will review it
 
 # License
 
-Distributed under the MIT and BEERWARE License. See [`MIT-LICENSE`](https://github.com/RedGear-Studio/Reg-Lang/blob/main/LICENSE-MIT.md) and [`BEERWARE-License`](https://github.com/RedGear-Studio/Reg-Lang/blob/main/LICENSE-BEERWARE.md)for more information.
+Distributed under the MIT and BEERWARE License. See [`MIT-LICENSE`](https://github.com/RedGear-Studio/ASL/blob/main/LICENSE-MIT.md) and [`BEERWARE-License`](https://github.com/RedGear-Studio/ASL/blob/main/LICENSE-BEERWARE.md)for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -156,17 +179,17 @@ Distributed under the MIT and BEERWARE License. See [`MIT-LICENSE`](https://gith
 Twitter Name: [@RedGear Studio](https://twitter.com/RedGearS) 
 Email: studio.redgear@gmail.com
 
-Project Link: [https://github.com/RedGear-Studio/Reg-Lang](https://github.com/RedGear-Studio/Reg-Lang)
+Project Link: [https://github.com/RedGear-Studio/ASL](https://github.com/RedGear-Studio/ASL)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-[contributors-shield]: https://img.shields.io/github/contributors/RedGear-Studio/Reg-Lang.svg?style=for-the-badge
-[contributors-url]: https://github.com/RedGear-Studio/Reg-Lang/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/RedGear-Studio/Reg-Lang.svg?style=for-the-badge
-[forks-url]: https://github.com/RedGear-Studio/Reg-Lang/network/members
-[stars-shield]: https://img.shields.io/github/stars/RedGear-Studio/Reg-Lang.svg?style=for-the-badge
-[stars-url]: https://github.com/RedGear-Studio/Reg-Lang/stargazers
-[issues-shield]: https://img.shields.io/github/issues/RedGear-Studio/Reg-Lang.svg?style=for-the-badge
-[issues-url]: https://github.com/RedGear-Studio/Reg-Lang/issues
-[license-shield]: https://img.shields.io/github/license/RedGear-Studio/Reg-Lang.svg?style=for-the-badge
-[license-url]: https://github.com/RedGear-Studio/Reg-Lang/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/RedGear-Studio/ASL.svg?style=for-the-badge
+[contributors-url]: https://github.com/RedGear-Studio/ASL/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/RedGear-Studio/ASL.svg?style=for-the-badge
+[forks-url]: https://github.com/RedGear-Studio/ASL/network/members
+[stars-shield]: https://img.shields.io/github/stars/RedGear-Studio/ASL.svg?style=for-the-badge
+[stars-url]: https://github.com/RedGear-Studio/ASL/stargazers
+[issues-shield]: https://img.shields.io/github/issues/RedGear-Studio/ASL.svg?style=for-the-badge
+[issues-url]: https://github.com/RedGear-Studio/ASL/issues
+[license-shield]: https://img.shields.io/github/license/RedGear-Studio/ASL.svg?style=for-the-badge
+[license-url]: https://github.com/RedGear-Studio/ASL/blob/master/LICENSE.txt

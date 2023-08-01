@@ -1,0 +1,15 @@
+.data
+    msg: .string "Hello World" ; '\0' is added by default
+
+.text
+.global _start
+_start:
+  mov $a0, msg ; mov the start address of the string in $a0 ($1)
+  ; NB: The compiler automatically replace "msg" by the starting address of the string
+  ; msg isn't at address 0 because they may already be some built-in data in the memory
+  sys 2         ; syscall to print, the address of the string is found in $a0 (first argument register)
+  
+  mov $a0, 0   ; mov the ok code for the exit syscall.
+  sys 6         ; Exit the program
+
+.end

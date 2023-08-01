@@ -1,16 +1,16 @@
 [package]
-name = "reg-lang"
+name = "asl"
 version = "0.0.1-alpha"
-authors = ["Higginson Julien <j.h.gipson62@gmail.com>"]
-homepage = "https://redgear.tk/Language.html"
-repository = "https://github.com/RedGear-Studio/Reg-Lang"
-description = "A simple, fast and experimental language named RegLang."
+authors = ["Gipson62 <j.h.gipson62@gmail.com>"]
+homepage = "https://redgear.tk/"
+repository = "https://github.com/RedGear-Studio/ASL"
+description = " [A Simple Language] is a programming language in development written in Rust "
 readme = "README.md"
 edition = "2021"
-license = "GPL-3.0"
+license = "MIT"
 categories = ["language"]
 
 [dependencies]
-clap = "4.2.2"
 pest = "2.5.7"
 pest_derive = "2.5.7"
+colored = "2.0.0"
