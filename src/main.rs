@@ -1,11 +1,15 @@
-pub mod asr_compiler;
-pub mod vm;
+#![allow(unused)]
+pub mod compiler;
+pub mod tree_walker;
+//use std::path::PathBuf;
 
-use std::fs;
-use colored::Colorize;
-use crate::asr_compiler::compiler::ASMContext;
+//use clap::{arg, Command};
+
+use compiler::ir::builder::IRBuilder;
 
 use crate::pest::Parser;
+use crate::compiler::parser::parser::generate_ast;
+use crate::tree_walker::eval::SymbolTable;
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
@@ -14,43 +18,59 @@ extern crate pest_derive;
 #[grammar = "grammar.pest"]
 struct TestParser;
 
-fn main(){
-    let command = std::env::args().nth(1).unwrap_or_else(|| {
-        println!("Reg-Lang CLI v0.1.0
-  USAGE: asl <command> [args]
-  Commands:
-    - compile <path>: Compiles the given file.
-
-NB: Please note that you cannot include external files using the `.include` directive at this time. We apologize for any inconvenience this may cause. If you need to use external files, you can try using a different method of including them, such as copying and pasting the contents of the file into your source code.
-
-We are working to add support for the `.include` directive in a future version of the assembler. Thank you for your understanding.");
-        std::process::exit(0);
-    });
-
-    if command == "compile" {
-        let Some(path) = std::env::args().nth(2) else {
-            eprintln!("{}: You must specify a path to a file", "Error".bold().red());
-            std::process::exit(1);
-        };
-        if !path[..].ends_with(".asr") {
-            eprintln!("{}: You must specify a file with the {} extension", "Error".bold().red(), ".asr".bold());
-            std::process::exit(1);
+fn main() {
+    /*let matches = cli().get_matches();
+    match matches.subcommand() {
+        Some(("run", sub_matches)) => {
+            let path = sub_matches
+                .get_many::<PathBuf>("PATH")
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>();
+            println!("Paths: {:?}", path);
         }
-        let content = fs::read_to_string(&path).unwrap_or_else(|e| {
-            eprintln!("Failed to read input file {}: {}", path, e);
-            std::process::exit(1);
-        });
-        println!("{}: {}", "Parsing".bold().blue(), path);
-        let result = TestParser::parse(Rule::program, &content).unwrap_or_else(|e| {
-            println!("{}:\n{}", "Error".bold().red(), e);
-            std::process::exit(0);
-        });
-        println!("{}", "Finished".bold().green());
-        println!("{} parsed result", "Compiling".bold().blue());
-        let mut context = ASMContext::new();
-        let mut vm = context.compile(result.into_iter().next().unwrap());
-        println!("{}", "Finished".bold().green());
-        println!("{}", "Running".bold().green());
-        vm.run();
+        _ => unreachable!()
+    }*/
+    let input: &str = "
+    function salut(x: int, y: boolean): int
+    begin
+        print x;
+    end;";
+    let program = TestParser::parse(Rule::program, input).unwrap_or_else(|e| panic!("{}", e));
+    for programs in program.into_iter() {
+        match programs.as_rule() {
+            Rule::program => {
+                let ast = generate_ast(programs);
+                let mut ir = IRBuilder::new();
+                ir.build(ast);
+                let mut symbol_table = SymbolTable::default();
+                /*let result = symbol_table.eval(ast.functions, 1);
+                match result {
+                    Ok(_) => (),
+                    Err(e) => println!("{}", e),
+                }*/
+            },
+            _ => unreachable!(),
+        }
     }
 }
+
+/*fn cli() -> Command {
+    Command::new("reg-lang")
+        .about(" A simple and in development programming language written in Rust.")
+        .subcommand_required(true)
+        .arg_required_else_help(true)
+        .allow_external_subcommands(true)
+        .subcommand(
+            Command::new("run")
+                .about("Run a program.")
+                .arg(arg!(-f --file <FILE> "File to run."))
+                .arg_required_else_help(true)
+        )
+        .subcommand(
+            Command::new("compile")
+                .about("Compile a program. Not usable for now.")
+                .arg(arg!(-f --file <FILE> "File to compile."))
+                .arg_required_else_help(true)
+        )
+}*/
