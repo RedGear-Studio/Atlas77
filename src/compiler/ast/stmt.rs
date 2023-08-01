@@ -17,23 +17,5 @@ pub enum Statement {
         cond_expr: Expression,
         body_expr: Vec<Statement>,
         else_expr: Option<Vec<Statement>>,
-    },
-    WhileLoop {
-        cond_expr: Expression,
-        body_expr: Vec<Statement>,
-    },
-    ForLoop {
-        identifier: String,
-        expr: Expression,
-        step: Expression,
-        direction: ForLoopDirection,
-        body_expr: Vec<Statement>,
-
     }
-}
-#[derive(Debug, Clone, PartialEq)]
-pub enum ForLoopDirection {
-    Increase,
-    Decrease,
-    Both
 }

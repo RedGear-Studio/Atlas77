@@ -3,7 +3,7 @@ use std::vec;
 use pest::iterators::Pair;
 use crate::Rule;
 use crate::compiler::ast::func::Function;
-use crate::compiler::ast::{stmt::Statement, expr::Expression, expr::BinaryOperator,  Program, expr::UnaryOperator, literal::Literal, stmt::ForLoopDirection};
+use crate::compiler::ast::{stmt::Statement, expr::Expression, expr::BinaryOperator,  Program, expr::UnaryOperator, literal::Literal};
 use crate::compiler::ir::data_type::IRDataType;
 
 pub fn generate_ast( program: Pair<Rule>) -> Program {
@@ -103,58 +103,6 @@ fn make_statement( statement: Pair<Rule>) -> Statement {
                 } else {
                     None
                 }
-            }
-        },
-        Rule::while_loop => {
-            let mut inner_pairs = statement.into_inner();
-            let condition = make_expression(inner_pairs.next().unwrap().into_inner().next().unwrap());
-            let mut body = vec![];
-            for statements in inner_pairs.next().unwrap().into_inner() {
-                body.push(make_statement(statements.into_inner().next().unwrap()));
-            }
-            Statement::WhileLoop {
-                cond_expr: condition,
-                body_expr: body,
-            }
-        },
-        Rule::for_loop => {
-            let mut inner_pairs = statement.into_inner();
-            let identifier = make_identifier(inner_pairs.next().unwrap());
-            let expr = make_expression(inner_pairs.next().unwrap().into_inner().next().unwrap());
-            let mut step = None;
-            let mut direction = ForLoopDirection::Increase;
-            let mut body = vec![];
-            for something in inner_pairs {
-                match something.as_rule() {
-                    Rule::step => {
-                        step = Some(make_expression(something.into_inner().next().unwrap().into_inner().next().unwrap()));
-                    },
-                    Rule::direction => {
-                        match something.into_inner().next().unwrap().as_rule() {
-                            Rule::increase => direction = ForLoopDirection::Increase,
-                            Rule::decrease => direction = ForLoopDirection::Decrease,
-                            Rule::both => direction = ForLoopDirection::Both,
-                            _ => unreachable!()
-                        };
-                    },
-                    Rule::block => {
-                        for statements in something.into_inner() {
-                            body.push(make_statement(statements.into_inner().next().unwrap()));
-                        }
-                    },
-                    _ =>  unreachable!()
-                }
-            }
-            Statement::ForLoop {
-                identifier,
-                expr,
-                step: if let Some(value) = step {
-                    value
-                } else {
-                    Expression::Literal(Literal::Number(1.0))
-                },
-                direction,
-                body_expr: body,
             }
         },
         _ => unreachable!()
