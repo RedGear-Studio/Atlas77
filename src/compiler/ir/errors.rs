@@ -1,4 +1,4 @@
-use super::ir_nodes::data_type::IRDataType;
+use super::data_type::IRDataType;
 
 pub enum IRResult {
     Success,

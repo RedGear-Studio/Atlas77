@@ -1,4 +1,4 @@
-use super::{ir_nodes::data_type::IRDataType, errors::{IRResult, IRError}};
+use super::{data_type::IRDataType, errors::{IRResult, IRError}};
 
 #[derive(Debug, Clone)]
 pub struct ContextScope {

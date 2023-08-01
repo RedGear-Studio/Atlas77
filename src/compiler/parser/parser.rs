@@ -2,9 +2,9 @@ use std::vec;
 
 use pest::iterators::Pair;
 use crate::Rule;
-use crate::ast::func::Function;
-use crate::ast::{stmt::Statement, expr::Expression, expr::BinaryOperator,  Program, expr::UnaryOperator, literal::Literal, stmt::ForLoopDirection};
-use crate::ir::ir_nodes::data_type::IRDataType;
+use crate::compiler::ast::func::Function;
+use crate::compiler::ast::{stmt::Statement, expr::Expression, expr::BinaryOperator,  Program, expr::UnaryOperator, literal::Literal, stmt::ForLoopDirection};
+use crate::compiler::ir::data_type::IRDataType;
 
 pub fn generate_ast( program: Pair<Rule>) -> Program {
     let mut ast = Program {

@@ -1,6 +1,6 @@
-use crate::ast::{Program, func::Function, stmt::Statement, expr::Expression};
+use crate::compiler::ast::{Program, func::Function, stmt::Statement, expr::Expression};
 
-use super::{context::IRContext, IRProgram, errors::{IRResult, IRError}, ir_nodes::data_type::IRDataType};
+use super::{context::IRContext, IRProgram, errors::{IRResult, IRError}, data_type::IRDataType};
 
 pub struct IRBuilder {
     ctx: IRContext,

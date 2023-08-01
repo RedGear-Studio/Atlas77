@@ -1,18 +1,14 @@
 #![allow(unused)]
-pub mod parser;
-pub mod ast;
 pub mod compiler;
-pub mod vm;
-pub mod ir;
 pub mod tree_walker;
 //use std::path::PathBuf;
 
 //use clap::{arg, Command};
 
-use ir::builder::IRBuilder;
+use compiler::ir::builder::IRBuilder;
 
 use crate::pest::Parser;
-use crate::parser::parser::generate_ast;
+use crate::compiler::parser::parser::generate_ast;
 use crate::tree_walker::eval::SymbolTable;
 extern crate pest;
 #[macro_use]

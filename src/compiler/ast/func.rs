@@ -1,4 +1,4 @@
-use crate::ir::ir_nodes::data_type::IRDataType;
+use crate::compiler::ir::data_type::IRDataType;
 
 use super::stmt::Statement;
 

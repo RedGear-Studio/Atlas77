@@ -1,11 +1,11 @@
-use crate::{ast::{
+use crate::compiler::{ast::{
     stmt::Statement,
     expr::Expression,
     expr::BinaryOperator,
     expr::UnaryOperator,
     literal::Literal, 
     stmt::ForLoopDirection
-}, ir::ir_nodes::data_type::IRDataType};
+}, ir::data_type::IRDataType};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 #[derive(Debug)]
