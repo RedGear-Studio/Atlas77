@@ -33,6 +33,7 @@ grammar Atlas77;
     TRUE: 'true';
     FALSE: 'false';
     LET: 'let';
+    CONST: 'const';
     RETURN: 'return';
     AS: 'as';
     IF: 'if';
@@ -46,26 +47,27 @@ grammar Atlas77;
     IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
 
 // Parser rules
-    program: (statement NEWLINE?)*;
-    statement: (let_statement | return_statement | expression_statement | if_statement | block | function_declaration);
-    let_statement: LET IDENTIFIER (COLON type)? (EQ expression)? SEMICOLON;
-    return_statement: RETURN expression SEMICOLON;
-    expression_statement: expression SEMICOLON;
-    if_statement: IF LPAREN expression RPAREN statement (ELSE statement)?;
+    program: file?;
+    file: (function_declaration | constant_declaration)* EOF;
+    constant_declaration: CONST IDENTIFIER COLON type EQ expr SEMICOLON;
+    statement: (let_statement | return_statement | expr_statement | if_statement | block | function_declaration);
+    let_statement: LET IDENTIFIER COLON type (EQ expr)? SEMICOLON;
+    return_statement: RETURN expr SEMICOLON;
+    expr_statement: expr SEMICOLON;
+    if_statement: IF LPAREN expr RPAREN statement (ELSE statement)?;
     block: LBRACE NEWLINE* (statement NEWLINE?)* RBRACE;
-    function_declaration: FN IDENTIFIER LPAREN (parameter (COMMA parameter)*)? RPAREN (ARROW type)? block;
+    function_declaration: FN IDENTIFIER parameters? (ARROW type)? block;
+    parameters: LPAREN parameter (COMMA parameter)* RPAREN;
     parameter: IDENTIFIER COLON type;
     type: I32 | F32 | BOOL | VOID | CHAR;
-    expression: (assignment | logical_or);
-    assignment: IDENTIFIER EQ assignment | logical_or;
-    logical_or: logical_and (OR logical_and)*;
-    logical_and: equality (AND equality)*;
-    equality: comparison ((EQ | NEQ) comparison)*;
-    comparison: addition ((LT | GT | LTE | GTE) addition)*;
-    addition: multiplication ((PLUS | MINUS) multiplication)*;
-    multiplication: unary ((MULT | DIV | MOD) unary)*;
-    unary: (NOT | MINUS) unary | call;
-    call: primary (LPAREN (expression (COMMA expression)*)? RPAREN)*;
-    primary: (TRUE | FALSE | NUMBER | STRING | IDENTIFIER | LPAREN expression RPAREN);
+    expr
+        : expr (MULT | DIV | MOD) expr
+        | expr (PLUS | MINUS) expr
+        | expr (EQ | NEQ | LT | LTE | GT | GTE) expr
+        | expr (OR | AND) expr
+        | atom;
+    
+    atom: NUMBER | LPAREN expr RPAREN | TRUE | FALSE | call;
+    call: IDENTIFIER LPAREN (expr (COMMA expr)*)? RPAREN;
     NUMBER: [0-9]+;
     STRING: '"' .*? '"';
