@@ -1,6 +1,6 @@
-grammar Atlas77;
+    grammar Atlas77;
 
-//Lexer rules
+    //Lexer rules
     //Literals
     COMMA: ',';
     SEMICOLON: ';';
@@ -16,7 +16,8 @@ grammar Atlas77;
     MULT: '*';
     DIV: '/';
     MOD: '%';
-    EQ: '==';
+    EQ: '=';
+    DEQ: '==';
     NEQ: '!=';
     LT: '<';
     GT: '>';
@@ -46,7 +47,7 @@ grammar Atlas77;
     CHAR: 'char';
     IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
 
-// Parser rules
+    // Parser rules
     program: file?;
     file: (function_declaration | constant_declaration)* EOF;
     constant_declaration: CONST IDENTIFIER COLON type EQ expr SEMICOLON;
@@ -63,11 +64,11 @@ grammar Atlas77;
     expr
         : expr (MULT | DIV | MOD) expr
         | expr (PLUS | MINUS) expr
-        | expr (EQ | NEQ | LT | LTE | GT | GTE) expr
+        | expr (DEQ | NEQ | LT | LTE | GT | GTE) expr
         | expr (OR | AND) expr
         | atom;
-    
-    atom: NUMBER | LPAREN expr RPAREN | TRUE | FALSE | call;
+
+    atom: NUMBER | LPAREN expr RPAREN | TRUE | FALSE | call | STRING;
     call: IDENTIFIER LPAREN (expr (COMMA expr)*)? RPAREN;
     NUMBER: [0-9]+;
     STRING: '"' .*? '"';
