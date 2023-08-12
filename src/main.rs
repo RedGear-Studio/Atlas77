@@ -1,76 +1,40 @@
-#![allow(unused)]
+use compiler::lexer::atlas77_lexer::Atlas77Lexer;
+
 pub mod compiler;
 pub mod tree_walker;
-//use std::path::PathBuf;
 
-//use clap::{arg, Command};
+use std::io::{self, Write};
 
-use compiler::ir::builder::IRBuilder;
+fn evaluate_input(input: &str) -> String {
+    let mut lexer = Atlas77Lexer::new(input.to_string(), "stdin".to_string());
+    let tokens = lexer.make_tokens();
 
-use crate::pest::Parser;
-use crate::compiler::parser::parser::generate_ast;
-use crate::tree_walker::eval::SymbolTable;
-extern crate pest;
-#[macro_use]
-extern crate pest_derive;
+    let mut result = String::new();
+    for token in tokens {
+        result.push_str(format!("{}", token).as_str());
+    }
+    
+    return result;
+}
 
-#[derive(Parser)]
-#[grammar = "grammar.pest"]
-struct TestParser;
+fn repl() {
+    loop {
+        print!(">> ");
+        io::stdout().flush().unwrap();
 
-fn main() {
-    /*let matches = cli().get_matches();
-    match matches.subcommand() {
-        Some(("run", sub_matches)) => {
-            let path = sub_matches
-                .get_many::<PathBuf>("PATH")
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>();
-            println!("Paths: {:?}", path);
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+
+        let input = input.trim();
+        if input == "exit" {
+            break;
         }
-        _ => unreachable!()
-    }*/
-    let input: &str = "
-    function salut(x: int, y: boolean): int
-    begin
-        print x;
-    end;";
-    let program = TestParser::parse(Rule::program, input).unwrap_or_else(|e| panic!("{}", e));
-    for programs in program.into_iter() {
-        match programs.as_rule() {
-            Rule::program => {
-                let ast = generate_ast(programs);
-                let mut ir = IRBuilder::new();
-                ir.build(ast);
-                let mut symbol_table = SymbolTable::default();
-                /*let result = symbol_table.eval(ast.functions, 1);
-                match result {
-                    Ok(_) => (),
-                    Err(e) => println!("{}", e),
-                }*/
-            },
-            _ => unreachable!(),
-        }
+
+        let result = evaluate_input(input);
+        println!("{}", result);
     }
 }
 
-/*fn cli() -> Command {
-    Command::new("reg-lang")
-        .about(" A simple and in development programming language written in Rust.")
-        .subcommand_required(true)
-        .arg_required_else_help(true)
-        .allow_external_subcommands(true)
-        .subcommand(
-            Command::new("run")
-                .about("Run a program.")
-                .arg(arg!(-f --file <FILE> "File to run."))
-                .arg_required_else_help(true)
-        )
-        .subcommand(
-            Command::new("compile")
-                .about("Compile a program. Not usable for now.")
-                .arg(arg!(-f --file <FILE> "File to compile."))
-                .arg_required_else_help(true)
-        )
-}*/
+fn main() {
+    repl();
+}

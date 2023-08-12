@@ -1,5 +1,8 @@
 /target
 *.lock
+*.toml
 .vscode
 .VSCodeCounter
-/benches
+*.jar
+.antlr
+.idea
