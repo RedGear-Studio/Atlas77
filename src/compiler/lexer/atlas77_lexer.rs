@@ -35,29 +35,92 @@ impl Atlas77Lexer {
         
 
         while self.current_char != None {
+            println!("Current char: {}", self.current_char.unwrap());
             match self.current_char.unwrap() {
-                '\t' | '\n' | '\r' | ' ' => {
-                    continue
+                '\t' | '\r' | ' ' => {
+                    self.advance();
+                },
+                '\n' => {
+                    tokens.push(Token::new(TokenType::NewLine, self.pos.clone(), self.pos.clone(), "\n".to_string()));
+                    self.advance();
                 },
                 '0'..='9' => {
                     tokens.push(self.make_number());
-                    self.advance();
                 },
                 'a'..='z' | 'A'..='Z' => {
                     tokens.push(self.make_identifier());
-                    self.advance();
                 },
                 '"' => {
                     tokens.push(self.make_string());
                     self.advance();
-                }
+                },
                 '+' => {
                     tokens.push(Token::new(TokenType::Plus, self.pos.clone(), self.pos.clone(), "+".to_string()));
                     self.advance();
-                }
+                },
                 '-' => {
                     tokens.push(self.make_minus_or_arrow());
-                }
+                },
+                '*' => {
+                    tokens.push(Token::new(TokenType::Star, self.pos.clone(), self.pos.clone(), "*".to_string()));
+                    self.advance();
+                },
+                '/' => {
+                    tokens.push(Token::new(TokenType::Slash, self.pos.clone(), self.pos.clone(), "/".to_string()));
+                    self.advance();
+                },
+                '%' => {
+                    tokens.push(Token::new(TokenType::Modulo, self.pos.clone(), self.pos.clone(), "/".to_string()));
+                    self.advance();
+                },
+                '{' => {
+                    tokens.push(Token::new(TokenType::LBrace, self.pos.clone(), self.pos.clone(), "{".to_string()));
+                    self.advance();
+                },
+                '}' => {
+                    tokens.push(Token::new(TokenType::RBrace, self.pos.clone(), self.pos.clone(), "}".to_string()));
+                    self.advance();
+                },
+                '[' => {
+                    tokens.push(Token::new(TokenType::LBracket, self.pos.clone(), self.pos.clone(), "[".to_string()));
+                    self.advance();
+                },
+                ']' => {
+                    tokens.push(Token::new(TokenType::RBracket, self.pos.clone(), self.pos.clone(), "]".to_string()));
+                    self.advance();
+                },
+                '(' => {
+                    tokens.push(Token::new(TokenType::LParen, self.pos.clone(), self.pos.clone(), "(".to_string()));
+                    self.advance();
+                },
+                ')' => {
+                    tokens.push(Token::new(TokenType::RParen, self.pos.clone(), self.pos.clone(), ")".to_string()));
+                    self.advance();
+                },
+                '!' => {
+                    tokens.push(self.make_not_equal());
+                },
+                '=' => {
+                    tokens.push(self.make_equal());
+                },
+                ',' => {
+                    tokens.push(Token::new(TokenType::Comma, self.pos.clone(), self.pos.clone(), ",".to_string()));
+                    self.advance();
+                },
+                ';' => {
+                    tokens.push(Token::new(TokenType::Semicolon, self.pos.clone(), self.pos.clone(), ";".to_string()));
+                    self.advance();
+                },
+                ':' => {
+                    tokens.push(Token::new(TokenType::Colon, self.pos.clone(), self.pos.clone(), ":".to_string()));
+                    self.advance();
+                },
+                '>' => {
+                    tokens.push(self.make_greater());
+                },
+                '<' => {
+                    tokens.push(self.make_less());
+                },
                 _ => {
                     errors.push(LexerError::new().add_message(format!("Unexpected character: {}", self.current_char.unwrap())).add_location(self.pos.clone()));
                     self.advance();
@@ -129,5 +192,56 @@ impl Atlas77Lexer {
         }
 
         return Token::new(tok_type, pos_start, self.pos.clone(), lexeme);
+    }
+
+    pub fn make_not_equal(&mut self) -> Token {
+        let pos_start = self.pos.clone();
+        self.advance();
+
+        if self.current_char == Some('=') {
+            self.advance();
+            return Token::new(TokenType::DoubleEqual, pos_start, self.pos.clone(), "==".to_string());
+        } else {
+            return Token::new(TokenType::NotEqual, pos_start, self.pos.clone(), "!=".to_string());
+        }        
+    }
+
+    pub fn make_equal(&mut self) -> Token {
+        let pos_start = self.pos.clone();
+        self.advance();
+
+        if self.current_char == Some('=') {
+            self.advance();
+            return Token::new(TokenType::DoubleEqual, pos_start, self.pos.clone(), "==".to_string());
+        } else if self.current_char == Some('>') {
+            self.advance();
+            return Token::new(TokenType::FatArrow, pos_start, self.pos.clone(), "=>".to_string());
+        } else {
+            return Token::new(TokenType::Equal, pos_start, self.pos.clone(), "=".to_string());
+        }
+    }
+    
+    pub fn make_greater(&mut self) -> Token {
+        let pos_start = self.pos.clone();
+        self.advance();
+
+        if self.current_char == Some('=') {
+            self.advance();
+            return Token::new(TokenType::GreaterEqual, pos_start, self.pos.clone(), ">=".to_string());
+        } else {
+            return Token::new(TokenType::Greater, pos_start, self.pos.clone(), ">".to_string());
+        }
+    }
+
+    pub fn make_less(&mut self) -> Token {
+        let pos_start = self.pos.clone();
+        self.advance();
+
+        if self.current_char == Some('=') {
+            self.advance();
+            return Token::new(TokenType::LessEqual, pos_start, self.pos.clone(), "<=".to_string());
+        } else {
+            return Token::new(TokenType::Less, pos_start, self.pos.clone(), "<".to_string());
+        }
     }
 }
