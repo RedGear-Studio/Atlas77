@@ -1,6 +1,6 @@
 use crate::compiler::errors::error::Error;
 
-use super::{tokens::{TokenType, Token}, position::Position, lexererrors::LexerError};
+use super::{tokens::{TokenType, Token}, position::Position};
 
 #[derive(Debug, Default)]
 pub struct Atlas77Lexer {
@@ -29,9 +29,9 @@ impl Atlas77Lexer {
         } else {None}; 
     }
 
-    pub fn make_tokens(&mut self) -> Vec<Token> {
+    pub fn make_tokens(&mut self) -> (Vec<Error>, Vec<Token>) {
         let mut tokens: Vec<Token> = Vec::new();
-        let mut errors: Vec<LexerError> = Vec::new(); 
+        let mut errors: Vec<Error> = Vec::new(); 
         
 
         while self.current_char != None {
@@ -122,13 +122,14 @@ impl Atlas77Lexer {
                     tokens.push(self.make_less());
                 },
                 _ => {
-                    errors.push(LexerError::new().add_message(format!("Unexpected character: {}", self.current_char.unwrap())).add_location(self.pos.clone()));
+                    errors.push(Error::new().add_message(format!("Unexpected character: {}", self.current_char.unwrap())).add_location(self.pos.clone()));
                     self.advance();
                 }
             }
         }
+        tokens.push(Token::new(TokenType::Eof, self.pos.clone(), self.pos.clone(), "".to_string()));
 
-        tokens
+        (errors, tokens)
     }
 
     pub fn make_number(&mut self) -> Token {

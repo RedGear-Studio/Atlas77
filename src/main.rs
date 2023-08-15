@@ -1,17 +1,22 @@
-use compiler::lexer::atlas77_lexer::Atlas77Lexer;
+use compiler::{lexer::atlas77_lexer::Atlas77Lexer, errors::error::Error};
 
 pub mod compiler;
 pub mod tree_walker;
+pub mod types;
 
 use std::io::{self, Write};
 
 fn evaluate_input(input: &str) -> String {
     let mut lexer = Atlas77Lexer::new(input.to_string(), "stdin".to_string());
-    let tokens = lexer.make_tokens();
+    let (errors, tokens) = lexer.make_tokens();
 
     let mut result = String::new();
     for token in tokens {
         result.push_str(format!("{}", token).as_str());
+    }
+
+    for error in errors {
+        println!("{}", error.message());
     }
     
     return result;
@@ -36,5 +41,7 @@ fn repl() {
 }
 
 fn main() {
+    let err = Error::new();
+
     repl();
 }

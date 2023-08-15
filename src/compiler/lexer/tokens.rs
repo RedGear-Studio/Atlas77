@@ -2,6 +2,7 @@ use core::fmt;
 
 use super::position::Position;
 
+#[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub pos_start: Position,
@@ -38,7 +39,7 @@ impl Token {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
     Eof,
     Identifier(String),

@@ -1,4 +1,4 @@
-use crate::compiler::{ast::{
+/*use crate::compiler::{parser::ast::{
     stmt::Statement,
     expr::Expression,
     expr::BinaryOperator,
@@ -383,4 +383,4 @@ impl SymbolTable {
             }
         }
     }
-}
+}*/

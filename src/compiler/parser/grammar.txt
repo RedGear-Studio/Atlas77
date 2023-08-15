@@ -1,0 +1,96 @@
+program         : declaration* EOI;
+
+declaration     : funDecl
+                | structDecl
+                | constDecl
+                | enumDecl;
+
+funDecl         : FUNCTION IDENTIFIER LPAREN arg* RPAREN ARROW type LBRACE statement* RBRACE;
+
+arg             : type COLON IDENTIFIER;
+
+structDecl      : STRUCT IDENTIFIER LBRACE structField* RBRACE;
+
+structField     : type COLON IDENTIFIER SEMICOLON;
+
+constDecl       : CONST IDENTIFIER type EQ expression SEMICOLON;
+
+enumDecl        : ENUM IDENTIFIER LBRACE enumValue (COMMA enumValue)* RBRACE;
+
+enumValue       : IDENTIFIER
+                | IDENTIFIER EQ expression;
+
+type            : primitiveType
+                | compoundType;
+
+primitiveType   : INT
+                | FLOAT
+                | CHAR
+                | STRING
+                | BOOL;
+
+compoundType    : ARRAY LBRACKET expression RBRACKET OF type
+                | IDENTIFIER;
+
+statement       : expression SEMICOLON
+                | ifStatement
+                | whileStatement
+                | forStatement
+                | returnStatement
+                | block;
+
+ifStatement     : IF LPAREN expression RPAREN block (ELSE block)?;
+
+whileStatement : WHILE LPAREN expression RPAREN block;
+
+forStatement   : FOR LPAREN forControl RPAREN block;
+
+forControl     : forInit SEMICOLON expression SEMICOLON expression;
+
+forInit        : expression
+               | variableDeclaration;
+
+returnStatement: RETURN expression? SEMICOLON;
+
+block          : LBRACE statement* RBRACE;
+
+expression     : assignment;
+
+assignment     : leftValue ASSIGN expression
+               | logicalOr;
+
+leftValue      : IDENTIFIER
+               | arrayAccess
+               | fieldAccess;
+
+arrayAccess    : IDENTIFIER LBRACKET expression RBRACKET;
+
+fieldAccess    : IDENTIFIER DOT IDENTIFIER;
+
+logicalOr      : logicalAnd (LOGICAL_OR logicalAnd)*;
+
+logicalAnd     : equality (LOGICAL_AND equality)*;
+
+equality       : relational ((EQUAL | NOT_EQUAL) relational)*;
+
+relational     : additive ((LESS | LESS_EQUAL | GREATER | GREATER_EQUAL) additive)*;
+
+additive       : multiplicative ((PLUS | MINUS) multiplicative)*;
+
+multiplicative : unary ((MULTIPLY | DIVIDE) unary)*;
+
+unary          : (MINUS | NOT) unary
+               | primary;
+
+primary        : literal
+               | IDENTIFIER arguments?
+               | LPAREN expression RPAREN;
+
+arguments      : LPAREN (expression (COMMA expression)*)? RPAREN;
+
+literal        : INT_LITERAL
+               | FLOAT_LITERAL
+               | CHAR_LITERAL
+               | STRING_LITERAL
+               | TRUE
+               | FALSE;
