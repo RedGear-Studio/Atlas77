@@ -134,6 +134,19 @@ impl<'a> Lexer<'a> {
                     _ => Some(Token::String(string)),
                 }
             }
+            '\'' => {
+                let ch = self.next().unwrap();
+                match self.next() {
+                    None => Some(Token::UnterminatedString),
+                    Some(c) => {
+                        if c != '\'' {
+                            Some(Token::UnterminatedString)
+                        } else {
+                            Some(Token::Char(ch))
+                        }
+                    },
+                }
+            },
             x if x.is_numeric() => self.number(x),
             x if x.is_ascii_alphabetic() || x == '_' => self.identifier(x),
             '.' => Some(Token::Dot),

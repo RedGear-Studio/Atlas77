@@ -1,4 +1,4 @@
-use std::fmt::{Display, write};
+use std::fmt::Display;
 use atlas_misc::span::WithSpan;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -39,6 +39,7 @@ pub enum Token {
     // Literals.
     Identifier(String),
     String(String),
+    Char(char),
     Float(f64),
     Int(i64),
 
@@ -105,6 +106,7 @@ pub enum TokenKind {
     // Literals.
     Identifier,
     String,
+    Char,
     Int,
     Float,
 
@@ -180,6 +182,7 @@ impl From<&Token> for TokenKind {
             Token::Or => TokenKind::Or,
             Token::Identifier(_) => TokenKind::Identifier,
             Token::String(_) => TokenKind::String,
+            Token::Char(_) => TokenKind::Char,
             Token::Float(_) => TokenKind::Float,
             Token::Int(_) => TokenKind::Int,
             Token::Struct => TokenKind::Struct,
@@ -240,6 +243,7 @@ impl Display for TokenKind {
             TokenKind::Or => write!(f, "Or"),
             TokenKind::Identifier => write!(f, "Identifier"),
             TokenKind::String => write!(f, "String"),
+            TokenKind::Char => write!(f, "Char"),
             TokenKind::Float => write!(f, "Float"),
             TokenKind::Int => write!(f, "Int"),
             TokenKind::Struct => write!(f, "Struct"),
