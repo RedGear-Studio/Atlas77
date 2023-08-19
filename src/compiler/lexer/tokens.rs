@@ -20,6 +20,10 @@ impl Token {
         }
     }
 
+    pub fn matches(self, token_type: TokenType) -> bool {
+        self.token_type == token_type
+    }
+
     pub fn make_ident_ttype(id_str: String) -> TokenType {
         match id_str.as_str() {
             "if" => TokenType::If,
@@ -39,7 +43,7 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     Eof,
     Identifier(String),

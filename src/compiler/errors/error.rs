@@ -2,22 +2,22 @@ use crate::compiler::lexer::position::Position;
 use colored::{self, Colorize};
 use super::error_types::ErrorType;
 
-
-pub struct Error {
-    pub message: String,
-    pub context: String,
+#[derive(Debug, Clone)]
+pub struct Error<'a> {
+    pub message: &'a str,
+    pub context: &'a str,
     pub pos: Position,
-    pub filename: String,
+    pub filename: &'a str,
     pub type_: ErrorType
 }
 
-impl Error {
+impl<'a> Error<'a> {
     pub fn new() -> Self {
         Self {
-            message: String::new(),
-            context: String::new(),
+            message: "",
+            context: "",
             pos: Position::default(),
-            filename: "stdin".to_string(),
+            filename: "stdin",
             type_: ErrorType::default(),
         }
     }
@@ -25,42 +25,42 @@ impl Error {
     pub fn message(&self) -> String {
         format!("{}:\n {}\n {}", self.type_, self.context, self.message.bold())
     }
-    pub fn add_context(&self, context: String) -> Self {
+    pub fn add_context(&self, context: &'a str) -> Self {
         return Self {
-            message: self.message.to_owned(),
+            message: self.message,
             context,
             pos: self.pos.to_owned(),
-            filename: self.filename.to_owned(),
+            filename: self.filename,
             type_: self.type_.to_owned()
         }
     }
     
     pub fn add_location(&self, pos: Position) -> Self {
         return Self {
-            message: self.message.to_owned(),
-            context: self.context.to_owned(),
+            message: self.message,
+            context: self.context,
             pos,
-            filename: self.filename.to_owned(),
+            filename: self.filename,
             type_: self.type_.to_owned()
         }
     }
     
-    pub fn add_message(&self, message: String) -> Self {
+    pub fn add_message(&self, message: &'a str) -> Self {
         return Self {
             message,
-            context: self.context.to_owned(),
+            context: self.context,
             pos: self.pos.to_owned(),
-            filename: self.filename.to_owned(),
+            filename: self.filename,
             type_: self.type_.to_owned()
         }
     }
 
     pub fn add_type(&self, type_: ErrorType) -> Self {
         return Self {
-            message: self.message.to_owned(),
-            context: self.context.to_owned(),
+            message: self.message,
+            context: self.context,
             pos: self.pos.to_owned(),
-            filename: self.filename.to_owned(),
+            filename: self.filename,
             type_,
         }
     }

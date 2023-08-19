@@ -10,5 +10,9 @@ edition = "2021"
 license = "MIT"
 categories = ["language"]
 
-[dependencies]
-colored = "2.0.0"
+[workspace]
+
+members = [
+    "atlas-syntax",
+    "atlas-misc"
+    ]

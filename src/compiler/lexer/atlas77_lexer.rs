@@ -3,20 +3,22 @@ use crate::compiler::errors::error::Error;
 use super::{tokens::{TokenType, Token}, position::Position};
 
 #[derive(Debug, Default)]
-pub struct Atlas77Lexer {
+pub struct Atlas77Lexer<'a> {
     pub content: Vec<char>,
     pub file_name: String,
     pub pos: Position,
     pub current_char: Option<char>,
+    errors: &'a [Error<'a>],
 }
 
-impl Atlas77Lexer {
+impl<'a> Atlas77Lexer<'a> {
     pub fn new(content: String, file_name: String) -> Self {
         let mut lexer = Self {
             content: content.to_string().chars().collect(),
             file_name,
             pos: Position::default(),
             current_char: None,
+            errors: todo!(),
         };
         lexer.current_char = Some(lexer.content[lexer.pos.pos]);
         lexer
@@ -122,7 +124,7 @@ impl Atlas77Lexer {
                     tokens.push(self.make_less());
                 },
                 _ => {
-                    errors.push(Error::new().add_message(format!("Unexpected character: {}", self.current_char.unwrap())).add_location(self.pos.clone()));
+                    errors.push(Error::new().add_message(&format!("Unexpected character: {}", self.current_char.unwrap())).add_location(self.pos.clone()));
                     self.advance();
                 }
             }
