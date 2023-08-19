@@ -44,7 +44,7 @@ impl Span {
         let line_start = file[..start_byte].rfind('\n').map(|idx| idx + 1).unwrap_or(0);
         let line_end = file[end_byte..].find('\n').map(|idx| end_byte + idx).unwrap_or(end_byte);
 
-        let line_text = &file[line_start..=line_end];
+        let line_text = &file[line_start..=(line_end - 1)];
         let line_number = file[..start_byte].chars().filter(|&c| c == '\n').count() + 1;
         let column_number = start_byte - line_start + 1;
 

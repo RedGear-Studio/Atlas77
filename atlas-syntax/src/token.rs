@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
     Eof,
@@ -49,4 +51,60 @@ pub enum TokenKind {
     F32Type,
     CharType,
     StringType,
+}
+
+
+pub enum Token {
+    // Single-character tokens.
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    LeftBracket,
+    RightBracket,
+    Comma,
+    Dot,
+    Minus,
+    Plus,
+    Semicolon,
+    Slash,
+    Star,
+
+    // One or two character tokens.
+    Bang,
+    BangEqual,
+    Equal,
+    EqualEqual,
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
+    Arrow,
+    FatArrow,
+
+    // Literals.
+    Identifier(String),
+    String(String),
+    Number(f64),
+
+    // Keywords.
+    And,
+    Struct,
+    Else,
+    False,
+    Fun,
+    If,
+    Nil,
+    Or,
+    Print,
+    Return,
+    This,
+    True,
+    Let,
+    Include,
+
+    // Other.
+    Eof,
+    UnterminatedString,
+    Unknown(char),
 }
