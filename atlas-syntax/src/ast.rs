@@ -102,14 +102,15 @@ pub enum Statement {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Binary {
-        lhs: WithSpan<Box<Expression>>,
+        lhs: Box<WithSpan<Expression>>,
         op: WithSpan<BinaryOperator>,
-        rhs: WithSpan<Box<Expression>>,
+        rhs: Box<WithSpan<Expression>>,
     },
     Call {
-        ident: WithSpan<Ident>,
+        ident: Box<WithSpan<Expression>>,
         args: Vec<WithSpan<Expression>>,
     },
+    Grouping(Box<WithSpan<Expression>>),
     Float(f64),
     Int(i64),
     Boolean(bool),
@@ -144,8 +145,8 @@ pub enum Expression {
         prop: WithSpan<Ident>,
         val: Box<WithSpan<Expression>>
     },
-    ListVec {
-        items: Box<WithSpan<Expression>>
+    List {
+        items: Vec<WithSpan<Expression>>
     },
     ListGet {
         arr: Box<WithSpan<Expression>>,

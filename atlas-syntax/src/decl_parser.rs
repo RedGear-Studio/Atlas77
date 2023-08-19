@@ -97,5 +97,5 @@ fn parse_type_decl(it: &mut Parser) -> Result<WithSpan<Declaration>, ()> {
 }
 
 fn parse_stmt(it: &mut Parser) -> Result<WithSpan<Statement>, ()> {
-    todo!()
+    super::stmt_parser::parse(it)
 }
