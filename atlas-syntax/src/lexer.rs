@@ -6,12 +6,11 @@ use crate::token::*;
 struct Lexer<'a> {
     chars: Peekable<Chars<'a>>,
     pos: BytePos,
-    file_name: &'a str, //No need to always copy paste it everywhere
     keywords: HashMap<&'a str, Token>,
 }
 
 impl<'a> Lexer<'a> {
-    fn new(buf: &'a str, file_name: &'a str) -> Self {
+    fn new(buf: &'a str) -> Self {
         let mut keywords = HashMap::new();
         use crate::token::Token::*;
         keywords.insert("struct", Struct);
@@ -31,10 +30,13 @@ impl<'a> Lexer<'a> {
         keywords.insert("int", TInt);
         keywords.insert("bool", TBool);
         keywords.insert("void", TVoid);
+        keywords.insert("const", Const);
+        keywords.insert("enum", Enum);
+        keywords.insert("type", Type);
+
         Lexer {
             chars: buf.chars().peekable(),
             pos: BytePos::default(),
-            file_name,
             keywords
         }
     }
@@ -110,7 +112,15 @@ impl<'a> Lexer<'a> {
 
     fn match_token(&mut self, ch: char) -> Option<Token> {
         match ch {
-            '=' => Some(self.either('=', Token::EqualEqual, Token::Equal)),
+            '=' => {
+                if self.consume_if(|ch| ch == '=') {
+                    Some(Token::EqualEqual)
+                } else if self.consume_if(|ch| ch == '>') {
+                    Some(Token::FatArrow)
+                } else {
+                    Some(Token::Equal)
+                }
+            },
             '!' => Some(self.either('=', Token::BangEqual, Token::Bang)),
             '<' => Some(self.either('=', Token::LessEqual, Token::Less)),
             '>' => Some(self.either('=', Token::GreaterEqual, Token::Greater)),
@@ -118,6 +128,11 @@ impl<'a> Lexer<'a> {
             '/' => {
                 if self.consume_if(|ch| ch == '/') {
                     self.consume_while(|ch| ch != '\n');
+                    None
+                } else if self.consume_if(|ch| ch == '*') {
+                    self.consume_while(|ch| ch != '*');
+                    self.consume_if(|ch| ch == '*');
+                    self.consume_if(|ch| ch == '/');
                     None
                 } else {
                     Some(Token::Slash)
@@ -157,10 +172,14 @@ impl<'a> Lexer<'a> {
             '[' => Some(Token::LeftBracket),
             ']' => Some(Token::RightBracket),
             ',' => Some(Token::Comma),
-            '-' => Some(Token::Minus),
+            '-' => Some(self.either('>', Token::Arrow, Token::Minus)),
             '+' => Some(Token::Plus),
             ';' => Some(Token::Semicolon),
             '*' => Some(Token::Star),
+            '%' => Some(Token::Percent),
+            '|' => Some(self.either('|', Token::Pipe, Token::Or)),
+            '&' => Some(self.either('&', Token::Ampersand, Token::And)),
+            ':' => Some(Token::Colon),
             c => Some(Token::Unknown(c)),
         }
     }
@@ -233,8 +252,7 @@ impl<'a> Lexer<'a> {
     }
 }
 
-
-pub fn tokenize(content: &str, file_name: &str) -> Vec<WithSpan<Token>> {
-    let mut lexer = Lexer::new(content, file_name);
+pub fn tokenize(content: &str) -> Vec<WithSpan<Token>> {
+    let mut lexer = Lexer::new(content);
     lexer.tokenize()
 }

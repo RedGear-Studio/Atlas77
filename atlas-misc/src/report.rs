@@ -2,18 +2,18 @@ use std::fmt::Display;
 use colored::Colorize;
 use crate::{span::Span, file::FilePath};
 
-#[derive(Debug)]
-pub struct Report<'a> {
+#[derive(Debug, Clone, PartialEq)]
+pub struct Report {
     span: Span,
     severity: Severity,
     code: u32,
     message: String,
-    path: FilePath<'a>,
+    path: FilePath,
     context: String,
 }
 
-impl<'a> Report<'a> {
-    pub fn new(span: Span, severity: Severity, code: u32, message: String, path: FilePath<'a>, context: String) -> Self {
+impl Report {
+    pub fn new(span: Span, severity: Severity, code: u32, message: String, path: FilePath, context: String) -> Self {
         Self {
             span,
             severity,
@@ -25,7 +25,7 @@ impl<'a> Report<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Severity {
     Error,
     Warning,
@@ -44,9 +44,9 @@ impl Display for Severity {
     }
 }
 
-impl<'a> Display for Report<'a> {
+impl Display for Report {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let res_code = self.path.get_code();
+        let res_code = self.path.clone().get_code();
         if let Ok(code) = res_code {
             let (line, column, code) = self.span.get_line_info(&code);
             let lines = code.lines();
@@ -63,7 +63,7 @@ impl<'a> Display for Report<'a> {
 {}{}
 
     
-    {}",self.severity, self.code, self.message, self.path.file_name,
+    {}",self.severity, self.code, self.message, FilePath::get_file_name(&self.path.path),
                         line.to_string().blue(), column.to_string().blue(), line.to_string().blue(), txt, self.context)?
                 }
                 _ => {
