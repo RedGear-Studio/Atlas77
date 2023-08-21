@@ -1,0 +1,11 @@
+//Yoooo
+fn main() -> void {
+    let a = 5;
+    let b = 10;
+    let res = add(a, b);
+    print res;
+}
+
+fn add(a: int, b: int) -> int {
+    return a + b;
+}

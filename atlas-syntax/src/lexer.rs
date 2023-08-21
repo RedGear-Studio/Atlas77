@@ -114,12 +114,11 @@ impl<'a> Lexer<'a> {
         match ch {
             '=' => {
                 if self.consume_if(|ch| ch == '=') {
-                    Some(Token::EqualEqual)
+                    return Some(Token::EqualEqual);
                 } else if self.consume_if(|ch| ch == '>') {
-                    Some(Token::FatArrow)
-                } else {
-                    Some(Token::Equal)
+                    return Some(Token::FatArrow);
                 }
+                Some(Token::Equal)
             },
             '!' => Some(self.either('=', Token::BangEqual, Token::Bang)),
             '<' => Some(self.either('=', Token::LessEqual, Token::Less)),
@@ -128,15 +127,14 @@ impl<'a> Lexer<'a> {
             '/' => {
                 if self.consume_if(|ch| ch == '/') {
                     self.consume_while(|ch| ch != '\n');
-                    None
+                    return None;
                 } else if self.consume_if(|ch| ch == '*') {
                     self.consume_while(|ch| ch != '*');
                     self.consume_if(|ch| ch == '*');
                     self.consume_if(|ch| ch == '/');
-                    None
-                } else {
-                    Some(Token::Slash)
+                    return None;
                 }
+                Some(Token::Slash)
             }
             '\n' => None,
             '\t' => None,
@@ -155,10 +153,9 @@ impl<'a> Lexer<'a> {
                     None => Some(Token::UnterminatedString),
                     Some(c) => {
                         if c != '\'' {
-                            Some(Token::UnterminatedString)
-                        } else {
-                            Some(Token::Char(ch))
+                            return Some(Token::UnterminatedString);
                         }
+                        Some(Token::Char(ch))
                     },
                 }
             },
@@ -228,10 +225,9 @@ impl<'a> Lexer<'a> {
                 .collect();
             number.push('.');
             number.push_str(num2.as_str());
-            Some(Token::Float(number.parse::<f64>().unwrap()))
-        } else {
-            Some(Token::Int(number.parse::<i64>().unwrap()))
+            return Some(Token::Float(number.parse::<f64>().unwrap()));
         }
+        Some(Token::Int(number.parse::<i64>().unwrap()))
     }
 
     fn tokenize(&mut self) -> Vec<WithSpan<Token>> {

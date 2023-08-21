@@ -51,6 +51,7 @@ pub enum Declaration {
         vis: Visibility,
         ident: WithSpan<Ident>,
         args: Vec<WithSpan<(WithSpan<Ident>, WithSpan<Type>)>>,
+        ret: WithSpan<Type>,
         stmts: Vec<WithSpan<Statement>>,
     },
     Const {
@@ -72,7 +73,7 @@ pub enum Declaration {
     Include {
         path: WithSpan<String>,
     },
-    Typedef {
+    TypeDef {
         ident: WithSpan<Ident>,
         type_: WithSpan<Type>,
     },

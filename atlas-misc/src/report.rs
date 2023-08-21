@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display, Error};
 use colored::Colorize;
 use crate::{span::Span, file::FilePath};
 
@@ -64,14 +64,13 @@ impl Display for Report {
 
     
     {}",self.severity, self.code, self.message, FilePath::get_file_name(&self.path.path),
-                        line.to_string().blue(), column.to_string().blue(), line.to_string().blue(), txt, self.context)?
+                        line.to_string().blue(), column.to_string().blue(), line.to_string().blue(), txt, self.context)
                 }
-                _ => {
-
-                }
-            }
-        }
-        
-        todo!()
+                Severity::Warning => todo!(),
+                Severity::Note => todo!(),
+                Severity::Tip => todo!(),
+            };
+        };
+        Ok(())
     }
 }

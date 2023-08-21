@@ -34,6 +34,7 @@ pub fn expect_type(p: &mut Parser) -> Result<WithSpan<Type>, ()> {
         Token::TFloat => Ok(WithSpan::new(Type::Float, token.span)),
         Token::TChar => Ok(WithSpan::new(Type::Char, token.span)),
         Token::TVoid => Ok(WithSpan::new(Type::Void, token.span)),
+        Token::Identifier(ident) => Ok(WithSpan::new(Type::Custom(ident.clone()), token.span)),
         _ => {
             p.error(format!("Expected {} got {}", TokenKind::TBool, token.value), token.span, 0, "Not the expected token".to_string());
             Err(())

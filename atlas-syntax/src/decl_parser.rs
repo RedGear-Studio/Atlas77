@@ -45,6 +45,12 @@ fn parse_fn(it: &mut Parser) -> Result<WithSpan<Declaration>, ()> {
         Vec::new()
     };
     it.expect(TokenKind::RightParen)?;
+    //TODO: Add correct span value.
+    let mut return_type = WithSpan { value: Type::Void, span: Span::empty() };
+    if it.check(TokenKind::Arrow) {
+        it.expect(TokenKind::Arrow)?;
+        return_type = expect_type(it)?;
+    }
     it.expect(TokenKind::LeftBrace)?;
     let mut body: Vec<WithSpan<Statement>> = Vec::new();
     while !it.check(TokenKind::RightBrace) {
@@ -56,6 +62,7 @@ fn parse_fn(it: &mut Parser) -> Result<WithSpan<Declaration>, ()> {
         vis: Visibility::Public, 
         ident: name,
         args: params, 
+        ret: return_type,
         stmts: body
     }, span))
 }
@@ -89,11 +96,41 @@ fn parse_enum_decl(it: &mut Parser) -> Result<WithSpan<Declaration>, ()> {
 }
 
 fn parse_const_decl(it: &mut Parser) -> Result<WithSpan<Declaration>, ()> {
-    todo!()
+    let start_span = it.expect(TokenKind::Const)?;
+    let new_const = parse_const(it)?;
+    let end_span = it.expect(TokenKind::Semicolon)?;
+    let span = Span::union_span(start_span.into(), end_span.into());
+    Ok(WithSpan::new(new_const.value, span))
+}
+
+fn parse_const(it: &mut Parser) -> Result<WithSpan<Declaration>, ()> {
+    use super::expr_parser::parse;
+    let name = expect_identifier(it)?;
+    it.expect(TokenKind::Colon)?;
+    let type_ = expect_type(it)?;
+    it.expect(TokenKind::Equal)?;
+    let value = parse(it)?;
+    Ok(WithSpan::new(Declaration::Const{
+        vis: Visibility::Public,
+        ident: name.clone(),
+        type_: Some(type_),
+        expr: Some(value.clone())
+    }, Span::union_span(name.into(), value.into())))
 }
 
 fn parse_type_decl(it: &mut Parser) -> Result<WithSpan<Declaration>, ()> {
-    todo!()
+    let start_span = it.expect(TokenKind::Type)?;
+    let new_type = parse_type(it)?;
+    let end_token = it.expect(TokenKind::Semicolon)?;
+    let span = Span::union_span(start_span.into(), end_token.span);
+    Ok(WithSpan::new(new_type.value, span))
+}
+
+fn parse_type(it: &mut Parser) -> Result<WithSpan<Declaration>, ()> {
+    let name = expect_identifier(it)?;
+    it.expect(TokenKind::Equal)?;
+    let t = expect_type(it)?;
+    Ok(WithSpan::new(Declaration::TypeDef{ident: name.clone(), type_: t.clone()}, Span::union_span(name.into(), t.into())))
 }
 
 fn parse_stmt(it: &mut Parser) -> Result<WithSpan<Statement>, ()> {

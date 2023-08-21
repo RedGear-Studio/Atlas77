@@ -3,6 +3,7 @@ use crate::token::{Token, TokenKind};
 
 static EOF_TOKEN: WithSpan<Token> = WithSpan::new(Token::Eof, Span::empty());
 
+#[derive(Debug)]
 pub struct Parser<'a> {
     tokens: &'a [WithSpan<Token>],
     pos: usize,

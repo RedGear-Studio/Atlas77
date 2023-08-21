@@ -1,5 +1,5 @@
 fn main() {
-    let ast = atlas_syntax::parse("fn main() { print \"Hello, world!\"; }", "main.rs").unwrap();
+    let ast = atlas_syntax::parse("const main: int = 1;", "main.rs").unwrap();
 
     print!("{:?}", ast);
 }

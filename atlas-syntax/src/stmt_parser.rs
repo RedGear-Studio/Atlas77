@@ -14,6 +14,7 @@ fn parse_stmt(it: &mut Parser) -> Result<WithSpan<Statement>, ()> {
         TokenKind::LeftBrace => parse_block_stmt(it),
         TokenKind::Return => parse_return_stmt(it),
         TokenKind::Include => parse_include_stmt(it),
+        TokenKind::Let => parse_let_stmt(it),
         _ => parse_expr_stmt(it),
     }
 }
@@ -38,6 +39,10 @@ fn parse_return_stmt(it: &mut Parser) -> Result<WithSpan<Statement>, ()> {
 }
 
 fn parse_include_stmt(it: &mut Parser) -> Result<WithSpan<Statement>, ()> {
+    todo!()
+}
+
+fn parse_let_stmt(it: &mut Parser) -> Result<WithSpan<Statement>, ()> {
     todo!()
 }
 
