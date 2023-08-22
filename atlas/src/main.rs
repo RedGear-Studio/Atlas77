@@ -1,4 +1,4 @@
-use atlas_misc::{file::FilePath, report::Report};
+use atlas_misc::report::Report;
 use atlas_syntax::parse;
 
 
@@ -45,6 +45,8 @@ fn main() {
     if res.is_ok() {
         println!("{}", res.unwrap());
     } else {
-        println!("{}", res.unwrap_err()[0]);
+        for report in res.unwrap_err() {
+            println!("{}", report);
+        }
     }
 }

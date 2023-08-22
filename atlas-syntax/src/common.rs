@@ -26,6 +26,25 @@ pub fn expect_string(p: &mut Parser) -> Result<WithSpan<String>, ()> {
     }
 }
 
+pub fn expect_path(p: &mut Parser) -> Result<WithSpan<String>, ()> {
+    let mut path = String::new();
+    let mut cur_tkind = p.peek();
+    let mut cur_tok= p.peek_token();
+    while cur_tkind == TokenKind::Identifier || cur_tkind == TokenKind::Dot || cur_tkind == TokenKind::Slash {
+        cur_tok = p.advance();
+        match cur_tok.value.clone() {
+            Token::Identifier(i) => path.push_str(i.as_str()),
+            Token::Dot => path.push_str("."),
+            Token::Slash => path.push_str("/"),
+            _ => return Err(())
+        }
+        cur_tkind = p.peek();
+    }
+    println!("Path: {}", path);
+    Ok(WithSpan::new(path, cur_tok.span))   
+    
+}
+
 pub fn expect_type(p: &mut Parser) -> Result<WithSpan<Type>, ()> {
     let token = p.advance();
     match &token.value {

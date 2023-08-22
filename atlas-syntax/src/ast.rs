@@ -63,7 +63,7 @@ pub enum Declaration {
     Struct {
         vis: Visibility,
         ident: WithSpan<Ident>,
-        fields: Vec<WithSpan<(Ident, WithSpan<Type>)>>,
+        fields: Vec<WithSpan<(WithSpan<Ident>, WithSpan<Type>)>>,
     },
     Enum {
         vis: Visibility,
@@ -91,7 +91,8 @@ pub enum Statement {
     },
     If {
         cond: WithSpan<Expression>,
-        then: Vec<WithSpan<Statement>>,
+        body: Box<WithSpan<Statement>>,
+        else_: Option<Box<WithSpan<Statement>>>,
     },
     Return(Option<WithSpan<Expression>>),
     Block(Vec<WithSpan<Statement>>),

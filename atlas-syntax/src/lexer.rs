@@ -177,6 +177,7 @@ impl<'a> Lexer<'a> {
             '|' => Some(self.either('|', Token::Pipe, Token::Or)),
             '&' => Some(self.either('&', Token::Ampersand, Token::And)),
             ':' => Some(Token::Colon),
+            '#' => Some(Token::Cross),
             c => Some(Token::Unknown(c)),
         }
     }

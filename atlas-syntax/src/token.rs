@@ -21,6 +21,7 @@ pub enum Token {
     Colon,
     Ampersand,
     Pipe,
+    Cross,
 
     // One or two character tokens.
     Bang,
@@ -70,6 +71,11 @@ pub enum Token {
     UnterminatedString,
     Unknown(char),
 }
+impl Token {
+    pub fn is_identifier(&self) -> bool {
+        matches!(self, Token::Identifier(_))
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenKind {
@@ -91,6 +97,7 @@ pub enum TokenKind {
     Colon,
     Ampersand,
     Pipe,
+    Cross,
 
     // One or two character tokens.
     Bang,
@@ -174,6 +181,7 @@ impl From<&Token> for TokenKind {
             Token::Colon => TokenKind::Colon,
             Token::Ampersand => TokenKind::Ampersand,
             Token::Pipe => TokenKind::Pipe,
+            Token::Cross => TokenKind::Cross,
             Token::Bang => TokenKind::Bang,
             Token::BangEqual => TokenKind::BangEqual,
             Token::Equal => TokenKind::Equal,
@@ -238,6 +246,7 @@ impl Display for TokenKind {
             TokenKind::Colon => write!(f, "Colon"),
             TokenKind::Ampersand => write!(f, "Ampersand"),
             TokenKind::Pipe => write!(f, "Pipe"),
+            TokenKind::Cross => write!(f, "Cross"),
             TokenKind::Bang => write!(f, "Bang"),
             TokenKind::BangEqual => write!(f, "BangEqual"),
             TokenKind::Equal => write!(f, "Equal"),

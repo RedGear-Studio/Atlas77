@@ -1,4 +1,4 @@
-use std::fmt::{Display, Error};
+use std::fmt::Display;
 use colored::Colorize;
 use crate::{span::Span, file::FilePath};
 
@@ -7,20 +7,20 @@ pub struct Report {
     span: Span,
     severity: Severity,
     code: u32,
-    message: String,
+    msg: String,
     path: FilePath,
-    context: String,
+    ctx: String,
 }
 
 impl Report {
-    pub fn new(span: Span, severity: Severity, code: u32, message: String, path: FilePath, context: String) -> Self {
+    pub fn new(span: Span, severity: Severity, code: u32, msg: String, path: FilePath, ctx: String) -> Self {
         Self {
             span,
             severity,
             code,
-            message,
+            msg,
             path,
-            context
+            ctx
         }
     }
 }
@@ -63,8 +63,8 @@ impl Display for Report {
 {}{}
 
     
-    {}",self.severity, self.code, self.message, FilePath::get_file_name(&self.path.path),
-                        line.to_string().blue(), column.to_string().blue(), line.to_string().blue(), txt, self.context)
+    {}",self.severity, self.code, self.msg, FilePath::get_file_name(&self.path.path),
+                        line.to_string().blue(), column.to_string().blue(), line.to_string().blue(), txt, self.ctx)
                 }
                 Severity::Warning => todo!(),
                 Severity::Note => todo!(),
