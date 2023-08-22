@@ -15,7 +15,7 @@ pub fn expect_identifier(p: &mut Parser) -> Result<WithSpan<Ident>, ()> {
     }
 }
 
-pub fn expect_string(p: &mut Parser) -> Result<WithSpan<String>, ()> {
+/*pub fn expect_string(p: &mut Parser) -> Result<WithSpan<String>, ()> {
     let token = p.advance();
     match &token.value {
         Token::String(ident) => Ok(WithSpan::new(ident.clone(), token.span)),
@@ -24,7 +24,7 @@ pub fn expect_string(p: &mut Parser) -> Result<WithSpan<String>, ()> {
             Err(())
         },
     }
-}
+}*/
 
 pub fn expect_path(p: &mut Parser) -> Result<WithSpan<String>, ()> {
     let mut path = String::new();

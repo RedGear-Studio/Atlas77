@@ -71,11 +71,6 @@ pub enum Token {
     UnterminatedString,
     Unknown(char),
 }
-impl Token {
-    pub fn is_identifier(&self) -> bool {
-        matches!(self, Token::Identifier(_))
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenKind {

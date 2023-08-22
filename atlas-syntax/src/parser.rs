@@ -117,7 +117,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn optionally(&mut self, expected: TokenKind) -> Result<bool, ()> {
+    /*pub fn optionally(&mut self, expected: TokenKind) -> Result<bool, ()> {
         let token = self.peek();
         if TokenKind::from(token) == expected {
             self.expect(expected)?;
@@ -125,6 +125,6 @@ impl<'a> Parser<'a> {
         } else {
             Ok(false)
         }
-    }
+    }*/
 
 }

@@ -1,6 +1,6 @@
 use atlas_misc::span::{WithSpan, Span};
 
-use crate::{parser::Parser, ast::*, token::TokenKind, common::{expect_identifier, expect_type, expect_string, expect_path}};
+use crate::{parser::Parser, ast::*, token::TokenKind, common::{expect_identifier, expect_type, expect_path}};
 
 pub fn parse(it: &mut Parser) -> Result<Vec<WithSpan<Declaration>>, ()> {
     parse_program(it)
