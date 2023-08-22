@@ -1,14 +1,7 @@
-[package]
-name = "atlas77"
-version = "0.0.1-alpha"
-authors = ["Gipson62 <j.h.gipson62@gmail.com>"]
-homepage = "https://redgear.tk/"
-repository = "https://github.com/RedGear-Studio/Atlas77"
-description = " Atlas77 is a programming language in development written in Rust "
-readme = "README.md"
-edition = "2021"
-license = "MIT"
-categories = ["language"]
+[workspace]
 
-[dependencies]
-colored = "2.0.0"
+members = [
+    "atlas",
+    "atlas-syntax",
+    "atlas-misc",
+    ]

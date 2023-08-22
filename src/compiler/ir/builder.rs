@@ -1,4 +1,4 @@
-use crate::compiler::ast::{Program, func::Function, stmt::Statement, expr::Expression};
+/*use crate::compiler::ast::{Program, func::Function, stmt::Statement, expr::Expression};
 
 use super::{context::IRContext, IRProgram, errors::{IRResult, IRError}, data_type::IRDataType};
 
@@ -35,4 +35,4 @@ impl IRBuilder {
     pub fn build_var(&mut self, identifier: String, data_type: IRDataType) -> Result<IRResult, IRError> {
         todo!("build_var")
     }
-}
+}*/
