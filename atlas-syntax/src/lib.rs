@@ -3,7 +3,7 @@ use atlas_misc::report::Report;
 
 
 mod lexer;
-mod token;
+pub mod token;
 mod parser;
 mod ast;
 mod decl_parser;
@@ -16,6 +16,7 @@ pub fn parse(code: &str, path: &str) -> Result<AST, Vec<Report>> {
     use lexer::tokenize;
 
     let tokens = tokenize(code);
+    
     let mut parser = crate::parser::Parser::new(&tokens, path);
 
     match parse(&mut parser) {

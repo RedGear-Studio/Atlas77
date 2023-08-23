@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Default)]
 pub struct BytePos(usize);
 impl BytePos {
@@ -5,6 +7,13 @@ impl BytePos {
         BytePos(self.0 + ch.len_utf8())
     }
 }
+
+impl Display for BytePos {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Span {
