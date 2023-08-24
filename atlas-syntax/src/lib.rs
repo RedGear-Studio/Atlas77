@@ -5,7 +5,7 @@ use atlas_misc::report::Report;
 mod lexer;
 pub mod token;
 mod parser;
-mod ast;
+pub mod ast;
 mod decl_parser;
 mod stmt_parser;
 mod expr_parser;
