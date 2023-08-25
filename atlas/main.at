@@ -1,26 +1,5 @@
-//Include an header (.ah -> Atlas Header) in this file
-#include <stdlib.ah>;
+fn ready() -> void {}
 
-struct Position3D {
-    x: float,
-    y: float,
-}
+fn update() -> void {}
 
-enum Error {
-    HEHE,
-    YO,
-}
-
-fn add(a: int, b: int) -> int {
-    return a + b;
-}
-
-fn main() {
-    let a: int = 5;
-    let b: int = 10;
-    let x: int = add(a, b);
-    print("${x}");
-    if 5 + 5 == 10 {
-        print 10;
-    }
-} 
+fn update_events() -> void {}

@@ -1,11 +1,13 @@
-use ast::AST;
+use ast_::AST;
 use atlas_misc::report::Report;
 
 
 mod lexer;
 pub mod token;
 mod parser;
-pub mod ast;
+pub mod ast_;
+mod ast;
+mod env;
 mod decl_parser;
 mod stmt_parser;
 mod expr_parser;

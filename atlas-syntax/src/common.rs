@@ -1,6 +1,6 @@
 use atlas_misc::span::WithSpan;
 
-use crate::ast::{Ident, Type};
+use crate::ast_::{Ident, Type};
 use crate::parser::Parser;
 use crate::token::{Token, TokenKind};
 

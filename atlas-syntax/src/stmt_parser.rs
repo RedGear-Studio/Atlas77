@@ -1,6 +1,6 @@
 use atlas_misc::span::{WithSpan, Span};
 
-use crate::{parser::Parser, ast::{Statement, Expression}, token::TokenKind, common::{expect_identifier, expect_type}};
+use crate::{parser::Parser, ast_::{Statement, Expression}, token::TokenKind, common::{expect_identifier, expect_type}};
 
 
 pub fn parse(it: &mut Parser) -> Result<WithSpan<Statement>, ()> {

@@ -1,6 +1,6 @@
 use atlas_misc::span::{WithSpan, Span};
 
-use crate::{token::{TokenKind, Token}, parser::Parser, ast::{Expression, BinaryOperator, LogicalOperator, UnaryOperator}};
+use crate::{token::{TokenKind, Token}, parser::Parser, ast_::{Expression, BinaryOperator, LogicalOperator, UnaryOperator}};
 
 #[derive(PartialEq, PartialOrd, Copy, Clone)]
 enum Precedence {
