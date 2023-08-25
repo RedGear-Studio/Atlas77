@@ -1,5 +1,5 @@
 use atlas_misc::report::Report;
-use atlas_syntax::parse;
+use atlas_syntax::compile;
 
 use clap::Command;
 
