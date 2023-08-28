@@ -1,5 +1,4 @@
-use std::fmt::Display;
-use atlas_misc::span::WithSpan;
+use crate::env::CoreValue;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
@@ -15,6 +14,15 @@ pub enum Token {
     KwReturn,
     KwTrue,
     KwFalse,
+    KwLet,
+    KwPub,
+    KwStruct,
+    KwEnum,
+    KwType,
+    KwConst,
+    KwPrint,
+    KwNone,
+    KwSelf,
 
     //Identifiers
     Ident(String),
@@ -22,20 +30,20 @@ pub enum Token {
     //Literals
     Int(i64),
     Float(f64),
-    Bool(bool),
     Char(char),
+    String_(String),
 
     //Comments
-    Comment,
+    Comment(String),
 
     //Preprocessor directives
     ///`#start`
     /// 
     ///Used to define when the preprocessor directives start
     Start,
-    Include,
-    Define,
-    Macro,
+    Include(String),
+    Define(String, CoreValue),
+    Macro(String),
     ///`#end`
     /// 
     ///Used to define when the preprocessor directives end
@@ -89,8 +97,12 @@ pub enum Token {
     Question,
     Semicolon,
     Comma,
+    Ampersand,
 
     //Others
     Unknown(char),
+    UnterminatedString,
+    NewLine,
+    Tabulation,
     EOF,
 }

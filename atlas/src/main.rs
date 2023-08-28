@@ -7,11 +7,11 @@ use std::fs;
 
 fn evaluate_input(input: &str, path: &str) -> Result<String, Vec<Report>> {
 
-    let res = parse(input, path)?;
+    let res = compile(input, path);
 
     let mut result = String::new();
     for res in res {
-        result.push_str( format!("{:?}", res.value).as_str());
+        result.push_str( format!("[{:?}] ", res.value).as_str());
     }
 
     return Ok(result);

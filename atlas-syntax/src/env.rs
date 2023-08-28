@@ -1,9 +1,8 @@
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::ast_::Type;
+use crate::token::Token;
 
 pub struct Environment {
     parent: Option<Rc<Environment>>,
@@ -34,12 +33,25 @@ impl Environment {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CoreValue {
     Int(i64),
     Float(f64),
     Bool(bool),
     Char(char),
+}
+
+impl From<Token> for CoreValue {
+    fn from(value: Token) -> Self {
+        match value {
+            Token::Int(i) => CoreValue::Int(i),
+            Token::Float(f) => CoreValue::Float(f),
+            Token::KwTrue => CoreValue::Bool(true),
+            Token::KwFalse => CoreValue::Bool(false),
+            Token::Char(c) => CoreValue::Char(c),
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(Debug)]
