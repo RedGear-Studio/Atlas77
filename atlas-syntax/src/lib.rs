@@ -12,7 +12,7 @@ mod ast;
 mod env;
 
 pub fn compile(input: &str, path: &str) -> Vec<WithSpan<Token>> {
-    let mut lexer = Lexer::new(input);
+    let lexer = Lexer::new(input);
 
     let tokens = lexer.into_iter().collect::<Vec<WithSpan<Token>>>();
     tokens

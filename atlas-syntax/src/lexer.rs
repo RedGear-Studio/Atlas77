@@ -81,7 +81,7 @@ impl<'a> Lexer<'a> {
 
         if let Some(&ch) = chars.peek() {
             if x(ch) {
-                self.next().unwrap();
+                self.advance();
                 true
             } else {
                 false
@@ -97,7 +97,7 @@ impl<'a> Lexer<'a> {
     {
         let mut chars: Vec<char> = Vec::new();
         while let Some(&ch) = self.peek() {
-            println!("ch: {}", ch);
+            //println!("ch: {}", ch);
             if x(ch) {
                 self.advance().unwrap();
                 chars.push(ch);
@@ -126,6 +126,7 @@ impl<'a> Lexer<'a> {
     fn identifier(&mut self, ch: char) -> Option<Token> {
         let mut ident = String::new();
         ident.push(ch);
+        self.advance();
         let rest: String = self
             .consume_while(|c| c.is_ascii_alphanumeric() || c == '_')
             .into_iter()
@@ -140,6 +141,7 @@ impl<'a> Lexer<'a> {
     fn number(&mut self, c: char) -> Option<Token> {
         let mut number = String::new();
         number.push(c);
+        self.advance();
         let num: String = self
             .consume_while(|a| a.is_numeric())
             .into_iter()
@@ -159,19 +161,23 @@ impl<'a> Lexer<'a> {
 
     fn preprocessor(&mut self) -> Option<Token> {
         self.advance()?;
-        let preproc: String = self.consume_while(|ch| ch != '\n' || ch != ' ').into_iter().collect();
+        let preproc: String = self.consume_while(|ch| ch.is_alphabetic()).into_iter().collect();
+        println!("preproc: '{}';", preproc);
         match preproc.as_str() {
             "start" => {
+                //self.advance();
                 Some(Token::Start)
             },
             "end" => {
+                //self.advance();
                 Some(Token::End)
             }
             "include" => {
                 //Get next word and word is <filename>
+                self.advance();
                 if let Some(c) = self.advance() {
                     if c != '"' || c == '<' {
-                        let filename = self.consume_while(|ch| ch != '"' && ch != '<' && ch != '\n').into_iter().collect();
+                        let filename = self.consume_while(|ch| ch.is_alphabetic() || ch == '.' || ch == '_').into_iter().collect();
                         Some(Token::Include(filename))
                     } else {
                         None
@@ -183,7 +189,9 @@ impl<'a> Lexer<'a> {
             "define" => {
                 let mut name = String::new();
                 let value;
+                self.advance();
                 if let Some(c) = self.advance() {
+                    name.push(c);
                     if c.is_alphabetic() || c == '_' {
                         name.push_str(self.consume_while(|ch| ch.is_ascii_alphanumeric() || ch == '_').into_iter().collect::<String>().as_str());
                     }
@@ -191,18 +199,37 @@ impl<'a> Lexer<'a> {
                     self.advance();
                     if let Some(c) = self.advance() {
                         value = self.number(c).unwrap();
+                        //self.advance();
+                        println!("define: {:?}:{:?}", name, value);
                         Some(Token::Define(name, value.into()))
                     } else {
+                        //self.advance();
                         None
                     }
                 } else {
+                    //self.advance();
                     None
                 }
             },
             "macro" => {
+                let mut name = String::new();
+                self.advance();
+                if let Some(c) = self.advance() {
+                    name.push(c);
+                    if c.is_alphabetic() || c == '_' {
+                        name.push_str(self.consume_while(|ch| ch.is_ascii_alphanumeric() || ch == '_').into_iter().collect::<String>().as_str());
+                    }
+                    //Witespace
+                    self.advance();
+                }
+
                 todo!()
+                    
             }
-            _ => None
+            _ => {
+                self.advance();
+                None
+            }
         }
     }
 }
@@ -212,12 +239,16 @@ impl<'a> Iterator for Lexer<'a> {
     type Item = WithSpan<Token>;
     fn next(&mut self) -> Option<Self::Item> {
         use Token::*;
-        println!("pos: {:?}", self.pos);
+        //println!("pos: {:?}", self.pos);
         let start_pos = self.pos;
         let token = match self.peek() {
             Some(&ch) => {
                 match ch {
-                    ' ' | '\t' | '\r' => return self.next(),
+                    ' ' | '\t' | '\r' => {
+                        self.advance();
+                        return self.next();
+                    },
+                    '\n' => NewLine,
                     //Groupings
                     '(' => LParen,
                     ')' => RParen,
@@ -298,7 +329,7 @@ impl<'a> Iterator for Lexer<'a> {
                         Comma
                     },
                     '.' => {
-                        Dot
+                        self.either('.', DoubleDot, Dot)
                     },
                     //Identifiers
                     ch if ch.is_alphabetic() || ch == '_' => {
@@ -308,6 +339,7 @@ impl<'a> Iterator for Lexer<'a> {
                         self.number(x).unwrap()
                     },
                     '"' => {
+                        self.advance();
                         let string: String = self.consume_while(|ch| ch != '"').into_iter().collect();
                         match self.advance() {
                             None => UnterminatedString,
@@ -315,6 +347,7 @@ impl<'a> Iterator for Lexer<'a> {
                         }
                     },
                     '\'' => {
+                        self.advance();
                         let ch = self.advance().unwrap();
                         match self.advance() {
                             None => UnterminatedString,
@@ -345,6 +378,8 @@ impl<'a> Iterator for Lexer<'a> {
         };
 
         self.advance();
+        
+        //println!("token: {:?}", token);
 
         return Some(WithSpan::new(token, Span {
             start: start_pos, 

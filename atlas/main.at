@@ -1,1 +1,38 @@
-+-*25.3
+// Keywords
+if else fn int float bool char void return true false let pub struct enum type const print none self
+
+// Identifiers
+variableName another_variable _underscore
+
+// Literals
+123 456 7.89 0.123 'a' "Hello, world!"
+
+// Comments
+// This is a single-line comment
+/* This is a
+   multi-line comment */
+
+// Preprocessor directives
+#start
+#include <head__er.ah>
+#define MY_CONSTANT 42
+#macro my_macro() { println!("Hello, macro!") }
+#end
+
+// Groupings
+( ) { } [ ]
+
+// Arithmetic Operators
++ - * / %
+
+// Relational Operators
+== != < <= > >=
+
+// Logical Operators
+&& || !
+
+// Assignment Operators
+= += -= *= /= %=
+
+// Punctuation
+: :: . .. -> => | ? ; ,

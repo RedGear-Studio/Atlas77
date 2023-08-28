@@ -1,4 +1,4 @@
-use crate::env::CoreValue;
+use crate::{env::CoreValue, ast_::Type};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
@@ -41,9 +41,15 @@ pub enum Token {
     /// 
     ///Used to define when the preprocessor directives start
     Start,
+    //All the macros are
+    //parsed by the parser
     Include(String),
     Define(String, CoreValue),
-    Macro(String),
+    Macro {
+        name: String,
+        args: String,
+        body: String,
+    },
     ///`#end`
     /// 
     ///Used to define when the preprocessor directives end
