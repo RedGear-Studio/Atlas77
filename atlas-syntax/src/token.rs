@@ -1,4 +1,4 @@
-use crate::{env::CoreValue, ast_::Type};
+use crate::ast::core::{CoreValue, CoreType};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
@@ -10,6 +10,7 @@ pub enum Token {
     KwFloat,
     KwBool,
     KwChar,
+    KwString,
     KwVoid,
     KwReturn,
     KwTrue,

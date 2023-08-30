@@ -28,6 +28,7 @@ impl<'a> Lexer<'a> {
         keywords.insert("char", KwChar);
         keywords.insert("float", KwFloat);
         keywords.insert("int", KwInt);
+        keywords.insert("string", KwString);
         keywords.insert("bool", KwBool);
         keywords.insert("void", KwVoid);
         keywords.insert("const", KwConst);
@@ -211,21 +212,6 @@ impl<'a> Lexer<'a> {
                     None
                 }
             },
-            "macro" => {
-                let mut name = String::new();
-                self.advance();
-                if let Some(c) = self.advance() {
-                    name.push(c);
-                    if c.is_alphabetic() || c == '_' {
-                        name.push_str(self.consume_while(|ch| ch.is_ascii_alphanumeric() || ch == '_').into_iter().collect::<String>().as_str());
-                    }
-                    //Witespace
-                    self.advance();
-                }
-
-                todo!()
-                    
-            }
             _ => {
                 self.advance();
                 None
