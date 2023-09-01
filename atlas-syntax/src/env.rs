@@ -2,15 +2,33 @@ use std::collections::HashMap;
 
 use crate::ast::core::{CoreType, CoreValue};
 
+//Rework the scope system ?
+//Should scopes be owned by the functions instead of the global environment ?
+
+#[derive(Debug, Default)]
 pub struct Environment {
     scopes: Vec<Scope>,
+    //A function is snake_case
     functions: HashMap<String, FunctionSymbol>,
-    //A constant is MACRO_CASE
+    //A constant is SHOUTHY_SNAKE_CASE
     constants: HashMap<String, CoreValue>,
     current_scope: ScopeRef,
 }
 
 impl Environment {
+    pub fn new() -> Self {
+        Environment {
+            scopes: vec![Scope {
+                parent: None,
+                inners: Vec::new(),
+                vars: HashMap::new()
+            }],
+            functions: HashMap::new(),
+            constants: HashMap::new(),
+            current_scope: ScopeRef::default(),
+        }
+    }
+
     pub fn get_function(&self, name: &str) -> Option<&FunctionSymbol> {
         self.functions.get(name)
     }
@@ -40,6 +58,7 @@ impl Environment {
     }    
 }
 
+#[derive(Debug)]
 pub struct FunctionSymbol {
     params: Vec<(String, CoreType)>,
     ret_type: CoreType,
@@ -52,7 +71,7 @@ pub struct Scope {
     vars: HashMap<String, CoreType>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct ScopeRef(u32);
 
 impl ScopeRef {

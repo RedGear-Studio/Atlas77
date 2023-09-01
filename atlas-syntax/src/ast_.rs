@@ -39,7 +39,7 @@ pub enum BinaryOperator {
     EqualEqual,
 }
 
-    #[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum LogicalOperator {
     And,
     Or,
@@ -125,12 +125,12 @@ pub enum Expression {
         expr: Box<WithSpan<Expression>>,
     },
     Variable(WithSpan<Ident>),
-    Logical{
+    Logical {
         lhs: Box<WithSpan<Expression>>,
         op: WithSpan<LogicalOperator>,
         rhs: Box<WithSpan<Expression>>,
     },
-    Assign{
+    Assign {
         ident: WithSpan<Ident>,
         expr: Box<WithSpan<Expression>>
     },

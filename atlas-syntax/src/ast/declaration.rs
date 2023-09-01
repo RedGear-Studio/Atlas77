@@ -1,4 +1,4 @@
-use super::core::CoreType;
+use super::{core::CoreType, statements::Statement};
 
 /// Only contain 1 type of declaration for now (Function)
 pub enum Declaration {
@@ -9,5 +9,5 @@ pub struct Function {
     func_name: String,
     args: Vec<(String, CoreType)>,
     ret_type: CoreType,
-    body: String //Todo
+    body: Vec<Statement> //Todo
 }

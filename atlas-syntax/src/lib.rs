@@ -6,12 +6,13 @@ use lexer::Lexer;
 use token::Token;
 
 
-mod lexer;
-pub mod token;
-mod parser;
-pub mod ast_;
 pub mod ast;
+mod case;
 mod env;
+mod lexer;
+pub mod ast_;
+mod parser;
+pub mod token;
 
 pub fn compile(input: &str, path: &str) -> Vec<WithSpan<Token>> {
     let lexer = Lexer::new(input);
