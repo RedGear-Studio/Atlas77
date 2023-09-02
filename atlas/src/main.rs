@@ -11,7 +11,7 @@ fn evaluate_input(input: &str, path: &str) -> Result<String, Vec<Report>> {
 
     let mut result = String::new();
     for res in res {
-        result.push_str( format!("[{:?}] ", res.value).as_str());
+        result.push_str( format!("[{:?}] ", res).as_str());
     }
 
     return Ok(result);

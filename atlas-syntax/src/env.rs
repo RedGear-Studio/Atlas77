@@ -18,6 +18,14 @@ impl Environment {
         }
     }
 
+    pub fn add_function(&mut self, name: String, params: Vec<(String, CoreType)>, ret_type: CoreType) {
+        self.functions.insert(name, FunctionEnvironment::new(params, ret_type));
+    }
+
+    pub fn add_constant(&mut self, name: String, value: CoreValue) {
+        self.constants.insert(name, value);
+    }
+
     pub fn get_function(&self, name: &str) -> Option<&FunctionEnvironment> {
         self.functions.get(name)
     }

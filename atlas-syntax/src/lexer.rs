@@ -4,10 +4,12 @@ use atlas_misc::span::{BytePos, WithSpan, Span};
 
 use crate::token::Token;
 
+#[derive(Debug)]
 pub struct Lexer<'a> {
     pub src: Peekable<Chars<'a>>,
     pub pos: BytePos,
-    keywords: HashMap<&'a str, Token>
+    keywords: HashMap<&'a str, Token>,
+    curr_char: Option<char>,
 }
 
 impl<'a> Lexer<'a> {
@@ -39,7 +41,8 @@ impl<'a> Lexer<'a> {
         Lexer {
             src: buf.chars().peekable(),
             pos: BytePos::default(),
-            keywords
+            keywords,
+            curr_char: None
         }
     }
 
@@ -51,11 +54,16 @@ impl<'a> Lexer<'a> {
         self.src.peek()
     }
 
+    fn current(&mut self) -> Option<char> {
+        self.curr_char
+    }
+
     fn advance(&mut self) -> Option<char> {
         if let Some(&ch) = self.peek() {
             self.pos = self.pos.shift(ch);
         }
-        self.src.next()
+        self.curr_char = self.src.next();
+        return self.curr_char
     }
 
     fn consume_if<F>(&mut self, x: F) -> bool 
@@ -102,7 +110,6 @@ impl<'a> Lexer<'a> {
     {
         let mut chars: Vec<char> = Vec::new();
         while let Some(&ch) = self.peek() {
-            //println!("ch: {}", ch);
             if x(ch) {
                 self.advance().unwrap();
                 chars.push(ch);
@@ -146,7 +153,7 @@ impl<'a> Lexer<'a> {
     fn number(&mut self, c: char) -> Option<Token> {
         let mut number = String::new();
         number.push(c);
-        self.advance();
+        //self.advance();
         let num: String = self
             .consume_while(|a| a.is_numeric())
             .into_iter()
@@ -167,7 +174,6 @@ impl<'a> Lexer<'a> {
     fn preprocessor(&mut self) -> Option<Token> {
         self.advance()?;
         let preproc: String = self.consume_while(|ch| ch.is_alphabetic()).into_iter().collect();
-        println!("preproc: '{}';", preproc);
         match preproc.as_str() {
             "start" => {
                 //self.advance();
@@ -205,7 +211,6 @@ impl<'a> Lexer<'a> {
                     if let Some(c) = self.advance() {
                         value = self.number(c).unwrap();
                         //self.advance();
-                        println!("define: {:?}:{:?}", name, value);
                         Some(Token::Define(name, value.into()))
                     } else {
                         //self.advance();
@@ -229,7 +234,6 @@ impl<'a> Iterator for Lexer<'a> {
     type Item = WithSpan<Token>;
     fn next(&mut self) -> Option<Self::Item> {
         use Token::*;
-        //println!("pos: {:?}", self.pos);
         let start_pos = self.pos;
         let token = match self.peek() {
             Some(&ch) => {
@@ -369,8 +373,6 @@ impl<'a> Iterator for Lexer<'a> {
 
         self.advance();
         
-        //println!("token: {:?}", token);
-
         return Some(WithSpan::new(token, Span {
             start: start_pos, 
             end: self.pos 

@@ -30,6 +30,7 @@ pub enum LogicalOperator {
     Or,
 }
 
+#[derive(Debug)]
 pub enum Expression {
     BinaryExpr(BinaryOp),
     LogicalExpr(LogicalOp),
@@ -38,28 +39,33 @@ pub enum Expression {
     Literal(CoreValue)
 }
 
+#[derive(Debug)]
 pub struct BinaryOp {
     lhs: Box<WithSpan<Expression>>,
     op: WithSpan<BinaryOperator>,
     rhs: Box<WithSpan<Expression>>,
 }
 
+#[derive(Debug)]
 pub struct LogicalOp {
     lhs: Box<WithSpan<Expression>>,
     op: WithSpan<LogicalOperator>,
     rhs: Box<WithSpan<Expression>>,
 }
 
+#[derive(Debug)]
 pub struct Casting {
     expr: Box<WithSpan<Expression>>,
     type_: Box<WithSpan<CoreType>>,
 }
 
+#[derive(Debug)]
 pub struct Call {
     ident: Box<WithSpan<Expression>>,
     args: Vec<WithSpan<Expression>>,
 }
 
+#[derive(Debug)]
 pub struct UnaryOp {
     op: WithSpan<UnaryOperator>,
     expr: Box<WithSpan<Expression>>,
