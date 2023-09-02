@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use atlas_misc::span::WithSpan;
+
 use crate::ast::core::{CoreType, CoreValue};
 
 #[derive(Debug, Default, Clone)]
@@ -18,7 +20,7 @@ impl Environment {
         }
     }
 
-    pub fn add_function(&mut self, name: String, params: Vec<(String, CoreType)>, ret_type: CoreType) {
+    pub fn add_function(&mut self, name: String, params: Vec<WithSpan<(WithSpan<String>, WithSpan<CoreType>)>>, ret_type: WithSpan<CoreType>) {
         self.functions.insert(name, FunctionEnvironment::new(params, ret_type));
     }
 
@@ -37,14 +39,14 @@ impl Environment {
 
 #[derive(Debug, Default, Clone)]
 pub struct FunctionEnvironment {
-    params: Vec<(String, CoreType)>,
-    ret_type: CoreType,
+    params: Vec<WithSpan<(WithSpan<String>, WithSpan<CoreType>)>>,
+    ret_type: WithSpan<CoreType>,
     scopes: Vec<Scope>,
     current_scope: ScopeRef,
 }
 
 impl FunctionEnvironment {
-    pub fn new(params: Vec<(String, CoreType)>, ret_type: CoreType) -> Self {
+    pub fn new(params: Vec<WithSpan<(WithSpan<String>, WithSpan<CoreType>)>>, ret_type: WithSpan<CoreType>) -> Self {
         FunctionEnvironment {
             params,
             ret_type,

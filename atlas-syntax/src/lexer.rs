@@ -128,7 +128,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn either(&mut self, to_match: char, matched: Token, unmatched: Token) -> Token {
-        if self.consume_if(|c| c == to_match) {
+        if self.consume_if_next(|c| c == to_match) {
             matched
         } else {
             unmatched
@@ -237,9 +237,8 @@ impl<'a> Iterator for Lexer<'a> {
         let start_pos = self.pos;
         let token = match self.peek() {
             Some(&ch) => {
-                println!("ch: {:?}", ch);
                 match ch {
-                    ' ' | '\t' | '\r' => {
+                    ' ' | '\t' | '\r' | '\n' => {
                         self.advance();
                         return self.next();
                     },

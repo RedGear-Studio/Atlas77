@@ -17,9 +17,21 @@ use crate::{
     env::Environment,
     token::Token,
     ast::{
-        core::{CoreValue, CoreType}, 
-        declaration::{Declaration, Function}, expr::Identifier
-    }, common::{expect_identifier, expect_type}
+        core::{
+            CoreValue,
+            CoreType
+        }, 
+        declaration::{
+            Declaration, 
+            Function
+        },
+        expr::Identifier, 
+        statements::Statement
+    },
+    common::{
+        expect_identifier, 
+        expect_type
+    }
 };
 
 #[derive(Debug)]
@@ -142,15 +154,34 @@ impl<'a> Parser<'a> {
 
     fn parse_fn(&mut self) -> Result<WithSpan<Function>, String> {
         let name = expect_identifier(self)?;
-        println!("name: {:?}", name);
         self.expect(Token::LParen)?;
         let params = if !self.check(')') {
             self.parse_params()?
         } else {
             Vec::new()
         };
-        println!("params: {:?}", params);
-        unimplemented!()
+        self.expect(Token::RParen)?;
+
+        //Todo: Add a check to let people define functions with no return type
+        self.expect(Token::RArrow)?;
+        let ret_type = expect_type(self)?;
+
+        self.expect(Token::LBrace)?;
+        let mut body = Vec::new();
+        while !self.check('}') {
+            body.push(self.parse_statement()?);
+        }
+        self.expect(Token::RBracket)?;
+
+        let end_span = self.expect(Token::RBrace)?;
+
+        self.env.add_function(name.value, params, ret_type);
+        Ok(WithSpan::new(Function {
+            func_name: name, 
+            args: params,
+            ret_type,
+            body
+        }, Span::union_span(name.into(), end_span.span)))
     }
 
     fn parse_params(&mut self) -> Result<Vec<WithSpan<(WithSpan<Identifier>, WithSpan<CoreType>)>>, String> {
@@ -169,5 +200,20 @@ impl<'a> Parser<'a> {
         }
         Ok(params)
     }
+
+    fn parse_statement(&mut self) -> Result<WithSpan<Statement>, String> {
+        let tok = self.next().unwrap();
+        match tok.value {
+            Token::KwLet => self.parse_let(),
+            _ => unimplemented!()
+        }
+    }
+
+    fn parse_let(&mut self) -> Result<WithSpan<Statement>, String> {
+        let name = expect_identifier(self)?;
+        self.expect(Token::OpAssign)?;
+        let value = expect_type(self)?;
+        Ok(WithSpan::new(Statement::Let(name, value), Span::union_span(name.into(), value.into())))
+    } 
 
 }

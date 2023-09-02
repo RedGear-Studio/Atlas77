@@ -15,7 +15,7 @@ impl Display for BytePos {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 pub struct Span {
     pub start: BytePos,
     pub end: BytePos,
@@ -73,7 +73,7 @@ impl<T> From<&WithSpan<T>> for Span {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct WithSpan<T> {
     pub value: T,
     pub span: Span,
