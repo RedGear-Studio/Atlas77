@@ -1,3 +1,5 @@
+use atlas_misc::span::WithSpan;
+
 use super::{core::CoreType, statements::Statement};
 
 #[derive(Debug)]
@@ -8,8 +10,8 @@ pub enum Declaration {
 
 #[derive(Debug)]
 pub struct Function {
-    func_name: String,
-    args: Vec<(String, CoreType)>,
-    ret_type: CoreType,
-    body: Vec<Statement> //Todo
+    func_name: WithSpan<String>,
+    args: WithSpan<Vec<(WithSpan<String>, WithSpan<CoreType>)>>,
+    ret_type: WithSpan<CoreType>,
+    body: WithSpan<Vec<WithSpan<Statement>>>
 }

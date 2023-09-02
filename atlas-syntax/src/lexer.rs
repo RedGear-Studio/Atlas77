@@ -50,7 +50,7 @@ impl<'a> Lexer<'a> {
         self.src.peek().is_none()
     }
 
-    fn peek(&mut self) -> Option<&char> {
+    pub fn peek(&mut self) -> Option<&char> {
         self.src.peek()
     }
 
@@ -237,51 +237,87 @@ impl<'a> Iterator for Lexer<'a> {
         let start_pos = self.pos;
         let token = match self.peek() {
             Some(&ch) => {
+                println!("ch: {:?}", ch);
                 match ch {
                     ' ' | '\t' | '\r' => {
                         self.advance();
                         return self.next();
                     },
-                    '\n' => NewLine,
+                    '\n' => {
+                        self.advance();
+                        NewLine
+                    },
                     //Groupings
-                    '(' => LParen,
-                    ')' => RParen,
-                    '{' => LBrace,
-                    '}' => RBrace,
-                    '[' => LBracket,
-                    ']' => RBracket,
+                    '(' => {
+                        self.advance();
+                        LParen
+                    },
+                    ')' => {
+                        self.advance();
+                        RParen
+                    },
+                    '{' => {
+                        self.advance();
+                        LBrace
+                    },
+                    '}' => {
+                        self.advance();
+                        RBrace
+                    },
+                    '[' => {
+                        self.advance();
+                        LBracket
+                    },
+                    ']' => {
+                        self.advance();
+                        RBracket
+                    },
                     //Arithmetics
                     '+' => {
-                        self.either('=', OpAssignAdd, OpAdd)
+                        let either = self.either('=', OpAssignAdd, OpAdd);
+                        self.advance();
+                        either
                     },
                     '-' => {
                         if self.consume_if(|ch| ch == '>') {
                             RArrow
                         } else {
-                            self.either('=', OpAssignSub, OpSub)
+                            let either = self.either('=', OpAssignSub, OpSub);
+                            self.advance();
+                            either
                         }
                     },
                     '*' => {
-                        self.either('=', OpAssignMul, OpMul)
+                        let either = self.either('=', OpAssignMul, OpMul);
+                        self.advance();
+                        either
                     },
                     '/' => {
                         if self.consume_if(|ch| ch == '/') {
                             let str = self.consume_while(|ch| ch != '\n');
-                            Comment(str.into_iter().collect::<String>())
+                            let c = Comment(str.into_iter().collect::<String>());
+                            self.advance();
+                            c
                         } else if self.consume_if(|ch| ch == '*') {
                             let str = self.consume_while(|ch| ch != '*');
                             
                             if self.consume_if(|ch| ch == '*') && self.consume_if(|ch| ch == '/') {
-                                Comment(str.into_iter().collect::<String>())
+                                let c = Comment(str.into_iter().collect::<String>());
+                                self.advance();
+                                c
                             } else {
                                 panic!("Invalid Comment")
                             }
                         } else {
-                            self.either('=', OpAssignDiv, OpDiv)
+                            let either = self.either('=', OpAssignDiv, OpDiv);
+                            self.advance();
+                            either
                         }
                     },
                     '%' => {
-                        self.either('=', OpAssignMod, OpMod)
+                        let either = self.either('=', OpAssignMod, OpMod);
+                        self.advance();
+                        either
                     },
                     //Relational
                     '<' => {
@@ -294,7 +330,9 @@ impl<'a> Iterator for Lexer<'a> {
                         }
                     },
                     '>' => {
-                        self.either('=', OpGe, OpGt)
+                        let either = self.either('=', OpGe, OpGt);
+                        self.advance();
+                        either
                     },
                     '=' => {
                         if self.consume_if(|ch| ch == '>') {
@@ -304,41 +342,58 @@ impl<'a> Iterator for Lexer<'a> {
                         }
                     },
                     '&' => {
-                        self.either('&', OpAnd, Ampersand)
+                        let either = self.either('&', OpAnd, Ampersand);
+                        self.advance();
+                        either
                     },
                     '|' => {
-                        self.either('|', OpOr, Pipe)
+                        let either = self.either('|', OpOr, Pipe);
+                        self.advance();
+                        either
                     },
                     '!' => {
-                        self.either('=', OpNe, OpNot)
+                        let either = self.either('=', OpNe, OpNot);
+                        self.advance();
+                        either
                     },
                     //Logical
                     ':' => {
-                        self.either(':', DoubleColon, Colon)
+                        let either = self.either(':', DoubleColon, Colon);
+                        self.advance();
+                        either
                     },
                     ';' => {
+                        self.advance();
                         Semicolon
                     },
                     ',' => {
+                        self.advance();
                         Comma
                     },
                     '.' => {
-                        self.either('.', DoubleDot, Dot)
+                        let either = self.either('.', DoubleDot, Dot);
+                        self.advance();
+                        either
                     },
                     //Identifiers
                     ch if ch.is_alphabetic() || ch == '_' => {
-                        self.identifier(ch).unwrap()
+                        let c = self.identifier(ch).unwrap();
+                        c
                     },
                     x if x.is_numeric() => {
-                        self.number(x).unwrap()
+                        let n = self.number(x).unwrap();
+                        self.advance();
+                        n
                     },
                     '"' => {
                         self.advance();
                         let string: String = self.consume_while(|ch| ch != '"').into_iter().collect();
-                        match self.advance() {
+                        let res = match self.advance() {
                             None => UnterminatedString,
                             _ => String_(string)
-                        }
+                        };
+                        self.advance();
+                        res
                     },
                     '\'' => {
                         self.advance();
@@ -355,12 +410,16 @@ impl<'a> Iterator for Lexer<'a> {
                         }
                     },
                     '?' => {
+                        self.advance();
                         Question
                     },
                     '#' => {
-                        self.preprocessor().unwrap()
+                        let p = self.preprocessor().unwrap();
+                        self.advance();
+                        p
                     }
                     _ => {
+                        self.advance();
                         Unknown(ch)
                     }
                 } 
@@ -370,8 +429,6 @@ impl<'a> Iterator for Lexer<'a> {
                 return None
             }
         };
-
-        self.advance();
         
         return Some(WithSpan::new(token, Span {
             start: start_pos, 
