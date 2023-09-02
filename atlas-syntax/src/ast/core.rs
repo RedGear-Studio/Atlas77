@@ -1,6 +1,6 @@
 use crate::token::Token;
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone)]
 pub enum CoreType {
     /// Represents integer values.
     CTInt,
@@ -14,6 +14,7 @@ pub enum CoreType {
     CTString,
     /// Represents the absence of a value or the return type for functions that don't return a value.
     CTVoid,
+    #[default]
     /// Represents an unknown type. This is a placeholder for types that the parser doesn't fully understand.
     CTUnknown,
 }

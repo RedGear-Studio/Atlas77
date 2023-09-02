@@ -2,39 +2,51 @@ use std::collections::HashMap;
 
 use crate::ast::core::{CoreType, CoreValue};
 
-//Rework the scope system ?
-//Should scopes be owned by the functions instead of the global environment ?
-
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Environment {
-    scopes: Vec<Scope>,
     //A function is snake_case
-    functions: HashMap<String, FunctionSymbol>,
+    functions: HashMap<String, FunctionEnvironment>,
     //A constant is SHOUTHY_SNAKE_CASE
     constants: HashMap<String, CoreValue>,
-    current_scope: ScopeRef,
 }
 
 impl Environment {
     pub fn new() -> Self {
         Environment {
-            scopes: vec![Scope {
-                parent: None,
-                inners: Vec::new(),
-                vars: HashMap::new()
-            }],
             functions: HashMap::new(),
             constants: HashMap::new(),
-            current_scope: ScopeRef::default(),
         }
     }
 
-    pub fn get_function(&self, name: &str) -> Option<&FunctionSymbol> {
+    pub fn get_function(&self, name: &str) -> Option<&FunctionEnvironment> {
         self.functions.get(name)
     }
 
     pub fn get_constant(&self, name: &str) -> Option<&CoreValue> {
         self.constants.get(name)
+    }   
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct FunctionEnvironment {
+    params: Vec<(String, CoreType)>,
+    ret_type: CoreType,
+    scopes: Vec<Scope>,
+    current_scope: ScopeRef,
+}
+
+impl FunctionEnvironment {
+    pub fn new(params: Vec<(String, CoreType)>, ret_type: CoreType) -> Self {
+        FunctionEnvironment {
+            params,
+            ret_type,
+            scopes: vec![Scope {
+                parent: None,
+                inners: Vec::new(),
+                vars: HashMap::new()
+            }],
+            current_scope: ScopeRef::default(),
+        }
     }
 
     pub fn get_variable(&self, name: &str, s: ScopeRef) -> Option<&CoreType> {
@@ -55,16 +67,10 @@ impl Environment {
         };
         self.scopes.push(new);
         self.current_scope = ScopeRef::from(self.scopes.len() - 1);
-    }    
+    } 
 }
 
-#[derive(Debug)]
-pub struct FunctionSymbol {
-    params: Vec<(String, CoreType)>,
-    ret_type: CoreType,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Default, Clone)]
 pub struct Scope {
     parent: Option<ScopeRef>,
     inners: Vec<ScopeRef>,

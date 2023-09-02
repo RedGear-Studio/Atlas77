@@ -43,6 +43,10 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    pub fn is_eof(&mut self) -> bool {
+        self.src.peek().is_none()
+    }
+
     fn peek(&mut self) -> Option<&char> {
         self.src.peek()
     }
