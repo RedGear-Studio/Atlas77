@@ -12,18 +12,18 @@ pub enum Statement {
 
 #[derive(Debug)]
 pub struct Assignment {
-    var_name: Identifier,
-    value: Expression, //todo, should be Expression
+    pub var_name: Identifier,
+    pub value: Expression,
 }
 
 #[derive(Debug)]
 pub struct Return {
-    value: Option<Expression>,
+    pub value: Option<Expression>,
 }
 
 #[derive(Debug)]
 pub struct If {
-    cond: Expression, //todo, should be Expression
-    body: Box<WithSpan<Statement>>, //todo, should be Vec<Statement>
-    else_body: Option<Box<WithSpan<Statement>>>, //todo, should be Vec<Statement>
+    pub cond: Expression,
+    pub body: Box<WithSpan<Statement>>,
+    pub else_body: Option<Box<WithSpan<Statement>>>,
 }

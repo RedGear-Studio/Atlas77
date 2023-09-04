@@ -41,32 +41,32 @@ pub enum Expression {
 
 #[derive(Debug)]
 pub struct BinaryOp {
-    lhs: Box<WithSpan<Expression>>,
-    op: WithSpan<BinaryOperator>,
-    rhs: Box<WithSpan<Expression>>,
+    pub lhs: Box<WithSpan<Expression>>,
+    pub op: WithSpan<BinaryOperator>,
+    pub rhs: Box<WithSpan<Expression>>,
 }
 
 #[derive(Debug)]
 pub struct LogicalOp {
-    lhs: Box<WithSpan<Expression>>,
-    op: WithSpan<LogicalOperator>,
-    rhs: Box<WithSpan<Expression>>,
+    pub lhs: Box<WithSpan<Expression>>,
+    pub op: WithSpan<LogicalOperator>,
+    pub rhs: Box<WithSpan<Expression>>,
 }
 
 #[derive(Debug)]
 pub struct Casting {
-    expr: Box<WithSpan<Expression>>,
-    type_: Box<WithSpan<CoreType>>,
+    pub expr: Box<WithSpan<Expression>>,
+    pub type_: Box<WithSpan<CoreType>>,
 }
 
 #[derive(Debug)]
 pub struct Call {
-    ident: Box<WithSpan<Expression>>,
-    args: Vec<WithSpan<Expression>>,
+    pub ident: Box<WithSpan<Expression>>,
+    pub args: Vec<WithSpan<Expression>>,
 }
 
 #[derive(Debug)]
 pub struct UnaryOp {
-    op: WithSpan<UnaryOperator>,
-    expr: Box<WithSpan<Expression>>,
+    pub op: WithSpan<UnaryOperator>,
+    pub expr: Box<WithSpan<Expression>>,
 }

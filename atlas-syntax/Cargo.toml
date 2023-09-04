@@ -8,5 +8,4 @@ edition = "2021"
 [dependencies]
 ariadne = { version = "0.3.0", features = ["auto-color"] }
 atlas-misc = { path = "../atlas-misc" }
-heck = "0.4.1"
 

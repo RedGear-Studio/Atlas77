@@ -7,10 +7,10 @@ use crate::ast::core::{CoreType, CoreValue};
 #[derive(Debug, Default, Clone)]
 pub struct Environment {
     //A function is snake_case
-    functions: HashMap<String, FunctionEnvironment>,
-    curr_fn: Option<String>,
+    pub functions: HashMap<String, FunctionEnvironment>,
+    pub curr_fn: Option<String>,
     //A constant is SHOUTHY_SNAKE_CASE
-    constants: HashMap<String, CoreValue>,
+    pub constants: HashMap<String, CoreValue>,
 }
 
 impl Environment {
@@ -23,7 +23,7 @@ impl Environment {
     }
 
     pub fn add_function(&mut self, name: String, params: Vec<WithSpan<(WithSpan<String>, WithSpan<CoreType>)>>, ret_type: WithSpan<CoreType>) {
-        self.functions.insert(name, FunctionEnvironment::new(params, ret_type));
+        self.functions.insert(name.clone(), FunctionEnvironment::new(params, ret_type));
         self.curr_fn = Some(name);
     }
 
@@ -31,21 +31,25 @@ impl Environment {
         self.constants.insert(name, value);
     }
 
-    pub fn get_function(&self, name: &str) -> Option<&FunctionEnvironment> {
-        self.functions.get(name)
+    pub fn get_function(&mut self, name: &str) -> Option<&mut FunctionEnvironment> {
+        self.functions.get_mut(name)
     }
 
     pub fn get_constant(&self, name: &str) -> Option<&CoreValue> {
         self.constants.get(name)
-    }   
+    }
+
+    pub fn get_current_fn(&mut self) -> Option<&mut FunctionEnvironment> {
+        self.functions.get_mut(self.curr_fn.as_deref()?)
+    }
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct FunctionEnvironment {
-    params: Vec<WithSpan<(WithSpan<String>, WithSpan<CoreType>)>>,
-    ret_type: WithSpan<CoreType>,
-    scopes: Vec<Scope>,
-    current_scope: ScopeRef,
+    pub params: Vec<WithSpan<(WithSpan<String>, WithSpan<CoreType>)>>,
+    pub ret_type: WithSpan<CoreType>,
+    pub scopes: Vec<Scope>,
+    pub current_scope: ScopeRef,
 }
 
 impl FunctionEnvironment {
@@ -72,6 +76,10 @@ impl FunctionEnvironment {
         self.scopes[usize::from(s)].parent.as_ref().and_then(|p| self.get_variable(name, s))
     }
 
+    pub fn add_variable(&mut self, name: String, value: CoreType) {
+        self.scopes[usize::from(self.current_scope)].vars.insert(name, value);
+    }
+
     pub fn new_scope(&mut self, parent: Option<ScopeRef>) {
         let new = Scope {
             parent,
@@ -94,9 +102,9 @@ impl FunctionEnvironment {
 
 #[derive(Debug, Default, Clone)]
 pub struct Scope {
-    parent: Option<ScopeRef>,
-    inners: Vec<ScopeRef>,
-    vars: HashMap<String, CoreType>,
+    pub parent: Option<ScopeRef>,
+    pub inners: Vec<ScopeRef>,
+    pub vars: HashMap<String, CoreType>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]

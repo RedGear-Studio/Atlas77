@@ -67,6 +67,19 @@ impl<'a> Parser<'a> {
     pub fn error(&mut self, msg: String, span: Span, code: u32, ctx: String) {
         self.reports.push(Report::new(
             span,
+            Severity::Error, 
+            code, 
+            msg, 
+            FilePath { 
+                path: self.path.to_string(),
+            },
+            ctx 
+        ));
+    }
+
+    pub fn warning(&mut self, msg: String, span: Span, code: u32, ctx: String) {
+        self.reports.push(Report::new(
+            span,
             Severity::Warning, 
             code, 
             msg, 
@@ -175,9 +188,9 @@ impl<'a> Parser<'a> {
 
         let end_span = self.expect(Token::RBrace)?;
 
-        self.env.add_function(name.value, params, ret_type);
+        self.env.add_function(name.clone().value, params.clone(), ret_type.clone());
         Ok(WithSpan::new(Function {
-            func_name: name, 
+            func_name: name.clone(), 
             args: params,
             ret_type,
             body
@@ -213,8 +226,14 @@ impl<'a> Parser<'a> {
         let name = expect_identifier(self)?;
         self.expect(Token::OpAssign)?;
         let value = expect_type(self)?;
-        
-        Ok(WithSpan::new(Statement::Let(name, value), Span::union_span(name.into(), value.into())))
+        if let Some(f) = self.env.get_current_fn() {
+            f.add_variable(name.value, value.value);
+        };
+        if self.check('=') {
+            self.expect(Token::OpAssign)?;
+        }
+        //If there're nothing to return, what should I do ?
+        todo!()
     } 
 
 }

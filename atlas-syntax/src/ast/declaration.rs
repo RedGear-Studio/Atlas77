@@ -10,8 +10,8 @@ pub enum Declaration {
 
 #[derive(Debug)]
 pub struct Function {
-    func_name: WithSpan<String>,
-    args: Vec<WithSpan<(WithSpan<String>, WithSpan<CoreType>)>>,
-    ret_type: WithSpan<CoreType>,
-    body: Vec<WithSpan<Statement>>
+    pub func_name: WithSpan<String>,
+    pub args: Vec<WithSpan<(WithSpan<String>, WithSpan<CoreType>)>>,
+    pub ret_type: WithSpan<CoreType>,
+    pub body: Vec<WithSpan<Statement>>
 }

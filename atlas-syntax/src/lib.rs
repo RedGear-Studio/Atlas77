@@ -8,7 +8,6 @@ use token::Token;
 
 
 pub mod ast;
-mod case;
 mod common;
 mod env;
 mod lexer;
