@@ -1,4 +1,4 @@
-use crate::ast::core::{CoreValue, CoreType};
+use crate::ast::core::CoreValue;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {

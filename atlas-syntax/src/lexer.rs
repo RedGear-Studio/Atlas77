@@ -9,7 +9,7 @@ pub struct Lexer<'a> {
     pub src: Peekable<Chars<'a>>,
     pub pos: BytePos,
     keywords: HashMap<&'a str, Token>,
-    next_token: Option<Token>,
+    next_token: Option<WithSpan<Token>>,
     curr_char: Option<char>,
 }
 
@@ -56,11 +56,11 @@ impl<'a> Lexer<'a> {
         self.src.peek()
     }
 
-    pub fn peek_tok(&mut self) -> Token {
+    pub fn peek_tok(&mut self) -> Option<WithSpan<Token>> {
         if self.next_token.is_none() {
-            self.next_token = Some(self.next().unwrap().value);
+            self.next_token = Some(self.next().unwrap());
         }
-        return self.next_token.clone().unwrap();
+        return self.next_token.clone();
     }
 
     fn advance(&mut self) -> Option<char> {
@@ -240,10 +240,7 @@ impl<'a> Iterator for Lexer<'a> {
         use Token::*;
 
         if let Some(tok) = self.next_token.take() {
-            return Some(WithSpan::new(tok.to_owned(), Span {
-                start: self.pos,
-                end: self.pos.shift_by(tok.get_size())
-            }));
+            return Some(tok);
         }
 
         let start_pos = self.pos;

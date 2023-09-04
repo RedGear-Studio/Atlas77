@@ -1,15 +1,7 @@
-use std::path::PathBuf;
-
 use atlas_misc::{
     file::FilePath,
-    span::{
-        WithSpan, 
-        Span
-    }, 
-    report::{
-        Report, 
-        Severity
-    }
+    span::{WithSpan, Span}, 
+    report::{Report, Severity}
 };
 
 use crate::{
@@ -17,21 +9,12 @@ use crate::{
     env::Environment,
     token::Token,
     ast::{
-        core::{
-            CoreValue,
-            CoreType
-        }, 
-        declaration::{
-            Declaration, 
-            Function
-        },
+        core::{CoreValue, CoreType}, 
+        declaration::{Declaration, Function},
         expr::{Identifier, Expression, BinaryOperator, UnaryOperator, LogicalOperator, BinaryOp, UnaryOp}, 
         statements::{Statement, Assignment}
     },
-    common::{
-        expect_identifier, 
-        expect_type
-    }
+    common::{expect_identifier, expect_type}
 };
 
 #[derive(Debug)]
@@ -95,14 +78,14 @@ impl<'a> Parser<'a> {
         self.lexer.next()
     }
 
-    fn peek_char(&mut self) -> Option<&char> {
-        self.lexer.peek_char()
+    fn peek(&mut self) -> Option<WithSpan<Token>> {
+        self.lexer.peek_tok()
     }
 
-    fn check(&mut self, match_c: char) -> bool {
-        let c = self.peek_char();
-        match c {
-            Some(c) => *c == match_c,
+    fn check(&mut self, tok: Token) -> bool {
+        let t = self.peek();
+        match t {
+            Some(t) => t.value == tok,
             None => false
         }
     }
@@ -122,10 +105,6 @@ impl<'a> Parser<'a> {
         }
         Ok(decls)
     }
-
-    /*fn file_already_parsed(&self, path: &PathBuf) -> bool {
-        self.parsed_files.contains(path)
-    }*/
 
     fn parse_preprocessor(&mut self) -> Result<Vec<WithSpan<Declaration>>, String> {
         let res = Vec::new();
@@ -172,7 +151,7 @@ impl<'a> Parser<'a> {
     fn parse_fn(&mut self) -> Result<WithSpan<Function>, String> {
         let name = expect_identifier(self)?;
         self.expect(Token::LParen)?;
-        let params = if !self.check(')') {
+        let params = if !self.check(Token::LParen) {
             self.parse_params()?
         } else {
             Vec::new()
@@ -185,7 +164,7 @@ impl<'a> Parser<'a> {
 
         self.expect(Token::LBrace)?;
         let mut body = Vec::new();
-        while !self.check('}') {
+        while !self.check(Token::RBrace) {
             body.push(self.parse_statement()?);
         }
         self.expect(Token::RBracket)?;
@@ -202,13 +181,12 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_params(&mut self) -> Result<Vec<WithSpan<(WithSpan<Identifier>, WithSpan<CoreType>)>>, String> {
-        //self.expect(Token::LParen)?;
         let mut params = Vec::new();
         let i = expect_identifier(self)?;
         self.expect(Token::Colon)?;
         let t = expect_type(self)?;
         params.push(WithSpan::new((i.clone(), t.clone()), Span::union_span(i.into(), t.into())));
-        while self.check(',') {
+        while self.check(Token::Comma) {
             self.expect(Token::Comma)?;
             let i = expect_identifier(self)?;
             self.expect(Token::Colon)?;   
@@ -233,7 +211,7 @@ impl<'a> Parser<'a> {
         if let Some(f) = self.env.get_current_fn() {
             f.add_variable(name.clone().value, t.value);
         };
-        if self.expect(Token::OpAssign).is_ok() {
+        if self.check(Token::OpAssign) {
             let expr = self.parse_expr(Precedence::None)?;
             let end_span = self.expect(Token::Semicolon)?;
             Ok(WithSpan::new(Statement::AssignmentStmt(Assignment {
@@ -257,10 +235,114 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expr(&mut self, p: Precedence) -> Result<WithSpan<Expression>, String> {
+        let mut expr = self.parse_prefix()?;
+        while !self.lexer.is_eof() {
+            let next_prec = Precedence::from(self.peek().unwrap().value);
+            if p >= next_prec {
+                break;
+            }
+            expr = self.parse_infix(expr)?;
+        }
         todo!()
     }
 
-    fn parse_prefix(&mut self) -> Result<WithSpan<Expression>, String > {
+    fn parse_prefix(&mut self) -> Result<WithSpan<Expression>, String> {
+        match self.peek() {
+            Some(t) => {
+                match t.value {
+                    Token::Int(_)
+                    | Token::Float(_)
+                    | Token::KwNone
+                    | Token::KwSelf
+                    | Token::KwTrue
+                    | Token::KwFalse
+                    | Token::Ident(_)
+                    | Token::Char(_)
+                    | Token::String_(_)  => self.parse_primary(),
+                    Token::OpSub | Token::OpNot => self.parse_unary(),
+                    Token::LParen => self.parse_group(),
+                    _ => {
+                        self.error(format!("Unexpected {:?}", t.value), t.span, 0, String::from("Not the value expected"));
+                        Err("Unexpected (parse_prefix)".to_string())
+                    }
+                }
+            }
+            None => {
+                panic!("EOF")
+            }
+        }
+    }
+
+    fn parse_infix(&mut self, left: WithSpan<Expression>) -> Result<WithSpan<Expression>, String> {
+        match self.peek() {
+            Some(t) => {
+                match t.value {
+                    Token::OpNe
+                    | Token::OpEq
+                    | Token::OpLe
+                    | Token::OpGe
+                    | Token::OpLt
+                    | Token::OpGt
+                    | Token::OpAdd
+                    | Token::OpSub
+                    | Token::OpMul
+                    | Token::OpDiv => self.parse_binary(left),
+                    Token::OpOr
+                    | Token::OpAnd => self.parse_logical(left),
+                    Token::OpAssign => self.parse_assign(left),
+                    Token::LParen => self.parse_call(left),
+                    _ => {
+                        self.error(format!("Unexpected {:?}", t.value), t.span, 0, String::from("Not the value expected"));
+                        Err("Unexpected (parse_infix)".to_string())
+                    }
+                }
+            }
+            None => {
+                panic!("EOF")
+            }
+        }
+    }
+
+    fn parse_primary(&mut self) -> Result<WithSpan<Expression>, String> {
+        todo!()
+    }
+
+    fn parse_binary(&mut self, left: WithSpan<Expression>) -> Result<WithSpan<Expression>, String> {
+        todo!()
+    }
+
+    fn parse_logical(&mut self, left: WithSpan<Expression>) -> Result<WithSpan<Expression>, String> {
+        todo!()
+    }
+
+    fn parse_assign(&mut self, left: WithSpan<Expression>) -> Result<WithSpan<Expression>, String> {
+        todo!()
+    }
+
+    fn parse_call(&mut self, left: WithSpan<Expression>) -> Result<WithSpan<Expression>, String> {
+        self.expect(Token::LParen)?;
+        let args = self.parse_arguments()?;
+        todo!()
+    }
+
+    //Should type checking happen here ?
+    fn parse_arguments(&mut self) -> Result<Vec<WithSpan<Expression>>, String> {
+        let mut args = Vec::new();
+        if self.check(Token::RParen) {
+            args.push(self.parse_expr(Precedence::None)?);
+            while self.check(Token::Comma) {
+                self.expect(Token::Comma)?;
+                args.push(self.parse_expr(Precedence::None)?);
+            }
+        }
+        Ok(args)
+    }
+
+    fn parse_unary(&mut self) -> Result<WithSpan<Expression>, String> {
+        todo!()
+    }
+
+    fn parse_group(&mut self) -> Result<WithSpan<Expression>, String> {
         todo!()
     }
 }

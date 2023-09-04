@@ -3,6 +3,6 @@
 #end
 
 fn add(a: int, b: int) -> int {
-   let res: int;
+   let res: int = a + b;
    return res;
 }
