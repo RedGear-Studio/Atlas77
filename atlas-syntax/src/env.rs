@@ -8,6 +8,7 @@ use crate::ast::core::{CoreType, CoreValue};
 pub struct Environment {
     //A function is snake_case
     functions: HashMap<String, FunctionEnvironment>,
+    curr_fn: Option<String>,
     //A constant is SHOUTHY_SNAKE_CASE
     constants: HashMap<String, CoreValue>,
 }
@@ -17,11 +18,13 @@ impl Environment {
         Environment {
             functions: HashMap::new(),
             constants: HashMap::new(),
+            curr_fn: None,
         }
     }
 
     pub fn add_function(&mut self, name: String, params: Vec<WithSpan<(WithSpan<String>, WithSpan<CoreType>)>>, ret_type: WithSpan<CoreType>) {
         self.functions.insert(name, FunctionEnvironment::new(params, ret_type));
+        self.curr_fn = Some(name);
     }
 
     pub fn add_constant(&mut self, name: String, value: CoreValue) {
@@ -77,7 +80,16 @@ impl FunctionEnvironment {
         };
         self.scopes.push(new);
         self.current_scope = ScopeRef::from(self.scopes.len() - 1);
-    } 
+    }
+
+    pub fn leave_scope(&mut self) {
+        let parent = self.scopes[usize::from(self.current_scope)].parent;
+        if let Some(p) = parent {
+            self.current_scope = p;
+        } else {
+            panic!("Cannot leave root scope");
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]

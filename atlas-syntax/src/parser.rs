@@ -213,6 +213,7 @@ impl<'a> Parser<'a> {
         let name = expect_identifier(self)?;
         self.expect(Token::OpAssign)?;
         let value = expect_type(self)?;
+        
         Ok(WithSpan::new(Statement::Let(name, value), Span::union_span(name.into(), value.into())))
     } 
 
