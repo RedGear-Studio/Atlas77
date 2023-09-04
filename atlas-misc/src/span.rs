@@ -6,6 +6,10 @@ impl BytePos {
     pub fn shift(self, ch: char) -> Self {
         BytePos(self.0 + ch.len_utf8())
     }
+
+    pub fn shift_by(self, n: usize) -> Self {
+        BytePos(self.0 + n)
+    }
 }
 
 impl Display for BytePos {

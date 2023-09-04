@@ -25,8 +25,8 @@ use crate::{
             Declaration, 
             Function
         },
-        expr::Identifier, 
-        statements::Statement
+        expr::{Identifier, Expression, BinaryOperator, UnaryOperator, LogicalOperator, BinaryOp, UnaryOp}, 
+        statements::{Statement, Assignment}
     },
     common::{
         expect_identifier, 
@@ -95,8 +95,12 @@ impl<'a> Parser<'a> {
         self.lexer.next()
     }
 
+    fn peek_char(&mut self) -> Option<&char> {
+        self.lexer.peek_char()
+    }
+
     fn check(&mut self, match_c: char) -> bool {
-        let c = self.lexer.peek();
+        let c = self.peek_char();
         match c {
             Some(c) => *c == match_c,
             None => false
@@ -124,7 +128,7 @@ impl<'a> Parser<'a> {
     }*/
 
     fn parse_preprocessor(&mut self) -> Result<Vec<WithSpan<Declaration>>, String> {
-        let mut res = Vec::new();
+        let res = Vec::new();
         let mut current_tok = self.next();
         while !self.lexer.is_eof() && current_tok.clone().unwrap().value != Token::End {
             if let Some(tok) = current_tok {
@@ -138,7 +142,7 @@ impl<'a> Parser<'a> {
             current_tok = self.lexer.next();
         }
 
-        self.next(); //consume NewLine
+        //self.next();
 
         return Ok(res);
     }
@@ -224,16 +228,78 @@ impl<'a> Parser<'a> {
 
     fn parse_let(&mut self) -> Result<WithSpan<Statement>, String> {
         let name = expect_identifier(self)?;
-        self.expect(Token::OpAssign)?;
-        let value = expect_type(self)?;
+        self.expect(Token::Colon)?;
+        let t = expect_type(self)?;
         if let Some(f) = self.env.get_current_fn() {
-            f.add_variable(name.value, value.value);
+            f.add_variable(name.clone().value, t.value);
         };
-        if self.check('=') {
-            self.expect(Token::OpAssign)?;
-        }
-        //If there're nothing to return, what should I do ?
-        todo!()
-    } 
+        if self.expect(Token::OpAssign).is_ok() {
+            let expr = self.parse_expr(Precedence::None)?;
+            let end_span = self.expect(Token::Semicolon)?;
+            Ok(WithSpan::new(Statement::AssignmentStmt(Assignment {
+                var_name: name.clone(),
+                value: expr
+            }), Span::union_span(name.into(), end_span.span)))
 
+        } else {
+            let span = name.span;
+            let warning = Report::new(
+                span,
+                Severity::Error,
+                0, 
+                String::from("Expected an assignement here"),
+                FilePath { path: String::from(self.path) },
+                String::from("There should be an assignement here")
+            );
+            println!("{}", warning);
+            std::process::exit(0)
+        }
+    }
+
+    fn parse_expr(&mut self, p: Precedence) -> Result<WithSpan<Expression>, String> {
+        todo!()
+    }
+
+    fn parse_prefix(&mut self) -> Result<WithSpan<Expression>, String > {
+        todo!()
+    }
+}
+
+
+#[derive(PartialEq, PartialOrd, Copy, Clone)]
+enum Precedence {
+    None,
+    Assign, // =
+    Or,
+    And,
+    Equality,   // == !=
+    Comparison, // < <= > >=
+    Term,       // + -
+    Factor,     // * /
+    Unary,      // ! -
+    Call,       // ()
+    List,       // []
+    //Primary,
+}
+
+impl From<Token> for Precedence {
+    fn from(token: Token) -> Precedence {
+        match token {
+            Token::OpAssign => Precedence::Assign,
+            Token::OpOr => Precedence::Or,
+            Token::OpAnd => Precedence::And,
+            Token::OpEq | Token::OpNe => Precedence::Equality,
+            Token::OpLt
+            | Token::OpLe
+            | Token::OpGt
+            | Token::OpGe => Precedence::Comparison,
+            Token::OpAdd | Token::OpSub => Precedence::Term,
+            Token::OpMul | Token::OpDiv => Precedence::Factor,
+            Token::OpNot => Precedence::Unary,
+            Token::LParen => Precedence::Call,
+            Token::Dot => Precedence::Call,
+            Token::LBracket => Precedence::List,
+            _ => Precedence::None,
+        }
+    }
 }

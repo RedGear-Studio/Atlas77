@@ -9,6 +9,7 @@ pub struct Lexer<'a> {
     pub src: Peekable<Chars<'a>>,
     pub pos: BytePos,
     keywords: HashMap<&'a str, Token>,
+    next_token: Option<Token>,
     curr_char: Option<char>,
 }
 
@@ -42,6 +43,7 @@ impl<'a> Lexer<'a> {
             src: buf.chars().peekable(),
             pos: BytePos::default(),
             keywords,
+            next_token: None,
             curr_char: None
         }
     }
@@ -50,16 +52,19 @@ impl<'a> Lexer<'a> {
         self.src.peek().is_none()
     }
 
-    pub fn peek(&mut self) -> Option<&char> {
+    pub fn peek_char(&mut self) -> Option<&char> {
         self.src.peek()
     }
 
-    fn current(&mut self) -> Option<char> {
-        self.curr_char
+    pub fn peek_tok(&mut self) -> Token {
+        if self.next_token.is_none() {
+            self.next_token = Some(self.next().unwrap().value);
+        }
+        return self.next_token.clone().unwrap();
     }
 
     fn advance(&mut self) -> Option<char> {
-        if let Some(&ch) = self.peek() {
+        if let Some(&ch) = self.peek_char() {
             self.pos = self.pos.shift(ch);
         }
         self.curr_char = self.src.next();
@@ -70,7 +75,7 @@ impl<'a> Lexer<'a> {
     where 
         F: Fn(char) -> bool
     {
-        if let Some(&ch) = self.peek() {
+        if let Some(&ch) = self.peek_char() {
             if x(ch) {
                 self.advance().unwrap();
                 true
@@ -109,7 +114,7 @@ impl<'a> Lexer<'a> {
         F: Fn(char) -> bool 
     {
         let mut chars: Vec<char> = Vec::new();
-        while let Some(&ch) = self.peek() {
+        while let Some(&ch) = self.peek_char() {
             if x(ch) {
                 self.advance().unwrap();
                 chars.push(ch);
@@ -153,13 +158,12 @@ impl<'a> Lexer<'a> {
     fn number(&mut self, c: char) -> Option<Token> {
         let mut number = String::new();
         number.push(c);
-        //self.advance();
         let num: String = self
             .consume_while(|a| a.is_numeric())
             .into_iter()
             .collect();
         number.push_str(num.as_str());
-        if self.peek() == Some(&'.') && self.consume_if_next(|ch| ch.is_numeric()) {
+        if self.peek_char() == Some(&'.') && self.consume_if_next(|ch| ch.is_numeric()) {
             let num2: String = self
                 .consume_while(|a| a.is_numeric())
                 .into_iter()
@@ -234,17 +238,21 @@ impl<'a> Iterator for Lexer<'a> {
     type Item = WithSpan<Token>;
     fn next(&mut self) -> Option<Self::Item> {
         use Token::*;
+
+        if let Some(tok) = self.next_token.take() {
+            return Some(WithSpan::new(tok.to_owned(), Span {
+                start: self.pos,
+                end: self.pos.shift_by(tok.get_size())
+            }));
+        }
+
         let start_pos = self.pos;
-        let token = match self.peek() {
+        let token = match self.peek_char() {
             Some(&ch) => {
                 match ch {
                     ' ' | '\t' | '\r' | '\n' => {
                         self.advance();
                         return self.next();
-                    },
-                    '\n' => {
-                        self.advance();
-                        NewLine
                     },
                     //Groupings
                     '(' => {
@@ -278,7 +286,8 @@ impl<'a> Iterator for Lexer<'a> {
                         either
                     },
                     '-' => {
-                        if self.consume_if(|ch| ch == '>') {
+                        if self.consume_if_next(|ch| ch == '>') {
+                            self.advance();
                             RArrow
                         } else {
                             let either = self.either('=', OpAssignSub, OpSub);
@@ -335,9 +344,12 @@ impl<'a> Iterator for Lexer<'a> {
                     },
                     '=' => {
                         if self.consume_if(|ch| ch == '>') {
+                            self.advance();
                             FatArrow
                         } else {
-                            self.either('=', OpAssign, OpEq)
+                            let either = self.either('=', OpEq, OpAssign);
+                            self.advance();
+                            either
                         }
                     },
                     '&' => {

@@ -36,7 +36,8 @@ pub enum Expression {
     LogicalExpr(LogicalOp),
     CallExpr(Call),
     UnaryExpr(UnaryOp),
-    Literal(CoreValue)
+    Literal(CoreValue),
+    Identifer(WithSpan<String>),
 }
 
 #[derive(Debug)]

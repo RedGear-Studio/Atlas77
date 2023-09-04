@@ -12,8 +12,8 @@ pub enum Statement {
 
 #[derive(Debug)]
 pub struct Assignment {
-    pub var_name: Identifier,
-    pub value: Expression,
+    pub var_name: WithSpan<Identifier>,
+    pub value: WithSpan<Expression>,
 }
 
 #[derive(Debug)]

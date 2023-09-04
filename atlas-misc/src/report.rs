@@ -55,7 +55,7 @@ impl Display for Report {
                 txt.push_str(&format!("\t|\t{}\n", l))
             }
             txt.push_str(&format!("\t|"));
-            match self.severity {
+            let _ = match self.severity {
                 Severity::Error => {
                     write!(f, "{}[{}]: {}
 \t--> {}:{}:{}  

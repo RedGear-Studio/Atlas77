@@ -40,8 +40,21 @@ pub enum CoreValue {
     Bool(bool),
     Char(char),
     String(String),
+    None,
 }
 
+impl ToString for CoreValue {
+    fn to_string(&self) -> String {
+        match self {
+            CoreValue::Int(i) => i.to_string(),
+            CoreValue::Float(f) => f.to_string(),
+            CoreValue::Bool(b) => b.to_string(),
+            CoreValue::Char(c) => c.to_string(),
+            CoreValue::String(s) => s.to_string(),
+            CoreValue::None => "None".to_string(),
+        }
+    }
+}
 
 impl From<Token> for CoreValue {
     fn from(value: Token) -> Self {

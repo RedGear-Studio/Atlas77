@@ -1,11 +1,6 @@
-#![allow(unused)]
-
 use ast::declaration::Declaration;
-use atlas_misc::{report::Report, span::{WithSpan, BytePos}};
-use lexer::Lexer;
+use atlas_misc::span::WithSpan;
 use parser::Parser;
-use token::Token;
-
 
 pub mod ast;
 mod common;
