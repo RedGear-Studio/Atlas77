@@ -1,8 +1,0 @@
-#start
-#define PI 3.14
-#end
-
-fn add(a: int, b: int) -> int {
-   let res: int = a + b;
-   return res;
-}
