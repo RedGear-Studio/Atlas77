@@ -3,5 +3,4 @@ members = [
     "atlas",
     "atlas-syntax",
     "atlas-misc",
-    "atlas-compiler"
 ]

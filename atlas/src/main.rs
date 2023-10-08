@@ -1,3 +1,7 @@
+pub mod interfaces;
+pub mod span;
+pub mod simple_lexer;
+
 use atlas_misc::report::Report;
 use atlas_syntax::compile;
 
