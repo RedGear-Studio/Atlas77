@@ -1,12 +1,16 @@
 pub mod interfaces;
 pub mod span;
 pub mod simple_lexer;
+pub mod simple_checker;
+pub mod utils;
 
-use simple_lexer::SimpleLexer;
+use simple_lexer::SimpleLexerV1;
 use interfaces::lexer::Lexer;
 
 
 fn main() {
-    let mut lex = SimpleLexer::new(String::from("C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\atlas\\src\\simple_lexer.rs"));
-    println!("{:?}", lex.expect("Failed to create lexer").tokenize());
+    let mut lexer: Box<dyn Lexer> = Box::new(SimpleLexerV1::new(String::from("C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\atlas\\test.atlas")).expect("Failed to create the lexer"));
+    let tokens = lexer.tokenize();
+    println!("{:?}", tokens);
+    println!("{:?}", lexer.check(&tokens))
 }

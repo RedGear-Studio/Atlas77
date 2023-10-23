@@ -2,14 +2,14 @@ use crate::{span::{WithSpan, BytePos, Span}, interfaces::lexer::{Lexer, token::T
 use std::{fs::File, iter::Peekable, collections::HashMap};
 use std::io::{BufRead, BufReader};
 
-pub(crate) struct SimpleLexer {
-    file_path: String,
+pub(crate) struct SimpleLexerV1 {
+    _file_path: String,
     current_pos: BytePos,
     it: Peekable<std::vec::IntoIter<char>>,
     keywords: HashMap<String, TokenType>,
 }
 
-impl Lexer for SimpleLexer {
+impl Lexer for SimpleLexerV1 {
     fn new(file_path: String) -> Result<Self, std::io::Error> {
         let file = File::open(file_path.clone())?;
         let reader = BufReader::new(file);
@@ -43,8 +43,8 @@ impl Lexer for SimpleLexer {
         keywords.insert("typedef".to_string(), KwType);
         keywords.insert("pub".to_string(), KwPub);
 
-        Ok(SimpleLexer {
-            file_path,
+        Ok(SimpleLexerV1 {
+            _file_path: file_path,
             it: source_code.into_iter().peekable(), // Convert Vec<char> into an iterator
             current_pos: BytePos::default(),
             keywords
@@ -76,7 +76,7 @@ impl Lexer for SimpleLexer {
     }
 }
 
-impl SimpleLexer {
+impl SimpleLexerV1 {
     fn next(&mut self) -> Option<char> {
         let next = self.it.next();
         if let Some(ch) = next {
