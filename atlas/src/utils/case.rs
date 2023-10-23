@@ -1,7 +1,7 @@
 use heck::*;
 
 pub trait Case {
-    fn is_snake_case(&mut self) -> bool;   
+    fn is_snake_case(&mut self) -> bool;
     fn is_shouty_snake_case(&mut self) -> bool;
     fn is_pascal_case(&mut self) -> bool;
     fn is_camel_case(&mut self) -> bool;

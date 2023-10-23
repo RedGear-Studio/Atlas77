@@ -1,5 +1,4 @@
 pub mod interfaces;
-pub mod span;
 pub mod simple_lexer;
 pub mod simple_checker;
 pub mod utils;

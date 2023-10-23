@@ -1,4 +1,4 @@
-use crate::{span::{WithSpan, BytePos, Span}, interfaces::lexer::{Lexer, token::TokenType}};
+use crate::{utils::span::{WithSpan, BytePos, Span}, interfaces::lexer::{Lexer, token::Token}};
 use std::{fs::File, iter::Peekable, collections::HashMap};
 use std::io::{BufRead, BufReader};
 
@@ -6,7 +6,7 @@ pub(crate) struct SimpleLexerV1 {
     _file_path: String,
     current_pos: BytePos,
     it: Peekable<std::vec::IntoIter<char>>,
-    keywords: HashMap<String, TokenType>,
+    keywords: HashMap<String, Token>,
 }
 
 impl Lexer for SimpleLexerV1 {
@@ -20,7 +20,7 @@ impl Lexer for SimpleLexerV1 {
             source_code.push('\n'); // Add newline character for line breaks
         }
         let mut keywords = HashMap::new();
-        use TokenType::*;
+        use Token::*;
         keywords.insert("struct".to_string(), KwStruct);
         keywords.insert("else".to_string(), KwElse);
         keywords.insert("false".to_string(), KwFalse);
@@ -51,8 +51,8 @@ impl Lexer for SimpleLexerV1 {
         })
     }
 
-    fn tokenize(&mut self) -> Vec<WithSpan<TokenType>> {
-        let mut tokens: Vec<WithSpan<TokenType>> = Vec::new();
+    fn tokenize(&mut self) -> Vec<WithSpan<Token>> {
+        let mut tokens: Vec<WithSpan<Token>> = Vec::new();
 
         loop {
             let start_pos = self.current_pos;
@@ -89,7 +89,7 @@ impl SimpleLexerV1 {
         self.it.peek()
     }
 
-    fn either(&mut self, to_match: char, matched: TokenType, unmatched: TokenType) -> TokenType {
+    fn either(&mut self, to_match: char, matched: Token, unmatched: Token) -> Token {
         if self.consume_if(|c| c == to_match) {
             matched
         } else {
@@ -151,8 +151,8 @@ impl SimpleLexerV1 {
         chars
     }
 
-    fn match_t_token(&mut self, ch: char) -> Option<TokenType> {
-        use TokenType::*;
+    fn match_t_token(&mut self, ch: char) -> Option<Token> {
+        use Token::*;
         match ch {
             ' ' | '\t' | '\r' | '\n' => {
                 if !self.peek().is_none() {
@@ -256,7 +256,7 @@ impl SimpleLexerV1 {
         }
     }
 
-    fn identifier(&mut self, c: char) -> Option<TokenType> {
+    fn identifier(&mut self, c: char) -> Option<Token> {
         let mut ident = String::new();
         ident.push(c);
 
@@ -271,11 +271,11 @@ impl SimpleLexerV1 {
         if let Some(k) = self.keywords.get(&ident) {
             Some(k.clone())
         } else {
-            Some(TokenType::Ident(ident))
+            Some(Token::Ident(ident))
         }        
     }
 
-    fn number(&mut self, c: char) -> Option<TokenType> {
+    fn number(&mut self, c: char) -> Option<Token> {
         let mut number = String::new();
         number.push(c);
 
@@ -294,9 +294,9 @@ impl SimpleLexerV1 {
                 .collect();
             number.push_str(&num);
 
-            Some(TokenType::Float(number.parse::<f64>().unwrap()))
+            Some(Token::Float(number.parse::<f64>().unwrap()))
         } else {
-            Some(TokenType::Int(number.parse::<i64>().unwrap()))
+            Some(Token::Int(number.parse::<i64>().unwrap()))
         }
     }
     
