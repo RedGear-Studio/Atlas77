@@ -1,12 +1,14 @@
 use std::fmt::Display;
 
+/// Represents a position in bytes within a source file.
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Default)]
 pub struct BytePos(usize);
 impl BytePos {
+    /// Shifts the byte position by the length of a character.
     pub fn shift(self, ch: char) -> Self {
         BytePos(self.0 + ch.len_utf8())
     }
-
+    /// Shifts the byte position by a specified number of bytes.
     pub fn shift_by(self, n: usize) -> Self {
         BytePos(self.0 + n)
     }
@@ -18,7 +20,7 @@ impl Display for BytePos {
     }
 }
 
-
+/// Represents a span in a source file, defined by a start and end byte position.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 pub struct Span {
     pub start: BytePos,
@@ -26,20 +28,21 @@ pub struct Span {
 }
 
 impl Span {
+    /// Creates a new `Span` without bounds checking.
     pub unsafe fn new_unchecked(start: usize, end:  usize) -> Self {
         Span {
             start: BytePos(start),
             end: BytePos(end),
         }
     }
-
+    /// Creates an empty `Span` with both start and end positions at zero.
     pub const fn empty() -> Self {
         Span {
             start: BytePos(0),
             end: BytePos(0),
         }
     }
-
+    /// Combines two spans to create a new span that encompasses both.
     pub fn union_span(a: Self, other: Self) -> Self {
         use std::cmp;
 
@@ -48,7 +51,7 @@ impl Span {
             end: cmp::max(a.end, other.end),
         }        
     }
-
+    /// Retrieves line information (line number, column number, and line text) associated with the span.
     pub fn get_line_info<'a>(&'a self, file: &'a str) -> (usize, usize, &str) {
         let start_byte = self.start.0;
         let end_byte = self.end.0;
@@ -77,6 +80,7 @@ impl<T> From<&WithSpan<T>> for Span {
     }
 }
 
+/// Represents a value associated with a span in a source file.
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct WithSpan<T> {
     pub value: T,
@@ -84,10 +88,11 @@ pub struct WithSpan<T> {
 }
 
 impl<T> WithSpan<T> {
+    /// Creates a new `WithSpan` with a value and a specified span.
     pub const fn new(value: T, span: Span) -> Self {
         WithSpan { value, span }
     }
-
+    /// Creates an empty `WithSpan` with a value and an empty span.
     pub const fn empty(value: T) -> Self {
         Self {
             value,
@@ -97,7 +102,7 @@ impl<T> WithSpan<T> {
             },
         }
     }
-
+    /// Creates a new `WithSpan` without bounds checking.
     pub const unsafe fn new_unchecked(value: T, start: usize, end: usize) -> Self {
         Self {
             value,
@@ -107,7 +112,7 @@ impl<T> WithSpan<T> {
             },
         }
     }
-
+    /// Converts a `WithSpan` into a reference to a `WithSpan` with a reference to the value.
     pub const fn as_ref(&self) -> WithSpan<&T> {
         WithSpan {
             span: self.span,

@@ -1,9 +1,30 @@
 use heck::*;
 
+/// The `Case` trait defines methods for checking the naming convention of identifiers.
 pub trait Case {
+    /// Checks if an identifier follows the snake_case naming convention.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the identifier is in snake_case, `false` otherwise.
     fn is_snake_case(&mut self) -> bool;
+    /// Checks if an identifier follows the SHOUTY_SNAKE_CASE naming convention.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the identifier is in SHOUTY_SNAKE_CASE, `false` otherwise.
     fn is_shouty_snake_case(&mut self) -> bool;
+    /// Checks if an identifier follows the PascalCase naming convention.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the identifier is in PascalCase, `false` otherwise.
     fn is_pascal_case(&mut self) -> bool;
+    /// Checks if an identifier follows the camelCase naming convention.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the identifier is in camelCase, `false` otherwise.
     fn is_camel_case(&mut self) -> bool;
 }
 
