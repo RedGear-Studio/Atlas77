@@ -8,6 +8,9 @@ pub trait Lexer {
         where Self: Sized;
     fn tokenize(&mut self) -> Vec<WithSpan<token::Token>>;
     fn check(&mut self, tokens: &[WithSpan<token::Token>]) -> Result<(), errors::LexerError> {
+        if tokens.len() == 0 {
+            return Err(errors::LexerError::Empty);
+        }
         for token in tokens {
             match token.value {
                 token::Token::Unknown(c) => {

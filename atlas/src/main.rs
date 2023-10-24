@@ -1,10 +1,11 @@
 pub mod interfaces;
 pub mod simple_lexer;
-pub mod simple_checker;
 pub mod utils;
+pub mod language;
 
 use simple_lexer::SimpleLexerV1;
 use interfaces::lexer::Lexer;
+use interfaces::parser::Parser;
 
 
 fn main() {

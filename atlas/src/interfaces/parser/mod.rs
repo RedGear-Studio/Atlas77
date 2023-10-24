@@ -1,6 +1,5 @@
-use atlas_syntax::ast::AST;
-
-use crate::simple_checker::check;
+use crate::utils::span::WithSpan;
+use crate::interfaces::lexer::token;
 
 pub mod ast;
 pub mod errors;
@@ -8,8 +7,9 @@ pub mod errors;
 pub trait Parser {
     fn new(file_path: String) -> Result<Self, std::io::Error>
         where Self: Sized;
-    fn parse(&mut self);
-    fn check(&mut self, ast: AST) -> Result<(), errors::ParseError> {
-        check(ast)
+    fn parse(&mut self, tokens: &[WithSpan<token::Token>]) -> ast::AbstractSyntaxTree;
+    fn check(&mut self, _ast: ast::AbstractSyntaxTree) -> Result<(), errors::ParseError> {
+        println!("It'll be implemented later, dw it'll be... :)");
+        Ok(())
     }
 }
