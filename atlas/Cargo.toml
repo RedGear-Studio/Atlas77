@@ -1,12 +1,11 @@
 [package]
-name = "atlas"
-version = "0.1.0"
+name = "atlas77"
+version = "0.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 ariadne = { version = "0.3.0", features = ["auto-color"] }
-atlas-misc = { path = "../atlas-misc" }
 clap = { version = "4.3.23", features = ["derive"] }
 heck = "0.4.1"
