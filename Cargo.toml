@@ -1,7 +1,5 @@
 [workspace]
-
 members = [
     "atlas",
-    "atlas-syntax",
     "atlas-misc",
-    ]
+]

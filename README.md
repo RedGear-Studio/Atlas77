@@ -21,6 +21,9 @@
 </div>
 
 
+Blablablablabla I'm trying to make a language in Rust
+
+
 # Contributing
 Thank you for your interest in contributing to our project! We welcome all contributions, whether they be bug fixes, new features, or improvements to the documentation.
 
@@ -37,7 +40,7 @@ Once you have submitted your pull request, one of our maintainers will review it
 
 # License
 
-Distributed under the MIT and BEERWARE License. See [`MIT-LICENSE`](https://github.com/RedGear-Studio/Atlas77/blob/main/LICENSE-MIT.md) and [`BEERWARE-License`](https://github.com/RedGear-Studio/Atlas77/blob/main/LICENSE-BEERWARE.md)for more information.
+Distributed under the MIT License. See [`MIT-LICENSE`](https://github.com/RedGear-Studio/Atlas77/blob/main/LICENSE-MIT.md) for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -46,7 +49,7 @@ Distributed under the MIT and BEERWARE License. See [`MIT-LICENSE`](https://gith
 ## Contact
 
 Twitter Name: [@RedGear Studio](https://twitter.com/RedGearS) 
-Email: studio.redgear@gmail.com
+Email: [studio.redgear@gmail.com](studio.redgear@gmail.com)
 
 Project Link: [https://github.com/RedGear-Studio/Atlas77](https://github.com/RedGear-Studio/Atlas77)
 

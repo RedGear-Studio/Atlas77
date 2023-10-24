@@ -1,52 +1,24 @@
-use atlas_misc::report::Report;
-use atlas_syntax::parse;
+pub mod interfaces;
+pub mod simple_lexer;
+pub mod simple_parser;
+pub mod utils;
+pub mod language;
 
+use simple_lexer::SimpleLexerV1;
+use interfaces::lexer::Lexer;
+use interfaces::parser::Parser;
 
-use std::{io::{self, Write}, fs};
+use crate::language::Language;
+use crate::simple_parser::SimpleParserV1;
 
-fn evaluate_input(input: &str, path: &str) -> Result<String, Vec<Report>> {
-
-    let res = parse(input, path)?;
-
-    let mut result = String::new();
-    for res in res {
-        result.push_str( format!("{:?}", res.value).as_str());
-    }
-
-    return Ok(result);
-}
-
-fn _repl() {
-    loop {
-        print!(">> ");
-        io::stdout().flush().unwrap();
-
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
-
-        let input = input.trim();
-        if input == "exit" {
-            break;
-        }
-
-        let _result = evaluate_input(input, "stdin");
-        //println!("{}", result);
-    }
-}
 
 fn main() {
-    let path = "atlas/main.atl";
-    let code = fs::read_to_string(path).unwrap();
-    
-    let res = evaluate_input(
-        &code,
-        path
+    let path = String::from("C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\atlas\\test.atlas");
+    let mut language = Language::new(
+        Box::new(SimpleLexerV1::new(path.to_owned()).expect("Failed to create the lexer")),
+        Box::new(SimpleParserV1::new(path).expect("Failed to create the parser"))
     );
-    if res.is_ok() {
-        println!("{}", res.unwrap());
-    } else {
-        for report in res.unwrap_err() {
-            println!("{}", report);
-        }
-    }
+    let tokens = language.lexer.tokenize();
+    println!("{:?}", tokens);
+    println!("{:?}", language.lexer.check(&tokens))
 }
