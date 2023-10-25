@@ -1,6 +1,6 @@
-use crate::Parser;
+use crate::interfaces::parser::Parser;
 
-pub(crate) struct SimpleParserV1 {}
+pub struct SimpleParserV1 {}
 
 impl Parser for SimpleParserV1 {
     fn new(file_path: String) -> Result<Self, std::io::Error> {

@@ -2,7 +2,7 @@ use crate::{utils::span::{WithSpan, BytePos, Span}, interfaces::lexer::{Lexer, t
 use std::{fs::File, iter::Peekable, collections::HashMap};
 use std::io::{BufRead, BufReader};
 
-pub(crate) struct SimpleLexerV1 {
+pub struct SimpleLexerV1 {
     _file_path: String,
     current_pos: BytePos,
     it: Peekable<std::vec::IntoIter<char>>,
