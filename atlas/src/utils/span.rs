@@ -20,10 +20,12 @@ impl Display for BytePos {
     }
 }
 
-/// Represents a span in a source file, defined by a start and end byte position.
+///! Represents a span in a source file, defined by a start and end byte position.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 pub struct Span {
+    /// The position of character at the start of the span
     pub start: BytePos,
+    /// The position of character at the end of the span
     pub end: BytePos,
 }
 
@@ -83,7 +85,11 @@ impl<T> From<&WithSpan<T>> for Span {
 /// Represents a value associated with a span in a source file.
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct WithSpan<T> {
+    /// The value within the span 
+    /// 
+    /// NB: Often use for Nodes and Tokens
     pub value: T,
+    /// The span of the value
     pub span: Span,
 }
 

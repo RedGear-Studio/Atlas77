@@ -3,7 +3,9 @@ use crate::interfaces::{lexer::Lexer, parser::Parser};
 /// 
 /// NB: A lot more components will be added in the future. (like optimization passes, registers allocation pass, etc)
 pub struct Language {
+    /// The lexer component.
     pub lexer: Box<dyn Lexer>,
+    /// The parser component.
     pub parser: Box<dyn Parser>,
 }
 

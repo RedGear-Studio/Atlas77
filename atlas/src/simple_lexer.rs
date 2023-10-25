@@ -2,6 +2,7 @@ use crate::{utils::span::{WithSpan, BytePos, Span}, interfaces::lexer::{Lexer, t
 use std::{fs::File, iter::Peekable, collections::HashMap};
 use std::io::{BufRead, BufReader};
 
+/// Default Lexer and base one for the Atlas77 language
 pub struct SimpleLexerV1 {
     _file_path: String,
     current_pos: BytePos,
@@ -40,7 +41,7 @@ impl Lexer for SimpleLexerV1 {
         keywords.insert("void".to_string(), KwVoid);
         keywords.insert("const".to_string(), KwConst);
         keywords.insert("enum".to_string(), KwEnum);
-        keywords.insert("typedef".to_string(), KwType);
+        keywords.insert("typedef".to_string(), KwTypeDef);
         keywords.insert("pub".to_string(), KwPub);
 
         Ok(SimpleLexerV1 {

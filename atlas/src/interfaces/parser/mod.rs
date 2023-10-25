@@ -1,7 +1,9 @@
 use crate::utils::span::WithSpan;
 use crate::interfaces::lexer::token;
 
+/// Contains all the ast nodes
 pub mod ast;
+/// Contains all the potential Parser errors
 pub mod errors;
 
 /// The `Parser` trait defines the interface for parsing source code and generating an abstract syntax tree (AST).

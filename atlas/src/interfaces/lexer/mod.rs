@@ -1,4 +1,6 @@
+/// Contains all the Tokens needed for a basic Lexer
 pub mod token;
+/// Contains all the potential Lexer Error
 pub mod errors;
 
 use crate::utils::span::WithSpan;
@@ -55,6 +57,9 @@ pub trait Lexer {
             match token.value {
                 token::Token::Unknown(c) => {
                     return Err(errors::LexerError::UnknownToken(c, token.span))
+                }
+                token::Token::UnterminatedString => {
+                    return Err(errors::LexerError::UnterminatedString)
                 }
                 _ => ()
             }
