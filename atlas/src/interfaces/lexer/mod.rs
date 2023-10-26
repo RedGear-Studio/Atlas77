@@ -7,7 +7,7 @@ use crate::utils::span::WithSpan;
 
 /// The `Lexer` trait defines the interface for lexical analysis.
 pub trait Lexer {
-    /// Creates a new instance of a lexer for a given file.
+    /// Add the file path to the lexer. The way you treat the file path is implementation dependent.
     ///
     /// # Arguments
     ///
@@ -39,7 +39,7 @@ pub trait Lexer {
     /// # Example
     ///
     /// ```
-    /// use my_lexer::Lexer;
+    /// use my_lexer::MyLexer;
     ///
     /// let mut my_lexer = MyLexer::new("source_file.txt".to_string()).unwrap();
     /// let tokens = my_lexer.tokenize();

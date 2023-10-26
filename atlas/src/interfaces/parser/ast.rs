@@ -1,12 +1,12 @@
-use crate::utils::visitor::Visitor;
+use crate::{utils::{visitor::Visitor, span::WithSpan}, Token};
 
 use super::node::Node;
 
 /// Placeholder
-pub struct AbstractSyntaxTree;
+pub type AbstractSyntaxTree = Vec<WithSpan<Box<dyn Node>>>;
 
 // Expression Nodes
-
+#[derive(Debug, Clone)]
 pub enum Literal {
     Integer(i64),
     Float(f64),
@@ -14,6 +14,7 @@ pub enum Literal {
     Bool(bool),
 }
 
+#[derive(Debug, Clone)]
 pub struct IdentifierNode {
     pub name: String,
 }
@@ -24,10 +25,11 @@ impl Node for IdentifierNode {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct BinaryExpression {
-    pub left: Box<Expression>,
+    pub left: WithSpan<Box<Expression>>,
     pub operator: BinaryOperator,
-    pub right: Box<Expression>,
+    pub right: WithSpan<Box<Expression>>,
 }
 
 impl Node for BinaryExpression {
@@ -36,6 +38,7 @@ impl Node for BinaryExpression {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum BinaryOperator {
     OpAdd,
     OpSub,
@@ -58,9 +61,31 @@ pub enum BinaryOperator {
     OpBitXor,
 }
 
+impl From<&Token> for Option<BinaryOperator> {
+    fn from(value: &Token) -> Self {
+        match value {
+            Token::OpAdd => Some(BinaryOperator::OpAdd),
+            Token::OpSub => Some(BinaryOperator::OpSub),
+            Token::OpMul => Some(BinaryOperator::OpMul),
+            Token::OpDiv => Some(BinaryOperator::OpDiv),
+            Token::OpMod => Some(BinaryOperator::OpMod),
+            Token::OpEq => Some(BinaryOperator::OpEq),
+            Token::OpNe => Some(BinaryOperator::OpNe),
+            Token::OpLt => Some(BinaryOperator::OpLt),
+            Token::OpLe => Some(BinaryOperator::OpLe),
+            Token::OpGt => Some(BinaryOperator::OpGt),
+            Token::OpGe => Some(BinaryOperator::OpGe),
+            Token::OpAnd => Some(BinaryOperator::OpAnd),
+            Token::OpOr => Some(BinaryOperator::OpOr),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct UnaryExpression {
-    pub operator: UnaryOperator,
-    pub expression: Box<Expression>,
+    pub operator: Option<UnaryOperator>,
+    pub expression: WithSpan<Box<Expression>>,
 }
 
 impl Node for UnaryExpression {
@@ -69,12 +94,14 @@ impl Node for UnaryExpression {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum UnaryOperator {
     OpAdd,
     OpSub,
     OpNot,
 }
 
+#[derive(Debug, Clone)]
 pub enum Expression {
     Literal(Literal),
     Identifier(IdentifierNode),

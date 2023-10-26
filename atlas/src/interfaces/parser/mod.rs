@@ -1,6 +1,8 @@
 use crate::utils::span::WithSpan;
 use crate::interfaces::lexer::token;
 
+use self::errors::ParseError;
+
 /// Contains all the ast nodes
 pub mod ast;
 /// Contains all the potential Parser errors
@@ -14,7 +16,7 @@ pub mod node;
 /// * `tokens` - A Vec of `WithSpan` tokens, each representing a token along with its span.
 /// * `file_path` - The path to the root source file to be processed. (This is used for error reporting.)
 pub trait Parser {
-    /// Creates a new empty instance of a parser for a given file (the file is only used for error reporting and should be the root file).
+    /// Adds the file path to the parser. (The file should only be used for error reporting.)
     ///
     /// # Arguments
     ///
@@ -36,7 +38,7 @@ pub trait Parser {
     /// # Returns
     ///
     /// An `AbstractSyntaxTree` that represents the parsed code's hierarchical structure and semantics.
-    fn parse(&mut self) -> ast::AbstractSyntaxTree;
+    fn parse(&mut self) -> Result<ast::AbstractSyntaxTree, ParseError>;
     /// Checks the parsed abstract syntax tree (AST) for correctness and adherence to the language's grammar rules.
     ///
     /// # Arguments

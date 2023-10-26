@@ -20,7 +20,7 @@ impl Display for BytePos {
     }
 }
 
-///! Represents a span in a source file, defined by a start and end byte position.
+/// Represents a span in a source file, defined by a start and end byte position.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 pub struct Span {
     /// The position of character at the start of the span
