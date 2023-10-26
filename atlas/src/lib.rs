@@ -6,23 +6,12 @@
 
 #![warn(missing_docs)]
 
-///! <h3 align="center">Atlas77</h3>
+///! # Atlas-Core
 ///! 
-///! <p align="center">
-///!   [Atlas77] is a programming language in development written in Rust 
-///!  <br />
-///!  <a href="https://github.com/RedGear-Studio/Atlas77/issues">Report Bug</a>
-///!  ·
-///!  <a href="https://github.com/RedGear-Studio/Atlas77/issues">Request Feature</a>
-///!  ·
-///!  <a href="https://github.com/RedGear-Studio/Atlas77/pulls">Add Features</a>
-///! </p>
-///! </div>
-///! 
-///! 
-///! Blablablablabla I'm trying to make a language in Rust
+///! Atlas-core is the foundational library for a language creation tool designed to assist users in developing languages.
+///! This core library serves as the building block for the creation of Atlas77, a functional programming language.
 
-/// Contains all the definition of the Language struct
+
 pub mod language;
 /// TODO
 pub mod simple_lexer;
