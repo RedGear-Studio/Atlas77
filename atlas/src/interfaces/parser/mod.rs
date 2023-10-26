@@ -5,6 +5,8 @@ use crate::interfaces::lexer::token;
 pub mod ast;
 /// Contains all the potential Parser errors
 pub mod errors;
+/// Contains all the definition of the Node trait
+pub mod node;
 
 /// The `Parser` trait defines the interface for parsing source code and generating an abstract syntax tree (AST).
 pub trait Parser {
