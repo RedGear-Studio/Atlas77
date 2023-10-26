@@ -21,6 +21,8 @@
 ///! 
 ///! 
 ///! Blablablablabla I'm trying to make a language in Rust
+
+/// Contains all the definition of the Language struct
 pub mod language;
 /// TODO
 pub mod simple_lexer;
@@ -30,6 +32,3 @@ pub mod simple_parser;
 pub mod utils;
 /// TODO
 pub mod interfaces;
-
-#[doc(inline)]
-pub use crate::language::*;
