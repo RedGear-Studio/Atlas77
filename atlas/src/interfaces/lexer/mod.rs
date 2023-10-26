@@ -17,8 +17,7 @@ pub trait Lexer {
     ///
     /// A `Result` that contains the lexer instance if successful, or an `std::io::Error` if there's an issue
     /// with file I/O (e.g., file not found, permission issues).
-    fn new(file_path: String) -> Result<Self, std::io::Error>
-        where Self: Sized;
+    fn with_file_path(&mut self, file_path: String) -> Result<(), std::io::Error>;
     /// Tokenizes the source code, converting it into a sequence of tokens.
     ///
     /// # Returns

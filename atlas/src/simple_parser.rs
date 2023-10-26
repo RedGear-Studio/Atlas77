@@ -1,13 +1,41 @@
 use crate::interfaces::parser::Parser;
+use crate::utils::span::*;
+use crate::interfaces::lexer::token::{Token::*, Token};
+
+/// The `EOF` token.
+static EOF_TOKEN: WithSpan<Token> = WithSpan::new(EOF, Span::empty());
 
 /// Default Parser and base one for the Atlas77 language
-pub struct SimpleParserV1 {}
+#[derive(Debug, Clone, Default)]
+pub struct SimpleParserV1 {
+    tokens: Vec<WithSpan<Token>>,
+    file_path: String,
+    pos: usize,
+}
 
 impl Parser for SimpleParserV1 {
-    fn new(_file_path: String) -> Result<Self, std::io::Error> {
-        Ok(SimpleParserV1 {})
+    fn with_file_path(&mut self, file_path: String) -> Result<(), std::io::Error> {
+        self.file_path = file_path;
+        return  Ok(());
     }
-    fn parse(&mut self, _tokens: &[crate::utils::span::WithSpan<crate::interfaces::lexer::token::Token>]) -> crate::interfaces::parser::ast::AbstractSyntaxTree {
+    fn with_tokens(&mut self, tokens: Vec<WithSpan<Token>>) {
+        self.tokens = tokens
+    }
+    fn parse(&mut self) -> crate::interfaces::parser::ast::AbstractSyntaxTree {
+        
+        todo!("Implement me!")
+    }
+}
+
+impl SimpleParserV1 {
+    pub fn new() -> Self {
+        SimpleParserV1 { 
+            tokens: Vec::default(), 
+            file_path: String::default(), 
+            pos: usize::default()
+        }
+    }
+    pub fn is_eof(&self) -> bool {
         todo!()
     }
 }

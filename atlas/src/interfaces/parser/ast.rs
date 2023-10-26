@@ -58,10 +58,28 @@ pub enum BinaryOperator {
     OpBitXor,
 }
 
+pub struct UnaryExpression {
+    pub operator: UnaryOperator,
+    pub expression: Box<Expression>,
+}
+
+impl Node for UnaryExpression {
+    fn accept(&mut self, visitor: &mut dyn Visitor) {
+        visitor.visit_unary_expression(self);
+    }
+}
+
+pub enum UnaryOperator {
+    OpAdd,
+    OpSub,
+    OpNot,
+}
+
 pub enum Expression {
     Literal(Literal),
     Identifier(IdentifierNode),
     BinaryExpression(BinaryExpression),
+    UnaryExpression(UnaryExpression),
 }
 
 impl Node for Expression {

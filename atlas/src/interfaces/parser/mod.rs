@@ -9,8 +9,12 @@ pub mod errors;
 pub mod node;
 
 /// The `Parser` trait defines the interface for parsing source code and generating an abstract syntax tree (AST).
+/// 
+/// There should be at least 2 field on your parser:
+/// * `tokens` - A Vec of `WithSpan` tokens, each representing a token along with its span.
+/// * `file_path` - The path to the root source file to be processed. (This is used for error reporting.)
 pub trait Parser {
-        /// Creates a new instance of a parser for a given file.
+    /// Creates a new empty instance of a parser for a given file (the file is only used for error reporting and should be the root file).
     ///
     /// # Arguments
     ///
@@ -20,18 +24,19 @@ pub trait Parser {
     ///
     /// A `Result` that contains the parser instance if successful, or an `std::io::Error` if there's an issue
     /// with file I/O (e.g., file not found, permission issues).
-    fn new(file_path: String) -> Result<Self, std::io::Error>
-        where Self: Sized;
-    /// Parses a sequence of tokens, generating an abstract syntax tree (AST).
-    ///
+    fn with_file_path(&mut self, file_path: String) -> Result<(), std::io::Error>;
+    /// Adds the given tokens to the parser.
+    /// 
     /// # Arguments
     ///
-    /// * `tokens` - A slice of `WithSpan` objects, each representing a token along with its span.
+    /// * `tokens` - A Vec of `WithSpan` objects, each representing a token along with its span.
+    fn with_tokens(&mut self, tokens: Vec<WithSpan<token::Token>>);
+    /// Parses a sequence of tokens, generating an abstract syntax tree (AST).
     ///
     /// # Returns
     ///
-    /// An `ast::AbstractSyntaxTree` that represents the parsed code's hierarchical structure and semantics.
-    fn parse(&mut self, tokens: &[WithSpan<token::Token>]) -> ast::AbstractSyntaxTree;
+    /// An `AbstractSyntaxTree` that represents the parsed code's hierarchical structure and semantics.
+    fn parse(&mut self) -> ast::AbstractSyntaxTree;
     /// Checks the parsed abstract syntax tree (AST) for correctness and adherence to the language's grammar rules.
     ///
     /// # Arguments

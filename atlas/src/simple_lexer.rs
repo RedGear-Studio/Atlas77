@@ -4,14 +4,14 @@ use std::io::{BufRead, BufReader};
 
 /// Default Lexer and base one for the Atlas77 language
 pub struct SimpleLexerV1 {
-    _file_path: String,
+    file_path: String,
     current_pos: BytePos,
     it: Peekable<std::vec::IntoIter<char>>,
     keywords: HashMap<String, Token>,
 }
 
 impl Lexer for SimpleLexerV1 {
-    fn new(file_path: String) -> Result<Self, std::io::Error> {
+    fn with_file_path(&mut self, file_path: String) -> Result<(), std::io::Error> {
         let file = File::open(file_path.clone())?;
         let reader = BufReader::new(file);
 
@@ -44,12 +44,11 @@ impl Lexer for SimpleLexerV1 {
         keywords.insert("typedef".to_string(), KwTypeDef);
         keywords.insert("pub".to_string(), KwPub);
 
-        Ok(SimpleLexerV1 {
-            _file_path: file_path,
-            it: source_code.into_iter().peekable(), // Convert Vec<char> into an iterator
-            current_pos: BytePos::default(),
-            keywords
-        })
+        self.keywords = keywords;
+        self.file_path = file_path;
+        self.it = source_code.into_iter().peekable();
+
+        Ok(())
     }
 
     fn tokenize(&mut self) -> Vec<WithSpan<Token>> {
@@ -78,6 +77,15 @@ impl Lexer for SimpleLexerV1 {
 }
 
 impl SimpleLexerV1 {
+    pub fn new() -> Self {
+        SimpleLexerV1 {
+            file_path: String::default(),
+            it: " ".chars().collect::<Vec<_>>().into_iter().peekable(),
+            current_pos: BytePos::default(),
+            keywords: HashMap::new()
+        }
+    }
+
     fn next(&mut self) -> Option<char> {
         let next = self.it.next();
         if let Some(ch) = next {

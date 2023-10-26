@@ -1,6 +1,6 @@
 [package]
 name = "atlas-core"
-version = "0.0.1"
+version = "0.0.2-alpha"
 authors = ["Gipson <j.h.gipson62@gmail.com>"]
 description = "The core of the Atlas which contains all relevant traits, interface and base structs."
 license = "MIT"
