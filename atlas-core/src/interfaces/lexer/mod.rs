@@ -1,11 +1,13 @@
+/// Contains all the Tokens needed for a basic Lexer
 pub mod token;
+/// Contains all the potential Lexer Error
 pub mod errors;
 
 use crate::utils::span::WithSpan;
 
 /// The `Lexer` trait defines the interface for lexical analysis.
 pub trait Lexer {
-    /// Creates a new instance of a lexer for a given file.
+    /// Add the file path to the lexer. The way you treat the file path is implementation dependent.
     ///
     /// # Arguments
     ///
@@ -15,8 +17,7 @@ pub trait Lexer {
     ///
     /// A `Result` that contains the lexer instance if successful, or an `std::io::Error` if there's an issue
     /// with file I/O (e.g., file not found, permission issues).
-    fn new(file_path: String) -> Result<Self, std::io::Error>
-        where Self: Sized;
+    fn with_file_path(&mut self, file_path: String) -> Result<(), std::io::Error>;
     /// Tokenizes the source code, converting it into a sequence of tokens.
     ///
     /// # Returns
@@ -38,7 +39,7 @@ pub trait Lexer {
     /// # Example
     ///
     /// ```
-    /// use my_lexer::Lexer;
+    /// use my_lexer::MyLexer;
     ///
     /// let mut my_lexer = MyLexer::new("source_file.txt".to_string()).unwrap();
     /// let tokens = my_lexer.tokenize();
@@ -55,6 +56,9 @@ pub trait Lexer {
             match token.value {
                 token::Token::Unknown(c) => {
                     return Err(errors::LexerError::UnknownToken(c, token.span))
+                }
+                token::Token::UnterminatedString => {
+                    return Err(errors::LexerError::UnterminatedString)
                 }
                 _ => ()
             }

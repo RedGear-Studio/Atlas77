@@ -1,16 +1,25 @@
 [package]
 name = "atlas-core"
-version = "0.0.0"
-authors = ["Gipson <j.h.gipson62@gmail.com>"]
+version = "0.0.2-alpha2"
+authors = ["Gipson62 <j.h.gipson62@gmail.com>"]
 description = "The core of the Atlas which contains all relevant traits, interface and base structs."
+keywords = ["language", "tool", "programming-language", "language-agnostic"]
+categories = ["development-tools", "development-tools::build-utils"]
 license = "MIT"
 edition = "2021"
 homepage = "https://redgear.tk/"
 repository = "https://github.com/RedGear-Studio/Atlas77"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "atlas_core"
+
+[features]
+default = ["debug"]
+debug = ["dep:env_logger"]
 
 [dependencies]
 ariadne = { version = "0.3.0", features = ["auto-color"] }
 clap = { version = "4.3.23", features = ["derive"] }
 heck = "0.4.1"
+# debug logs
+env_logger = { version = "0.10", optional = true }
