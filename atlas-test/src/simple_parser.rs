@@ -1,9 +1,9 @@
-use crate::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, IdentifierNode};
-use crate::interfaces::parser::errors::ParseError;
-use crate::interfaces::parser::Parser;
-use crate::node::Node;
-use crate::utils::span::*;
-use crate::interfaces::lexer::token::{Token::*, Token};
+use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, IdentifierNode};
+use atlas_core::interfaces::parser::errors::ParseError;
+use atlas_core::interfaces::parser::Parser;
+use atlas_core::node::Node;
+use atlas_core::utils::span::*;
+use atlas_core::interfaces::lexer::token::{Token::*, Token};
 
 /// The `EOF` token.
 static EOF_TOKEN: WithSpan<Token> = WithSpan::new(EOF, Span::empty());
@@ -34,7 +34,7 @@ impl Parser for SimpleParserV1 {
 }
 
 impl SimpleParserV1 {
-    /// Creates a new `SimpleParserV1`
+    /// Creates a new empty `SimpleParserV1`
     pub fn new() -> Self {
         SimpleParserV1 { 
             tokens: Vec::default(), 
@@ -98,11 +98,11 @@ impl SimpleParserV1 {
         let op = Option::<BinaryOperator>::from(&self.current().value);
         match op {
             Some(op) => {
-                Ok((WithSpan::new(Box::new(Expression::BinaryExpression(BinaryExpression {
+                Ok(WithSpan::new(Box::new(Expression::BinaryExpression(BinaryExpression {
                     left: left.clone(),
                     operator: op,
                     right: self.parse_unary()?
-                })), left.span)))
+                })), left.span))
             }
             None => {
                 Ok(left)

@@ -1,9 +1,9 @@
-use atlas_core::simple_lexer::SimpleLexerV1;
-use atlas_core::interfaces::lexer::Lexer;
-use atlas_core::interfaces::parser::Parser;
+pub mod simple_lexer;
+pub mod simple_parser;
 
+use crate::simple_lexer::SimpleLexerV1;
 use atlas_core::language::Language;
-use atlas_core::simple_parser::SimpleParserV1;
+use crate::simple_parser::SimpleParserV1;
 
 
 fn main() {

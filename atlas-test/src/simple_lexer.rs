@@ -1,4 +1,4 @@
-use crate::{utils::span::{WithSpan, BytePos, Span}, interfaces::lexer::{Lexer, token::Token}};
+use atlas_core::{utils::span::{WithSpan, BytePos, Span}, interfaces::lexer::{Lexer, token::Token}};
 use std::{fs::File, iter::Peekable, collections::HashMap};
 use std::io::{BufRead, BufReader};
 
@@ -77,6 +77,7 @@ impl Lexer for SimpleLexerV1 {
 }
 
 impl SimpleLexerV1 {
+    /// Create a new empty `SimpleLexerV1`
     pub fn new() -> Self {
         SimpleLexerV1 {
             file_path: String::default(),

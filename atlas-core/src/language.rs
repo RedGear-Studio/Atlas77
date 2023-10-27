@@ -2,6 +2,7 @@ use crate::interfaces::{lexer::Lexer, parser::Parser};
 /// The `Language` struct represents a language processing tool with interchangeable lexer and parser components.
 /// 
 /// NB: A lot more components will be added in the future. (like optimization passes, registers allocation pass, etc)
+/// And it's probably just a temporary struct, it'll be refactored in the future to have something more optimized and reflecting more the idea of the project
 pub struct Language {
     /// The lexer component.
     pub lexer: Box<dyn Lexer>,

@@ -9,14 +9,10 @@
 //! # Atlas-Core
 //! 
 //! Atlas-core is the foundational library for a language creation tool designed to assist users in developing languages.
-//! This core library serves as the building block for the creation of Atlas77, a functional programming language.
+//! This core library currently serves as the building block for the creation of Atlas77, a functional programming language.
 
 /// TODO
 pub mod language;
-/// TODO
-pub mod simple_lexer;
-/// TODO
-pub mod simple_parser;
 /// TODO
 pub mod utils;
 /// TODO
@@ -30,3 +26,9 @@ pub use interfaces::parser::*;
 pub use interfaces::lexer::*;
 #[doc(inline)]
 pub use interfaces::lexer::token::*;
+
+/// For alphas only
+pub mod prelude {
+    pub use crate::language::*;
+    pub use crate::interfaces::*;
+}

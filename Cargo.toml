@@ -2,4 +2,5 @@
 resolver = "1"
 members = [
     "atlas-core",
+    "atlas-test"
 ]
