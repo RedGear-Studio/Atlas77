@@ -7,7 +7,7 @@ use crate::simple_parser::SimpleParserV1;
 
 
 fn main() {
-    let path = String::from("C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\atlas\\test.atlas");
+    let path = String::from("C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\atlas-test\\test.atlas");
     let mut language = Language::new(
         Box::new(SimpleLexerV1::new()),
         Box::new(SimpleParserV1::new())

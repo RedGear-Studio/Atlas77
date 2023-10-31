@@ -126,15 +126,16 @@ impl SimpleParserV1 {
             },
             _ => None,
         };
-        self.advance();
         match self.current().value {
             Token::Float(f) => {
+                self.advance();
                 Ok(WithSpan::new(Box::new(Expression::UnaryExpression(UnaryExpression {
                     operator,
                     expression: WithSpan::new(Box::new(Expression::Literal(Literal::Float(f))), Span::default())
                 })), Span::default()))
             },
             Token::Int(i) => {
+                self.advance();
                 Ok(WithSpan::new(Box::new(Expression::UnaryExpression(UnaryExpression {
                     operator,
                     expression: WithSpan::new(Box::new(Expression::Literal(Literal::Integer(i))), Span::default())
