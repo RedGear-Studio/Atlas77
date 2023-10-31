@@ -6,9 +6,9 @@
 
 #![warn(missing_docs)]
 
-//! # Atlas-Core
+//! # atlas-Core
 //! 
-//! Atlas-core is the foundational library for a language creation tool designed to assist users in developing languages.
+//! `atlas-core` is the foundational library for a language creation tool designed to assist users in developing languages.
 //! This core library currently serves as the building block for the creation of Atlas77, a functional programming language.
 
 /// TODO

@@ -202,6 +202,7 @@ impl SimpleLexerV1 {
                 }
             },
             '%' => Some(self.either('=', OpAssignMod, OpMod)),
+            '^' => Some(OpPow),
             '<' => {
                 if self.consume_if(|c| c == '=') {
                     Some(OpLe)

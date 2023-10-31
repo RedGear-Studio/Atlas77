@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::{utils::{visitor::Visitor, span::WithSpan}, Token};
 
 use super::node::Node;
@@ -14,9 +16,26 @@ pub enum Literal {
     Bool(bool),
 }
 
+impl fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Integer(i) => write!(f, "{}", i),
+            Self::Float(fl) => write!(f, "{}", fl),
+            Self::String(s) => write!(f, "{}", s),
+            Self::Bool(b) => write!(f, "{}", b),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct IdentifierNode {
     pub name: String,
+}
+
+impl fmt::Display for IdentifierNode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 impl Node for IdentifierNode {
@@ -38,6 +57,12 @@ impl Node for BinaryExpression {
     }
 }
 
+impl fmt::Display for BinaryExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({} {} {})", self.left.value, self.operator, self.right.value)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum BinaryOperator {
     OpAdd,
@@ -45,7 +70,8 @@ pub enum BinaryOperator {
     OpMul,
     OpDiv,
     OpMod,
-    OpEq,
+    OpPow,
+    /*OpEq,
     OpNe,
     OpLt,
     OpLe,
@@ -58,7 +84,20 @@ pub enum BinaryOperator {
     OpShr,
     OpBitAnd,
     OpBitOr,
-    OpBitXor,
+    OpBitXor,*/
+}
+
+impl fmt::Display for BinaryOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::OpAdd => write!(f, "+"),
+            Self::OpSub => write!(f, "-"),
+            Self::OpMul => write!(f, "*"),
+            Self::OpDiv => write!(f, "/"),
+            Self::OpMod => write!(f, "%"),
+            Self::OpPow => write!(f, "^"),
+        }
+    }
 }
 
 impl From<&Token> for Option<BinaryOperator> {
@@ -69,14 +108,15 @@ impl From<&Token> for Option<BinaryOperator> {
             Token::OpMul => Some(BinaryOperator::OpMul),
             Token::OpDiv => Some(BinaryOperator::OpDiv),
             Token::OpMod => Some(BinaryOperator::OpMod),
-            Token::OpEq => Some(BinaryOperator::OpEq),
+            Token::OpPow => Some(BinaryOperator::OpPow),
+            /*Token::OpEq => Some(BinaryOperator::OpEq),
             Token::OpNe => Some(BinaryOperator::OpNe),
             Token::OpLt => Some(BinaryOperator::OpLt),
             Token::OpLe => Some(BinaryOperator::OpLe),
             Token::OpGt => Some(BinaryOperator::OpGt),
             Token::OpGe => Some(BinaryOperator::OpGe),
             Token::OpAnd => Some(BinaryOperator::OpAnd),
-            Token::OpOr => Some(BinaryOperator::OpOr),
+            Token::OpOr => Some(BinaryOperator::OpOr),*/
             _ => None,
         }
     }
@@ -86,6 +126,16 @@ impl From<&Token> for Option<BinaryOperator> {
 pub struct UnaryExpression {
     pub operator: Option<UnaryOperator>,
     pub expression: WithSpan<Box<Expression>>,
+}
+
+impl fmt::Display for UnaryExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.operator.is_some() {
+            write!(f, "{} {}", self.operator.clone().unwrap(), self.expression.value)
+        } else {
+            write!(f, "{}", self.expression.value)
+        }
+    }
 }
 
 impl Node for UnaryExpression {
@@ -101,12 +151,33 @@ pub enum UnaryOperator {
     OpNot,
 }
 
+impl fmt::Display for UnaryOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::OpAdd => write!(f, "+"),
+            Self::OpSub => write!(f, "-"),
+            Self::OpNot => write!(f, "!"),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Expression {
     Literal(Literal),
     Identifier(IdentifierNode),
     BinaryExpression(BinaryExpression),
     UnaryExpression(UnaryExpression),
+}
+
+impl fmt::Display for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Literal(l) => write!(f, "{}", l),
+            Self::Identifier(i) => write!(f, "{}", i),
+            Self::BinaryExpression(b) => write!(f, "{}", b),
+            Self::UnaryExpression(u) => write!(f, "{}", u),
+        }
+    }
 }
 
 impl Node for Expression {

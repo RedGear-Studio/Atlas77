@@ -86,6 +86,8 @@ pub enum Token {
     OpDiv,
     /// Represents the modulus operator (%)
     OpMod,
+    /// Represents the power operator (^)
+    OpPow,
 
     //Relational Operators
     /// Represents the equal operator (==)
@@ -207,6 +209,7 @@ impl ToString for Token {
             Token::OpMul => "*".to_string(),
             Token::OpDiv => "/".to_string(),
             Token::OpMod => "%".to_string(),
+            Token::OpPow => "^".to_string(),
             Token::OpEq => "==".to_string(),
             Token::OpNe => "!=".to_string(),
             Token::OpLt => "<".to_string(),

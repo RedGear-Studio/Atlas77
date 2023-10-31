@@ -1,12 +1,12 @@
 use crate::utils::span::WithSpan;
 use crate::interfaces::lexer::token;
 
-use self::errors::ParseError;
+use self::parse_errors::ParseError;
 
 /// Contains all the ast nodes
 pub mod ast;
 /// Contains all the potential Parser errors
-pub mod errors;
+pub mod parse_errors;
 /// Contains all the definition of the Node trait
 pub mod node;
 
@@ -62,7 +62,7 @@ pub trait Parser {
     ///     eprintln!("Parser error: {:?}", err);
     /// }
     /// ```
-    fn check(&mut self, _ast: ast::AbstractSyntaxTree) -> Result<(), errors::ParseError> {
+    fn check(&mut self, _ast: ast::AbstractSyntaxTree) -> Result<(), parse_errors::ParseError> {
         println!("It'll be implemented later, dw it'll be... :)");
         Ok(())
     }
