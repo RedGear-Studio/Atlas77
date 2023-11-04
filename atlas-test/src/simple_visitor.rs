@@ -47,7 +47,7 @@ impl Visitor for SimpleVisitorV1 {
             }
         }
     }
-    fn visit_identifier(&mut self, identifier: &IdentifierNode)  {
+    fn visit_identifier(&mut self, _identifier: &IdentifierNode)  {
         //Not useful for now
     }
     fn visit_unary_expression(&mut self, expression: &UnaryExpression) -> f64 {

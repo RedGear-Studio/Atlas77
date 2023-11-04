@@ -1,7 +1,6 @@
-use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, IdentifierNode};
+use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal};
 use atlas_core::interfaces::parser::parse_errors::ParseError;
 use atlas_core::interfaces::parser::Parser;
-use atlas_core::node::Node;
 use atlas_core::utils::span::*;
 use atlas_core::interfaces::lexer::token::{Token::*, Token};
 
@@ -43,27 +42,11 @@ impl SimpleParserV1 {
         }
     }
 
-    fn is_eof(&self) -> bool {
-        self.check(EOF)
-    }
-
-    fn peek(&self) -> &WithSpan<Token> {
-        match self.tokens.get(self.pos + 1) {
-            Some(t) => t,
-            None => &EOF_TOKEN,
-        }
-    }
-
     fn current(&self) -> &WithSpan<Token> {
         match self.tokens.get(self.pos) {
             Some(t) => t,
             None => &EOF_TOKEN,
         }
-    }
-
-    fn check(&self, match_tok: Token) -> bool {
-        let tok = self.peek();
-        tok.value == match_tok
     }
 
     fn advance(&mut self) -> &WithSpan<Token> {
@@ -81,16 +64,13 @@ impl SimpleParserV1 {
         if tok.value == expected {
             Ok(tok)
         } else {
-            println!("Expected {:?}, got {:?}", expected, tok.value);
+            eprintln!("Expected {:?}, got {:?}", expected, tok.value);
             Err(ParseError::UnexpectedToken(tok.clone()))
         }
     }
 
     fn parse_expr(&mut self) -> Result<WithSpan<Box<Expression>>, ParseError> {
-        let expr = self.parse_binary()?;
-
-        println!("expr: {}", expr.value);
-        
+        let expr = self.parse_binary()?;        
         Ok(expr)
     }
 
@@ -190,7 +170,7 @@ impl SimpleParserV1 {
                 Ok(expr)
             }
             _ => {
-                println!("Unexpected token: {:?}", self.current().value);
+                eprintln!("Unexpected token: {:?}", self.current().value);
                 unimplemented!()
             }
         }
