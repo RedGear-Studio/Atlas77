@@ -1,4 +1,4 @@
-use crate::interfaces::{lexer::Lexer, parser::Parser};
+use crate::{interfaces::{lexer::Lexer, parser::Parser}, prelude::visitor::Visitor};
 /// The `Language` struct represents a language processing tool with interchangeable lexer and parser components.
 /// 
 /// NB: A lot more components will be added in the future. (like optimization passes, registers allocation pass, etc)
@@ -8,6 +8,7 @@ pub struct Language {
     pub lexer: Box<dyn Lexer>,
     /// The parser component.
     pub parser: Box<dyn Parser>,
+    pub visitor: Box<dyn Visitor>
 }
 
 impl Language {
@@ -21,8 +22,8 @@ impl Language {
     /// # Returns
     ///
     /// A new `Language` instance with the provided lexer and parser.
-    pub fn new(lexer: Box<dyn Lexer>, parser: Box<dyn Parser>) -> Language {
-        Self { lexer, parser }
+    pub fn new(lexer: Box<dyn Lexer>, parser: Box<dyn Parser>, visitor: Box<dyn Visitor>) -> Language {
+        Self { lexer, parser, visitor }
     }
 
     /// Sets the lexer component to a new implementation at runtime.

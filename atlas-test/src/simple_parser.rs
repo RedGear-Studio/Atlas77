@@ -27,8 +27,8 @@ impl Parser for SimpleParserV1 {
     }
     
     fn parse(&mut self) -> Result<AbstractSyntaxTree, ParseError> {
-        let ast: AbstractSyntaxTree = Vec::new();
-        self.parse_expr().expect("Failed to parse expression");
+        let mut ast: AbstractSyntaxTree = Vec::new();
+        ast.push(self.parse_expr().expect("Failed to parse expression"));
         Ok(ast)
     }
 }

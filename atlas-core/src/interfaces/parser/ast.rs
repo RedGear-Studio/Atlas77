@@ -1,11 +1,11 @@
 use core::fmt;
 
-use crate::{utils::{visitor::Visitor, span::WithSpan}, Token};
+use crate::{utils::span::WithSpan, prelude::visitor::Visitor, Token};
 
 use super::node::Node;
 
 /// Placeholder
-pub type AbstractSyntaxTree = Vec<WithSpan<Box<dyn Node>>>;
+pub type AbstractSyntaxTree = Vec<WithSpan<Box<Expression>>>;
 
 // Expression Nodes
 #[derive(Debug, Clone)]
@@ -184,7 +184,9 @@ impl Node for Expression {
     fn accept(&mut self, visitor: &mut dyn Visitor) {
         match self {
             Self::Identifier(i) => visitor.visit_identifier(i),
-            Self::BinaryExpression(b) => visitor.visit_binary_expression(b),
+            Self::BinaryExpression(b) => {
+                visitor.visit_binary_expression(b);
+            },
             _ => ()
         }
     }

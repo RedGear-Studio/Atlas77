@@ -4,5 +4,3 @@ pub mod case;
 /// 
 /// (`BytePos`, `WithSpan`, `Span`)
 pub mod span;
-/// Contains the Visitor traits.
-pub mod visitor;
