@@ -1,7 +1,7 @@
 /// Contains all the Tokens needed for a basic Lexer
 pub mod token;
 /// Contains all the potential Lexer Error
-pub mod errors;
+pub mod lex_errors;
 
 use crate::utils::span::WithSpan;
 
@@ -48,17 +48,17 @@ pub trait Lexer {
     ///     eprintln!("Lexer error: {:?}", err);
     /// }
     /// ```
-    fn check(&mut self, tokens: &[WithSpan<token::Token>]) -> Result<(), errors::LexerError> {
+    fn check(&mut self, tokens: &[WithSpan<token::Token>]) -> Result<(), lex_errors::LexerError> {
         if tokens.len() == 0 {
-            return Err(errors::LexerError::Empty);
+            return Err(lex_errors::LexerError::Empty);
         }
         for token in tokens {
             match token.value {
                 token::Token::Unknown(c) => {
-                    return Err(errors::LexerError::UnknownToken(c, token.span))
+                    return Err(lex_errors::LexerError::UnknownToken(c, token.span))
                 }
                 token::Token::UnterminatedString => {
-                    return Err(errors::LexerError::UnterminatedString)
+                    return Err(lex_errors::LexerError::UnterminatedString)
                 }
                 _ => ()
             }

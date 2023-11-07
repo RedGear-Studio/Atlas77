@@ -1,4 +1,4 @@
-use crate::utils::visitor::Visitor;
+use crate::prelude::visitor::Visitor;
 
 /// The `Node` trait represents a node in the abstract syntax tree.
 /// 
