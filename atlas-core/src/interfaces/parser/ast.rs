@@ -7,12 +7,16 @@ use super::node::Node;
 /// Placeholder
 pub type AbstractSyntaxTree = Vec<WithSpan<Box<Expression>>>;
 
-// Expression Nodes
+/// Literal
 #[derive(Debug, Clone)]
 pub enum Literal {
+    /// Integer literal
     Integer(i64),
+    /// Float literal
     Float(f64),
+    /// String literal
     String(String),
+    /// Boolean literal
     Bool(bool),
 }
 
@@ -27,8 +31,10 @@ impl fmt::Display for Literal {
     }
 }
 
+/// Identifier
 #[derive(Debug, Clone)]
 pub struct IdentifierNode {
+    /// Name of the identifier
     pub name: String,
 }
 
@@ -44,10 +50,16 @@ impl Node for IdentifierNode {
     }
 }
 
+/// Binary expression 
 #[derive(Debug, Clone)]
 pub struct BinaryExpression {
+    /// Left member of the binary expression
+    /// Can be any expression, including another binary expression
     pub left: WithSpan<Box<Expression>>,
+    /// Operator of the binary expression see `BinaryOperator`
     pub operator: BinaryOperator,
+    /// Right member of the binary expression
+    /// Can be any expression, including another binary expression
     pub right: WithSpan<Box<Expression>>,
 }
 
@@ -63,13 +75,20 @@ impl fmt::Display for BinaryExpression {
     }
 }
 
+/// Binary operator
 #[derive(Debug, Clone)]
 pub enum BinaryOperator {
+    /// Addition (`+`)
     OpAdd,
+    /// Subtraction (`-`)
     OpSub,
+    /// Multiplication (`*`)
     OpMul,
+    /// Division (`/`)
     OpDiv,
+    /// Modulo (`%`)
     OpMod,
+    /// Power (`^`)
     OpPow,
     /*OpEq,
     OpNe,
@@ -122,9 +141,13 @@ impl From<&Token> for Option<BinaryOperator> {
     }
 }
 
+/// Unary expression
 #[derive(Debug, Clone)]
 pub struct UnaryExpression {
+    /// Operator of the unary expression, see `UnaryOperator`
     pub operator: Option<UnaryOperator>,
+    /// Expression of the unary expression
+    /// Can be any expression, including another unary expression
     pub expression: WithSpan<Box<Expression>>,
 }
 
@@ -144,10 +167,14 @@ impl Node for UnaryExpression {
     }
 }
 
+/// Unary operator
 #[derive(Debug, Clone)]
 pub enum UnaryOperator {
+    /// Addition (`+`)
     OpAdd,
+    /// Subtraction (`-`)
     OpSub,
+    /// Not (`!`)
     OpNot,
 }
 
@@ -161,11 +188,16 @@ impl fmt::Display for UnaryOperator {
     }
 }
 
+/// Expression
 #[derive(Debug, Clone)]
 pub enum Expression {
+    /// Contains the `Literal` enum
     Literal(Literal),
+    /// Contains the `IdentifierNode` struct
     Identifier(IdentifierNode),
+    /// Contains the `BinaryExpression` struct
     BinaryExpression(BinaryExpression),
+    /// Contains the `UnaryExpression` struct
     UnaryExpression(UnaryExpression),
 }
 

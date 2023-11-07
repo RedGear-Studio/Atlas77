@@ -8,6 +8,7 @@ pub struct Language {
     pub lexer: Box<dyn Lexer>,
     /// The parser component.
     pub parser: Box<dyn Parser>,
+    /// The visitor component.
     pub visitor: Box<dyn Visitor>
 }
 

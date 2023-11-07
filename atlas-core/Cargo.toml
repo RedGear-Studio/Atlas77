@@ -1,8 +1,8 @@
 [package]
 name = "atlas-core"
-version = "0.0.3"
+version = "0.1.0-dev-1"
 authors = ["Gipson62 <j.h.gipson62@gmail.com>"]
-description = "The core of the Atlas which contains all relevant traits, interface and base structs."
+description = "Core library for a programming language tool"
 keywords = ["language", "tool", "programming-language", "language-agnostic"]
 categories = ["development-tools", "development-tools::build-utils"]
 license = "MIT"
