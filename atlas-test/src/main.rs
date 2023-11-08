@@ -18,7 +18,7 @@ fn main() {
         let mut language = Language::new(
             Box::new(SimpleLexerV1::new()),
             Box::new(SimpleParserV1::new()),
-            Box::new(SimpleVisitorV1{}),
+            Box::new(SimpleVisitorV1::new())
         );
         language.lexer.with_file_path(path.clone()).expect("Failed to open the file");
         let tokens = language.lexer.tokenize();
@@ -26,8 +26,9 @@ fn main() {
         language.parser.with_file_path(path).expect("Failed to open the file");
         language.parser.with_tokens(tokens);
         let ast = language.parser.parse().expect("Failed to parse the file");
-        let _result = language.visitor.visit_expression(&ast[0].value);
-        //println!("Result: {}", result);
+        for i in 0..ast.len() {
+            language.visitor.visit_statement(&ast[i].value);
+        }
     }
 
     let end = Instant::now();

@@ -5,7 +5,7 @@ use crate::{utils::span::WithSpan, prelude::visitor::Visitor, Token};
 use super::node::Node;
 
 /// Placeholder
-pub type AbstractSyntaxTree = Vec<WithSpan<Box<Expression>>>;
+pub type AbstractSyntaxTree = Vec<WithSpan<Box<Statement>>>;
 
 /// Literal
 #[derive(Debug, Clone)]
@@ -27,6 +27,37 @@ impl fmt::Display for Literal {
             Self::Float(fl) => write!(f, "{}", fl),
             Self::String(s) => write!(f, "{}", s),
             Self::Bool(b) => write!(f, "{}", b),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Statement {
+    VariableDeclaration(VariableDeclaration),
+    Expression(Expression),
+}
+
+impl fmt::Display for Statement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::VariableDeclaration(v) => write!(f, "{};", v),
+            Self::Expression(e) => write!(f, "{};", e),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct VariableDeclaration {
+    pub name: String,
+    pub value: Option<WithSpan<Box<Expression>>>,
+}
+
+impl fmt::Display for VariableDeclaration {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.value.is_some() {
+            write!(f, "let {} = {}\n", self.name, self.value.clone().unwrap().value)
+        } else {
+            write!(f, "let {}\n", self.name)
         }
     }
 }
@@ -215,7 +246,9 @@ impl fmt::Display for Expression {
 impl Node for Expression {
     fn accept(&mut self, visitor: &mut dyn Visitor) {
         match self {
-            Self::Identifier(i) => visitor.visit_identifier(i),
+            Self::Identifier(i) => {
+                visitor.visit_identifier(i);
+            },
             Self::BinaryExpression(b) => {
                 visitor.visit_binary_expression(b);
             },

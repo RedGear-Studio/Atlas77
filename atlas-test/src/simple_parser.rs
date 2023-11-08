@@ -1,4 +1,4 @@
-use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal};
+use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, Statement, VariableDeclaration, IdentifierNode};
 use atlas_core::interfaces::parser::parse_errors::ParseError;
 use atlas_core::interfaces::parser::Parser;
 use atlas_core::utils::span::*;
@@ -27,7 +27,9 @@ impl Parser for SimpleParserV1 {
     
     fn parse(&mut self) -> Result<AbstractSyntaxTree, ParseError> {
         let mut ast: AbstractSyntaxTree = Vec::new();
-        ast.push(self.parse_expr().expect("Failed to parse expression"));
+        while self.current().value != EOF {
+            ast.push(self.parse_statement().expect("Failed to parse expression"));
+        }
         Ok(ast)
     }
 }
@@ -66,6 +68,38 @@ impl SimpleParserV1 {
         } else {
             eprintln!("Expected {:?}, got {:?}", expected, tok.value);
             Err(ParseError::UnexpectedToken(tok.clone()))
+        }
+    }
+    
+    fn parse_statement(&mut self) -> Result<WithSpan<Box<Statement>>, ParseError> {
+        match self.current().value {
+            KwLet => {
+                self.advance();
+                let name = match self.current().value.clone() {
+                    Ident(s) => {
+                        self.advance();
+                        s
+                    }
+                    _ => unreachable!()
+                };
+                let value = if self.current().value == OpAssign {
+                    self.advance();
+                    Some(self.parse_expr()?)
+                } else {
+                    None
+                };
+                self.expect(Semicolon)?;
+                Ok(WithSpan::new(
+                    Box::new(Statement::VariableDeclaration(VariableDeclaration { name, value })), Span::default()
+                ))
+            },
+            _ => {
+                let expr = self.parse_expr()?;
+                self.expect(Semicolon)?;
+                Ok(WithSpan::new(
+                    Box::new(Statement::Expression(*expr.value)), Span::default()
+                ))
+            }
         }
     }
 
@@ -135,26 +169,12 @@ impl SimpleParserV1 {
             },
             _ => None,
         };
+        
         Ok(WithSpan::new(Box::new(Expression::UnaryExpression(UnaryExpression { operator, expression: self.parse_primary()? })), Span::default()))
     }
 
-    /*fn parse_unary(&mut self) -> Result<WithSpan<Box<Expression>>, ParseError> {
-        let operator = match &self.current().value {
-            Token::OpAdd => {
-                self.advance();
-                Some(UnaryOperator::OpAdd)
-            },
-            Token::OpNot => {
-                self.advance();
-                Some(UnaryOperator::OpNot)
-            },
-            _ => None,
-        };
-        Ok(WithSpan::new(Box::new(Expression::UnaryExpression(UnaryExpression { operator, expression: self.parse_primary()? })), Span::default()))
-    }*/
-
     fn parse_primary(&mut self) -> Result<WithSpan<Box<Expression>>, ParseError> {
-        match self.current().value {
+        match self.current().value.clone() {
             Token::Float(f) => {
                 self.advance();
                 Ok(WithSpan::new(Box::new(Expression::Literal(Literal::Float(f))), Span::default()))
@@ -168,6 +188,10 @@ impl SimpleParserV1 {
                 let expr = self.parse_expr()?;
                 self.expect(RParen)?;
                 Ok(expr)
+            }
+            Token::Ident(s) => {
+                self.advance();
+                Ok(WithSpan::new(Box::new(Expression::Identifier(IdentifierNode { name: s })), Span::default()))
             }
             _ => {
                 eprintln!("Unexpected token: {:?}", self.current().value);
