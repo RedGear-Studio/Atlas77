@@ -30,8 +30,6 @@ pub enum Token {
     KwFalse,    //false
     /// Represents the LET keyword ("let")
     KwLet,      //let
-    /// Represents the PUB keyword ("pub")
-    KwPub,      //pub
     /// Represents the STRUCT keyword ("struct")
     KwStruct,   //struct
     /// Represents the ENUM keyword ("enum")
@@ -41,11 +39,10 @@ pub enum Token {
     /// Represents the CONST keyword ("const")
     KwConst,    //const
     /// Represents the PRINT keyword ("print")
-    KwPrint,    //print
-    /// Represents the NONE keyword ("none")
-    KwNone,     //None
-    /// Represents the SELF keyword ("self")
-    KwSelf,     //self
+    KwPrint,
+    KwFnType,
+    KwList,
+    KwMap,
 
     //Identifiers
     /// Represents an identifier
@@ -185,14 +182,14 @@ impl ToString for Token {
             Token::KwTrue => "true".to_string(),
             Token::KwFalse => "false".to_string(),
             Token::KwLet => "let".to_string(),
-            Token::KwPub => "pub".to_string(),
+            Token::KwFnType => "Fn".to_string(),
             Token::KwStruct => "struct".to_string(),
             Token::KwEnum => "enum".to_string(),
             Token::KwTypeDef => "typedef".to_string(),
             Token::KwConst => "const".to_string(),
             Token::KwPrint => "print".to_string(),
-            Token::KwNone => "none".to_string(),
-            Token::KwSelf => "self".to_string(),
+            Token::KwList => "List".to_string(),
+            Token::KwMap => "Map".to_string(),
             Token::Ident(s) => s.to_string(),
             Token::Int(i) => i.to_string(),
             Token::Float(f) => f.to_string(),

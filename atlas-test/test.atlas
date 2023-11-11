@@ -1,2 +1,1 @@
-let salut = 1+1;
-salut;
+Fn[i64, i64] -> i64

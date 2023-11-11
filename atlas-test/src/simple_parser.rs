@@ -1,4 +1,4 @@
-use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, Statement, VariableDeclaration, IdentifierNode};
+use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, Statement, VariableDeclaration, IdentifierNode, Type};
 use atlas_core::interfaces::parser::parse_errors::ParseError;
 use atlas_core::interfaces::parser::Parser;
 use atlas_core::utils::span::*;
@@ -71,6 +71,34 @@ impl SimpleParserV1 {
         }
     }
     
+    pub fn parse_type(&mut self) -> Result<WithSpan<Box<Type>>, ParseError> {
+        let tok = self.advance();
+        match tok.value {
+            KwFnType => {
+                self.expect(LBracket)?;
+                let mut args = vec![];
+                while self.current().value != RBracket {
+                    args.push(*self.parse_type()?.value);
+                    if self.current().value == Comma {
+                        self.advance();
+                    }
+                }
+                self.expect(RBracket)?;
+                self.expect(RArrow)?;
+                let ret = self.parse_type()?.value;
+                return Ok(WithSpan::new(
+                    Box::new(Type::Function(args, ret)), Span::default()
+                ))
+            },
+            KwInt => return Ok(WithSpan::new(Box::new(Type::Integer), Span::default())),
+            KwFloat => return Ok(WithSpan::new(Box::new(Type::Float), Span::default())),
+            KwString => return Ok(WithSpan::new(Box::new(Type::String), Span::default())),
+            KwBool => return Ok(WithSpan::new(Box::new(Type::Bool), Span::default())),
+            KwVoid => return Ok(WithSpan::new(Box::new(Type::Void), Span::default())),
+            _ => unreachable!("Unexpected token: {:?}", tok)
+        }
+    }
+
     fn parse_statement(&mut self) -> Result<WithSpan<Box<Statement>>, ParseError> {
         match self.current().value {
             KwLet => {
@@ -90,7 +118,7 @@ impl SimpleParserV1 {
                 };
                 self.expect(Semicolon)?;
                 Ok(WithSpan::new(
-                    Box::new(Statement::VariableDeclaration(VariableDeclaration { name, value })), Span::default()
+                    Box::new(Statement::VariableDeclaration(VariableDeclaration { name, mutable: true, value })), Span::default()
                 ))
             },
             _ => {

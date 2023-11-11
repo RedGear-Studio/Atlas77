@@ -1,4 +1,5 @@
 use core::fmt;
+use std::fmt::write;
 
 use crate::{utils::span::WithSpan, prelude::visitor::Visitor, Token};
 
@@ -47,8 +48,53 @@ impl fmt::Display for Statement {
 }
 
 #[derive(Debug, Clone)]
+pub enum Type {
+    Integer,
+    Float,
+    String,
+    Bool,
+    Void,
+    List(Box<Type>),
+    Map(Box<Type>, Box<Type>),
+    Function(Vec<Type>, Box<Type>),
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Integer => write!(f, "i64"),
+            Self::Float => write!(f, "f64"),
+            Self::String => write!(f, "string"),
+            Self::Bool => write!(f, "bool"),
+            Self::Void => write!(f, "void"),
+            Self::List(t) => write!(f, "List[{}]", t),
+            Self::Map(k, v) => write!(f, "Map[{}, {}]", k, v),
+            Self::Function(args, ret) => write!(f, "Fn[{}] -> {}", args.into_iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", "), ret),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_type_display() {
+        assert_eq!(Type::Integer.to_string(), "i64");
+        assert_eq!(Type::Float.to_string(), "f64");
+        assert_eq!(Type::String.to_string(), "string");
+        assert_eq!(Type::Bool.to_string(), "bool");
+        assert_eq!(Type::Void.to_string(), "void");
+        assert_eq!(Type::List(Box::new(Type::Integer)).to_string(), "List[i64]");
+        assert_eq!(Type::Map(Box::new(Type::Integer), Box::new(Type::String)).to_string(), "Map[i64, string]");
+        assert_eq!(Type::Function(vec![Type::Integer, Type::Float], Box::new(Type::Bool)).to_string(), "Fn[i64, f64] -> bool");
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct VariableDeclaration {
     pub name: String,
+    pub mutable: bool,
     pub value: Option<WithSpan<Box<Expression>>>,
 }
 
@@ -219,6 +265,23 @@ impl fmt::Display for UnaryOperator {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct IfElseNode {
+    pub condition: WithSpan<Box<Expression>>,
+    pub if_body: WithSpan<Vec<Statement>>,
+    pub else_body: Option<WithSpan<Vec<Statement>>>,
+}
+
+impl fmt::Display for IfElseNode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(e) = &self.else_body {
+            write!(f, "if {}then\n\t{}else\n\t{}", self.condition.value, self.if_body.value.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n\t"), e.value.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n\t"))
+        } else {
+            write!(f, "if {} then\n\t{}", self.condition.value, self.if_body.value.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n\t"))
+        }
+    }
+}
+
 /// Expression
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -230,6 +293,7 @@ pub enum Expression {
     BinaryExpression(BinaryExpression),
     /// Contains the `UnaryExpression` struct
     UnaryExpression(UnaryExpression),
+    IfElseNode(IfElseNode)
 }
 
 impl fmt::Display for Expression {
@@ -239,6 +303,7 @@ impl fmt::Display for Expression {
             Self::Identifier(i) => write!(f, "{}", i),
             Self::BinaryExpression(b) => write!(f, "{}", b),
             Self::UnaryExpression(u) => write!(f, "{}", u),
+            Self::IfElseNode(i) => write!(f, "{}", i)
         }
     }
 }
