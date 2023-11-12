@@ -31,7 +31,7 @@ impl Visitor for SimpleVisitorV1 {
             BinaryOperator::OpDiv => left / right,
             BinaryOperator::OpMod => left.modulo(right),
             BinaryOperator::OpPow => left.power(right),
-            
+
             _ => unimplemented!("Binary operator not implemented")
         }
         
@@ -61,6 +61,7 @@ impl Visitor for SimpleVisitorV1 {
             Expression::IfElseNode(i) => {
                 self.visit_if_else_node(i)
             }
+            _ => unimplemented!("Expression not implemented")
         }
     }
     fn visit_identifier(&mut self, identifier: &IdentifierNode)  -> Value {
@@ -98,8 +99,9 @@ impl Visitor for SimpleVisitorV1 {
                 self.visit_expression(&e);
             }
             Statement::VariableDeclaration(v) => {
-                self.visit_variable_declaration(v)
+                self.visit_variable_declaration(v);
             }
+            _ => unimplemented!("Statement not implemented")
         }
     }
     fn visit_variable_declaration(&mut self, variable_declaration: &VariableDeclaration) {

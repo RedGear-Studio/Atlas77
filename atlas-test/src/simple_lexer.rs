@@ -164,7 +164,9 @@ impl SimpleLexerV1 {
     fn match_t_token(&mut self, ch: char) -> Option<Token> {
         use Token::*;
         match ch {
-            ' ' | '\t' | '\r' | '\n' => {
+            '\n' => Some(NewLine),
+            '\t' => Some(Tabulation),
+            ' ' | '\r' => {
                 if !self.peek().is_none() {
                     let ch = self.next().unwrap();
                     self.match_t_token(ch)

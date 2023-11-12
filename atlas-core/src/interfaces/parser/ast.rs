@@ -36,6 +36,7 @@ impl fmt::Display for Literal {
 pub enum Statement {
     VariableDeclaration(VariableDeclaration),
     Expression(Expression),
+    Return(Expression),
 }
 
 impl fmt::Display for Statement {
@@ -43,6 +44,7 @@ impl fmt::Display for Statement {
         match self {
             Self::VariableDeclaration(v) => write!(f, "{};", v),
             Self::Expression(e) => write!(f, "{};", e),
+            Self::Return(e) => write!(f, "return {};", e),
         }
     }
 }
@@ -94,6 +96,7 @@ mod test {
 #[derive(Debug, Clone)]
 pub struct VariableDeclaration {
     pub name: String,
+    pub t: Type,
     pub mutable: bool,
     pub value: Option<WithSpan<Box<Expression>>>,
 }
@@ -101,10 +104,22 @@ pub struct VariableDeclaration {
 impl fmt::Display for VariableDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.value.is_some() {
-            write!(f, "let {} = {}\n", self.name, self.value.clone().unwrap().value)
+            write!(f, "let {}{}: {} = {}\n", if self.mutable { "mut " } else { "" }, self.name, self.t, self.value.clone().unwrap().value)
         } else {
-            write!(f, "let {}\n", self.name)
+            write!(f, "let {}{}: {}\n", if self.mutable { "mut " } else { "" }, self.name, self.t)
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionExpression {
+    args: Vec<String>,
+    body: Vec<Statement>,
+}
+
+impl fmt::Display for FunctionExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "fn({}) -> \n\t{}\n", self.args.join(", "), self.body.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n\t"))
     }
 }
 
@@ -293,7 +308,8 @@ pub enum Expression {
     BinaryExpression(BinaryExpression),
     /// Contains the `UnaryExpression` struct
     UnaryExpression(UnaryExpression),
-    IfElseNode(IfElseNode)
+    IfElseNode(IfElseNode),
+    FunctionExpression(FunctionExpression),
 }
 
 impl fmt::Display for Expression {
@@ -303,7 +319,8 @@ impl fmt::Display for Expression {
             Self::Identifier(i) => write!(f, "{}", i),
             Self::BinaryExpression(b) => write!(f, "{}", b),
             Self::UnaryExpression(u) => write!(f, "{}", u),
-            Self::IfElseNode(i) => write!(f, "{}", i)
+            Self::IfElseNode(i) => write!(f, "{}", i),
+            Self::FunctionExpression(fun) => write!(f, "{}", fun),
         }
     }
 }

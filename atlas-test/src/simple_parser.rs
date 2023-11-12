@@ -1,4 +1,4 @@
-use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, Statement, VariableDeclaration, IdentifierNode, Type};
+use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, Statement, VariableDeclaration, IdentifierNode, Type, FunctionExpression};
 use atlas_core::interfaces::parser::parse_errors::ParseError;
 use atlas_core::interfaces::parser::Parser;
 use atlas_core::utils::span::*;
@@ -71,7 +71,7 @@ impl SimpleParserV1 {
         }
     }
     
-    pub fn parse_type(&mut self) -> Result<WithSpan<Box<Type>>, ParseError> {
+    fn parse_type(&mut self) -> Result<WithSpan<Box<Type>>, ParseError> {
         let tok = self.advance();
         match tok.value {
             KwFnType => {
@@ -90,6 +90,24 @@ impl SimpleParserV1 {
                     Box::new(Type::Function(args, ret)), Span::default()
                 ))
             },
+            KwList => {
+                self.expect(LBracket)?;
+                let t = self.parse_type()?.value;
+                self.expect(RBracket)?;
+                return Ok(WithSpan::new(
+                    Box::new(Type::List(t)), Span::default()
+                ))
+            },
+            KwMap => {
+                self.expect(LBracket)?;
+                let k = self.parse_type()?.value;
+                self.expect(Colon)?;
+                let v = self.parse_type()?.value;
+                self.expect(RBracket)?;
+                return Ok(WithSpan::new(
+                    Box::new(Type::Map(k, v)), Span::default()
+                ))
+            },
             KwInt => return Ok(WithSpan::new(Box::new(Type::Integer), Span::default())),
             KwFloat => return Ok(WithSpan::new(Box::new(Type::Float), Span::default())),
             KwString => return Ok(WithSpan::new(Box::new(Type::String), Span::default())),
@@ -100,25 +118,11 @@ impl SimpleParserV1 {
     }
 
     fn parse_statement(&mut self) -> Result<WithSpan<Box<Statement>>, ParseError> {
-        match self.current().value {
+        match self.advance().value {
             KwLet => {
-                self.advance();
-                let name = match self.current().value.clone() {
-                    Ident(s) => {
-                        self.advance();
-                        s
-                    }
-                    _ => unreachable!()
-                };
-                let value = if self.current().value == OpAssign {
-                    self.advance();
-                    Some(self.parse_expr()?)
-                } else {
-                    None
-                };
-                self.expect(Semicolon)?;
+                let var = self.parse_variable_declaration()?;
                 Ok(WithSpan::new(
-                    Box::new(Statement::VariableDeclaration(VariableDeclaration { name, mutable: true, value })), Span::default()
+                    Box::new(Statement::VariableDeclaration(var)), Span::default()
                 ))
             },
             _ => {
@@ -129,6 +133,68 @@ impl SimpleParserV1 {
                 ))
             }
         }
+    }
+
+    fn parse_variable_declaration(&mut self) -> Result<VariableDeclaration, ParseError> {
+        let name = match self.advance().value.clone() {
+            Ident(s) => {
+                s
+            }
+            _ => unreachable!()
+        };
+        self.expect(Colon)?;
+        let t = *self.parse_type()?.value;
+        if self.current().value == OpAssign {
+            self.advance();
+            match t {
+                Type::Function(_, _) => {
+                    // TODO: Typechecking required
+                    let fun = self.parse_function()?;
+                    Ok(VariableDeclaration { name, t, mutable: false, value: Some(WithSpan::new(Box::new(Expression::FunctionExpression(fun)), Span::default())) })
+                },
+                _ => {
+                    let value = if self.current().value == OpAssign {
+                        self.advance();
+                        Some(self.parse_expr()?)
+                    } else {
+                        None
+                    };
+                    self.expect(Semicolon)?;
+                    Ok(VariableDeclaration { name, t, mutable: true, value })
+                }
+            }
+        } else {
+            Ok(VariableDeclaration { name, t, mutable: false, value: None })
+        }
+        
+    }
+
+    fn parse_function(&mut self) -> Result<FunctionExpression, ParseError> {
+        self.expect(KwFn)?;
+        self.expect(LParen)?;
+        let mut args = vec![];
+        while self.current().value != RParen {
+            match self.current().value.clone() {
+                Ident(s) => {
+                    self.advance();
+                    args.push(s);
+                    if self.current().value == Comma {
+                        self.advance();
+                    }
+                }
+                _ => unreachable!()
+            }
+
+        }
+        self.expect(RParen)?;
+        self.expect(RArrow)?;
+        let body = self.parse_body()?;
+        todo!()
+    }
+
+    fn parse_body(&mut self) -> Result<Vec<Statement>, ParseError> {
+        //The body as a similar syntax than Python and uses indentation for scope
+        todo!("parse_body")
     }
 
     fn parse_expr(&mut self) -> Result<WithSpan<Box<Expression>>, ParseError> {
