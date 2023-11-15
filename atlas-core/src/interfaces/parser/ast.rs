@@ -1,5 +1,4 @@
 use core::fmt;
-use std::fmt::write;
 
 use crate::{utils::span::WithSpan, prelude::visitor::Visitor, Token};
 

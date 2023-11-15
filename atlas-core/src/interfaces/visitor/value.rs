@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::{Add, Sub, Mul, Div}, default};
+use std::{collections::HashMap, ops::{Add, Sub, Mul, Div}};
 
 use crate::ast::FunctionExpression;
 
@@ -9,7 +9,7 @@ pub enum Value {
     String(String),
     Bool(bool),
     List(Vec<Value>),
-    //Map(HashMap<String, Value>),
+    Map(HashMap<String, Value>),
     FunctionBody(FunctionExpression),
     #[default]
     Undefined,
