@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::f32::consts::E;
 
 use atlas_core::prelude::visitor::{Visitor, Program};
 use atlas_core::ast::*;
@@ -9,27 +8,71 @@ type VarMap = HashMap<String, Value>;
 type Stack = Vec<Value>;
 
 pub struct SimpleVisitorV1 {
-    varmap: VarMap,
+    varmap: Vec<(VarMap, usize)>, //usize is the parent scope
     stack: Stack,
+    current_scope: usize,
 }
 
 impl SimpleVisitorV1 {
     pub fn new() -> Self {
         SimpleVisitorV1 {
-            varmap: HashMap::new(), 
-            stack: Vec::new()
+            varmap: Vec::new(),
+            stack: Vec::new(),
+            current_scope: 0,
         }
     }
+
+    fn find_variable(&self, name: &str, scope: usize) -> Option<&Value> {
+        if let Some(v) = self.varmap[scope].0.get(name) {
+            Some(v)
+        } else {
+            if scope == 0 {
+                if let Some(v) = self.varmap[scope].0.get(name) {
+                    Some(v)
+                } else {
+                    unreachable!("Variable {} not found", name)
+                }
+            } else {
+                self.find_variable(name, self.varmap[scope].1) //go to the parent one
+            }
+        }
+    }
+
+    fn find_variable_mut(&mut self, name: &str, scope: usize, val: Value) -> Result<(), ()> {
+        let test = self.varmap [scope].0.get_mut(name);
+        match test {
+            Some(v) => {
+                *v = val;
+                Ok(())
+            }
+            None => {
+                if scope == 0 {
+                    if let Some(v) = self.varmap[scope].0.get_mut(name) {
+                        *v = val;
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
+                } else {
+                    self.find_variable_mut(name, scope - 1, val) //go to the parent one
+                }
+            }
+        }
+    }
+
+
 }
 
 impl Visitor for SimpleVisitorV1 {
     fn visit(&mut self, program: &Program) -> Value {
+        self.current_scope = 0;
+        self.varmap.push((HashMap::new(), self.current_scope));
         for expression in program {
             if let Expression::VariableDeclaration(v) = *expression.value.clone() {
                 self.visit_variable_declaration(&v);
             }
         }
-        if let Some(f) = self.varmap.get("main") {
+        if let Some(f) = self.varmap[0].0.get("main") {
             match f {
                 Value::FunctionBody(f) => {
                     return self.visit_function_expression(&f.clone());
@@ -58,7 +101,7 @@ impl Visitor for SimpleVisitorV1 {
             BinaryOperator::OpGt => left.cmp_ge(right),
             BinaryOperator::OpGe => left.cmp_gt(right),
 
-            _ => unimplemented!("Binary operator not implemented")
+            //_ => unimplemented!("Binary operator not implemented")
         }
     }
 
@@ -105,7 +148,7 @@ impl Visitor for SimpleVisitorV1 {
             let val = self.visit_expression(&arg.value);
             self.stack.push(val);
         }
-        if let Some(f) = self.varmap.get(&function_call.name) {
+        if let Some(f) = self.varmap[0].0.get(&function_call.name) {
             match f {
                 Value::FunctionBody(f) => {
                     return self.visit_function_expression(&f.clone());
@@ -118,10 +161,11 @@ impl Visitor for SimpleVisitorV1 {
     }
 
     fn visit_identifier(&mut self, identifier: &IdentifierNode)  -> Value {
-        if let Some(f) = self.varmap.get(&identifier.name) {
-            f.clone()
+        if let Some(v) = self.find_variable(identifier.name.as_str(), self.current_scope) {
+            v.clone()
         } else {
-            unreachable!("Variable {} not found", identifier.name)
+            eprintln!("Variable {} not found", identifier.name);
+            std::process::exit(1);
         }
     }
 
@@ -149,35 +193,29 @@ impl Visitor for SimpleVisitorV1 {
     }
 
     fn visit_variable_declaration(&mut self, variable_declaration: &VariableDeclaration) -> Value {
-        println!("{}", variable_declaration);
         match &variable_declaration.value {
             Some(v) => {
                 let val = *v.value.clone();
                 match val {
                     Expression::FunctionExpression(f) => {
-                        if let Some(v) = self.varmap.get_mut(&variable_declaration.name) {
-                            *v = Value::FunctionBody(f);
+                        if let Ok(_v) = self.find_variable_mut(&variable_declaration.name, self.current_scope, Value::FunctionBody(f.clone())) {
                             eprintln!("Variable {} already declared", variable_declaration.name);
                         } else {
-                            self.varmap.insert(variable_declaration.name.clone(), Value::FunctionBody(f));
+                            self.varmap[self.current_scope].0.insert(variable_declaration.name.clone(), Value::FunctionBody(f));
                         }
                     },
                     _ => {
                         let value = self.visit_expression(&variable_declaration.value.clone().unwrap().value);
-                        if self.varmap.get(&variable_declaration.name).is_some() {
+                        if let Ok(_v) = self.find_variable_mut(&variable_declaration.name, self.current_scope, value.clone()) {
                             eprintln!("Variable {} already declared", variable_declaration.name);
-                            let yo = self.varmap.get_mut(&variable_declaration.name).unwrap();
-                            *yo = value;
                         } else {
-                            self.varmap.insert(variable_declaration.name.clone(), value);
+                            self.varmap[0].0.insert(variable_declaration.name.clone(), value);
                         }
                     }
                 }
             }
             None => {
-                if let Some(v) = self.varmap.get_mut(&variable_declaration.name) {
-                    *v = Value::Undefined;
-                }
+                self.varmap[0].0.insert(variable_declaration.name.clone(), Value::Undefined);
             }
         }
         
@@ -209,23 +247,31 @@ impl Visitor for SimpleVisitorV1 {
     }
 
     fn visit_function_expression(&mut self, function_expression: &FunctionExpression) -> Value {
+        self.varmap.push((HashMap::new(), self.current_scope));
+        self.current_scope += 1;
         let mut args = Vec::new();
         for _ in &function_expression.args {
             args.push(self.stack.pop().unwrap());
         }
-
         for arg in &function_expression.args {
-            self.varmap.insert(arg.0.clone(), args.pop().unwrap());
+            self.varmap[self.current_scope].0.insert(arg.0.clone(), args.pop().unwrap());
         }
 
-        self.visit_expression(&function_expression.body.value)
+        let val = self.visit_expression(&function_expression.body.value);
+        self.current_scope -= 1;
+        self.varmap.pop();
+        val
     }
 
     fn visit_do_expression(&mut self, do_expression: &DoExpression) -> Value {
+        self.varmap.push((HashMap::new(), self.current_scope));
+        self.current_scope += 1;
         let mut last_evaluated_expr = Value::Undefined;
         for expression in &do_expression.body {
             last_evaluated_expr = self.visit_expression(&expression.value);
         }
+        self.current_scope -= 1;
+        self.varmap.pop();
         last_evaluated_expr
     }
 }

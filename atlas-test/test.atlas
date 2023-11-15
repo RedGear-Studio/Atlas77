@@ -1,7 +1,9 @@
-//let fib: (a: i64) -> i64 = if a == 0 then 0 else if a == 1 then 1 else fib(a - 1) + fib(a - 2)
+let fib: (a: i64) -> i64 = 
+    if a < 2 then
+        a
+    else
+        fib(a - 1) + fib(a - 2)
 
 let main: () -> i64 = do 
-    //fib(5) 
-    let test: bool = 5 == 5
-    test
+    fib(50) 
 end

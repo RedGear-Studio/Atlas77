@@ -291,7 +291,6 @@ impl SimpleParserV1 {
                 }
             }
             KwDo => {
-                println!("DO? {}", self.current().value);
                 self.expect(KwDo)?;
                 //TODO: Add semicolon to separate expressions in a DoEnd Body
                 let mut expressions = vec![];
@@ -304,7 +303,6 @@ impl SimpleParserV1 {
                 ))
             }
             KwLet => {
-                println!("LET? {}", self.current().value);
                 self.parse_expression()
             }
             KwIf => {
