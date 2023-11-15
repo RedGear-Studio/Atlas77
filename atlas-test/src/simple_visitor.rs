@@ -51,8 +51,14 @@ impl Visitor for SimpleVisitorV1 {
             BinaryOperator::OpDiv => left / right,
             BinaryOperator::OpMod => left.modulo(right),
             BinaryOperator::OpPow => left.power(right),
+            BinaryOperator::OpEq => Value::Bool(left == right),
+            BinaryOperator::OpNe => Value::Bool(left != right),
+            BinaryOperator::OpLt => left.cmp_lt(right),
+            BinaryOperator::OpLe => left.cmp_le(right),
+            BinaryOperator::OpGt => left.cmp_ge(right),
+            BinaryOperator::OpGe => left.cmp_gt(right),
 
-            //_ => unimplemented!("Binary operator not implemented")
+            _ => unimplemented!("Binary operator not implemented")
         }
     }
 
@@ -86,6 +92,9 @@ impl Visitor for SimpleVisitorV1 {
             }
             Expression::FunctionCall(func) => {
                 self.visit_function_call(func)
+            }
+            Expression::DoExpression(d) => {
+                self.visit_do_expression(d)
             }
             _ => unimplemented!("Expression not implemented\n\t{}", expression)
         }
@@ -140,6 +149,7 @@ impl Visitor for SimpleVisitorV1 {
     }
 
     fn visit_variable_declaration(&mut self, variable_declaration: &VariableDeclaration) -> Value {
+        println!("{}", variable_declaration);
         match &variable_declaration.value {
             Some(v) => {
                 let val = *v.value.clone();
@@ -209,5 +219,13 @@ impl Visitor for SimpleVisitorV1 {
         }
 
         self.visit_expression(&function_expression.body.value)
+    }
+
+    fn visit_do_expression(&mut self, do_expression: &DoExpression) -> Value {
+        let mut last_evaluated_expr = Value::Undefined;
+        for expression in &do_expression.body {
+            last_evaluated_expr = self.visit_expression(&expression.value);
+        }
+        last_evaluated_expr
     }
 }

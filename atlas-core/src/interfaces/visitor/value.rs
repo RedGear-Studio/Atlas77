@@ -2,17 +2,68 @@ use std::{collections::HashMap, ops::{Add, Sub, Mul, Div}, default};
 
 use crate::ast::FunctionExpression;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum Value {
     Integer(i64),
     Float(f64),
     String(String),
     Bool(bool),
     List(Vec<Value>),
-    Map(HashMap<String, Value>),
+    //Map(HashMap<String, Value>),
     FunctionBody(FunctionExpression),
     #[default]
     Undefined,
+}
+
+impl Value {
+    pub fn cmp_lt(&self, rhs: Self) -> Value {
+        match (self.clone(), rhs.clone()) {
+            (Value::Integer(a), Value::Integer(b)) => Value::Bool(a < b),
+            (Value::Integer(a), Value::Float(b)) => Value::Bool((a as f64) < b),
+            (Value::Float(a), Value::Integer(b)) => Value::Bool(a < (b as f64)),
+            (Value::Float(a), Value::Float(b)) => Value::Bool(a < b),
+            _ => {
+                unimplemented!("Unsupported operation: {:?} < {:?}", self, rhs)
+            }
+        }
+    }
+    
+    pub fn cmp_le(&self, rhs: Self) -> Value {
+        match (self.clone(), rhs.clone()) {
+            (Value::Integer(a), Value::Integer(b)) => Value::Bool(a <= b),
+            (Value::Integer(a), Value::Float(b)) => Value::Bool((a as f64) <= b),
+            (Value::Float(a), Value::Integer(b)) => Value::Bool(a <= (b as f64)),
+            (Value::Float(a), Value::Float(b)) => Value::Bool(a <= b),
+            _ => {
+                unimplemented!("Unsupported operation: {:?} <= {:?}", self, rhs)
+            }
+        }
+    }
+
+    pub fn cmp_gt(&self, rhs: Self) -> Value {
+        match (self.clone(), rhs.clone()) {
+            (Value::Integer(a), Value::Integer(b)) => Value::Bool(a > b),
+            (Value::Integer(a), Value::Float(b)) => Value::Bool((a as f64) > b),
+            (Value::Float(a), Value::Integer(b)) => Value::Bool(a > (b as f64)),
+            (Value::Float(a), Value::Float(b)) => Value::Bool(a > b),
+            _ => {
+                unimplemented!("Unsupported operation: {:?} > {:?}", self, rhs)
+            }
+        }
+    }
+
+    pub fn cmp_ge(&self, rhs: Self) -> Value {
+        match (self.clone(), rhs.clone()) {
+            (Value::Integer(a), Value::Integer(b)) => Value::Bool(a >= b),
+            (Value::Integer(a), Value::Float(b)) => Value::Bool((a as f64) >= b),
+            (Value::Float(a), Value::Integer(b)) => Value::Bool(a >= (b as f64)),
+            (Value::Float(a), Value::Float(b)) => Value::Bool(a >= b),
+            _ => {
+                unimplemented!("Unsupported operation: {:?} >= {:?}", self, rhs)
+            }
+        }
+    }
+
 }
 
 impl Add for Value {

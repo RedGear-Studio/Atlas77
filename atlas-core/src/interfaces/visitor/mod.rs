@@ -25,4 +25,6 @@ pub trait Visitor {
     fn visit_function_expression(&mut self, function_expression: &FunctionExpression) -> Value;
     ///TODO
     fn visit_function_call(&mut self, function_call: &FunctionCall) -> Value;
+    ///TODO
+    fn visit_do_expression(&mut self, do_expression: &DoExpression) -> Value;
 }

@@ -9,7 +9,7 @@ use super::node::Node;
 pub type AbstractSyntaxTree = Vec<WithSpan<Box<Expression>>>;
 
 /// Literal
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
     /// Integer literal
     Integer(i64),
@@ -49,7 +49,7 @@ impl fmt::Display for Statement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Integer,
     Float,
@@ -93,7 +93,7 @@ mod test {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VariableDeclaration {
     pub name: String,
     pub t: Type,
@@ -111,7 +111,7 @@ impl fmt::Display for VariableDeclaration {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FunctionExpression {
     pub args: Vec<(String, Type)>,
     pub body: WithSpan<Box<Expression>>,
@@ -124,7 +124,7 @@ impl fmt::Display for FunctionExpression {
 }
 
 /// Identifier
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IdentifierNode {
     /// Name of the identifier
     pub name: String,
@@ -143,7 +143,7 @@ impl Node for IdentifierNode {
 }
 
 /// Binary expression 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BinaryExpression {
     /// Left member of the binary expression
     /// Can be any expression, including another binary expression
@@ -168,7 +168,7 @@ impl fmt::Display for BinaryExpression {
 }
 
 /// Binary operator
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BinaryOperator {
     /// Addition (`+`)
     OpAdd,
@@ -182,13 +182,13 @@ pub enum BinaryOperator {
     OpMod,
     /// Power (`^`)
     OpPow,
-    /*OpEq,
+    OpEq,
     OpNe,
     OpLt,
     OpLe,
     OpGt,
     OpGe,
-    OpAnd,
+    /*OpAnd,
     OpOr,
     OpXor,
     OpShl,
@@ -207,6 +207,12 @@ impl fmt::Display for BinaryOperator {
             Self::OpDiv => write!(f, "/"),
             Self::OpMod => write!(f, "%"),
             Self::OpPow => write!(f, "^"),
+            Self::OpEq => write!(f, "=="),
+            Self::OpNe => write!(f, "!="),
+            Self::OpLt => write!(f, "<"),
+            Self::OpLe => write!(f, "<="),
+            Self::OpGt => write!(f, ">"),
+            Self::OpGe => write!(f, ">="),
         }
     }
 }
@@ -220,13 +226,13 @@ impl From<&Token> for Option<BinaryOperator> {
             Token::OpDiv => Some(BinaryOperator::OpDiv),
             Token::OpMod => Some(BinaryOperator::OpMod),
             Token::OpPow => Some(BinaryOperator::OpPow),
-            /*Token::OpEq => Some(BinaryOperator::OpEq),
+            Token::OpEq => Some(BinaryOperator::OpEq),
             Token::OpNe => Some(BinaryOperator::OpNe),
             Token::OpLt => Some(BinaryOperator::OpLt),
             Token::OpLe => Some(BinaryOperator::OpLe),
             Token::OpGt => Some(BinaryOperator::OpGt),
             Token::OpGe => Some(BinaryOperator::OpGe),
-            Token::OpAnd => Some(BinaryOperator::OpAnd),
+            /*Token::OpAnd => Some(BinaryOperator::OpAnd),
             Token::OpOr => Some(BinaryOperator::OpOr),*/
             _ => None,
         }
@@ -234,7 +240,7 @@ impl From<&Token> for Option<BinaryOperator> {
 }
 
 /// Unary expression
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UnaryExpression {
     /// Operator of the unary expression, see `UnaryOperator`
     pub operator: Option<UnaryOperator>,
@@ -260,7 +266,7 @@ impl Node for UnaryExpression {
 }
 
 /// Unary operator
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum UnaryOperator {
     /// Addition (`+`)
     OpAdd,
@@ -280,7 +286,7 @@ impl fmt::Display for UnaryOperator {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IfElseNode {
     pub condition: WithSpan<Box<Expression>>,
     pub if_body: WithSpan<Box<Expression>>,
@@ -297,7 +303,7 @@ impl fmt::Display for IfElseNode {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FunctionCall {
     pub name: String,
     pub args: Vec<WithSpan<Box<Expression>>>,
@@ -308,7 +314,7 @@ impl fmt::Display for FunctionCall {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DoExpression {
     pub body: Vec<WithSpan<Box<Expression>>>,
 }
@@ -319,7 +325,7 @@ impl fmt::Display for DoExpression {
 }
 
 /// Expression
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     /// Contains the `Literal` enum
     Literal(Literal),

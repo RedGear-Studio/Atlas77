@@ -1,4 +1,4 @@
-use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, Statement, VariableDeclaration, IdentifierNode, Type, FunctionExpression, FunctionCall};
+use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, Statement, VariableDeclaration, IdentifierNode, Type, FunctionExpression, FunctionCall, DoExpression, IfElseNode};
 use atlas_core::interfaces::parser::parse_errors::ParseError;
 use atlas_core::interfaces::parser::Parser;
 use atlas_core::utils::span::*;
@@ -130,14 +130,16 @@ impl SimpleParserV1 {
     }
 
     fn parse_expression(&mut self) -> Result<WithSpan<Box<Expression>>, ParseError> {
-        match self.advance().value {
+        match self.current().value {
             KwLet => {
+                self.advance();
                 let var = self.parse_variable_declaration()?;
                 Ok(WithSpan::new(
                     Box::new(Expression::VariableDeclaration(var)), Span::default()
                 ))
             },
             _ => {
+                //self.advance();
                 let expr = self.parse_expr()?;
                 Ok(WithSpan::new(
                     Box::new(*expr.value), Span::default()
@@ -164,17 +166,13 @@ impl SimpleParserV1 {
                     Ok(VariableDeclaration { name, t, mutable: false, value: Some(WithSpan::new(Box::new(Expression::FunctionExpression(FunctionExpression { args, body })), Span::default())) })
                 },
                 _ => {
-                    let value = if self.current().value == OpAssign {
-                        self.advance();
-                        Some(self.parse_expr()?)
-                    } else {
-                        None
-                    };
+                    let value = Some(self.parse_expr()?);
                     Ok(VariableDeclaration { name, t, mutable: true, value })
                 }
             }
         } else {
-            Ok(VariableDeclaration { name, t, mutable: false, value: None })
+            let value = self.parse_expr()?;
+            Ok(VariableDeclaration { name, t, mutable: false, value: Some(value) })
         }
         
     }
@@ -217,7 +215,7 @@ impl SimpleParserV1 {
     }
 
     fn parse_factor(&mut self) -> Result<WithSpan<Box<Expression>>, ParseError> {
-        let left = self.parse_power()?;
+        let left = self.parse_condition()?;
         let op = Option::<BinaryOperator>::from(&self.current().value);
 
         match self.current().value {
@@ -226,6 +224,22 @@ impl SimpleParserV1 {
                 let right = self.parse_binary()?; //Check this line with tests
                 Ok(WithSpan::new(
                     Box::new(Expression::BinaryExpression(BinaryExpression { left, operator: op.unwrap(), right })), Span::default()
+                ))
+            }
+            _ => Ok(left)
+        }
+    }
+
+    fn parse_condition(&mut self) -> Result<WithSpan<Box<Expression>>, ParseError> {
+        let left = self.parse_power()?;
+        let operator = Option::<BinaryOperator>::from(&self.current().value);
+
+        match self.current().value {
+            OpEq | OpNe | OpLt | OpLe | OpGt | OpGe => {
+                self.advance();
+                let right = self.parse_expr()?;
+                Ok(WithSpan::new(
+                    Box::new(Expression::BinaryExpression(BinaryExpression { left, operator: operator.unwrap(), right })), Span::default()
                 ))
             }
             _ => Ok(left)
@@ -251,21 +265,21 @@ impl SimpleParserV1 {
 
     fn parse_primary(&mut self) -> Result<WithSpan<Box<Expression>>, ParseError> {
         match self.current().value.clone() {
-            Token::Float(f) => {
+            Float(f) => {
                 self.advance();
                 Ok(WithSpan::new(Box::new(Expression::Literal(Literal::Float(f))), Span::default()))
             }
-            Token::Int(i) => {
+            Int(i) => {
                 self.advance();
                 Ok(WithSpan::new(Box::new(Expression::Literal(Literal::Integer(i))), Span::default()))
             }
-            Token::LParen => {
+            LParen => {
                 self.advance();
                 let expr = self.parse_expr()?;
                 self.expect(RParen)?;
                 Ok(expr)
             }
-            Token::Ident(s) => {
+            Ident(s) => {
                 self.advance();
                 if self.current().value == LParen {
                     self.advance();
@@ -274,6 +288,40 @@ impl SimpleParserV1 {
                     Ok(WithSpan::new(Box::new(Expression::FunctionCall(FunctionCall { name: s, args })), Span::default()))
                 } else {
                     Ok(WithSpan::new(Box::new(Expression::Identifier(IdentifierNode { name: s })), Span::default()))
+                }
+            }
+            KwDo => {
+                println!("DO? {}", self.current().value);
+                self.expect(KwDo)?;
+                //TODO: Add semicolon to separate expressions in a DoEnd Body
+                let mut expressions = vec![];
+                while self.current().value != KwEnd {
+                    expressions.push(self.parse_expression()?);
+                }
+                self.expect(KwEnd)?;
+                Ok(WithSpan::new(
+                    Box::new(Expression::DoExpression(DoExpression { body: expressions })), Span::default()
+                ))
+            }
+            KwLet => {
+                println!("LET? {}", self.current().value);
+                self.parse_expression()
+            }
+            KwIf => {
+                self.expect(KwIf)?;
+                let condition = self.parse_expr()?;
+                self.expect(KwThen)?;
+                let if_body = self.parse_expr()?;
+                if self.current().value == KwElse {
+                    self.expect(KwElse)?;
+                    let else_body = self.parse_expr()?;
+                    Ok(WithSpan::new(
+                        Box::new(Expression::IfElseNode(IfElseNode { condition, if_body, else_body: Some(else_body) })), Span::default()
+                    ))
+                } else {
+                    Ok(WithSpan::new(
+                        Box::new(Expression::IfElseNode(IfElseNode { condition, if_body, else_body: None })), Span::default()
+                    ))
                 }
             }
             _ => {
