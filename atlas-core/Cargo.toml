@@ -1,6 +1,6 @@
 [package]
 name = "atlas-core"
-version = "0.1.0-dev-1"
+version = "0.3.0"
 authors = ["Gipson62 <j.h.gipson62@gmail.com>"]
 description = "Core library for a programming language tool"
 keywords = ["language", "tool", "programming-language", "language-agnostic"]
@@ -8,7 +8,7 @@ categories = ["development-tools", "development-tools::build-utils"]
 license = "MIT"
 edition = "2021"
 homepage = "https://redgear.tk/"
-repository = "https://github.com/RedGear-Studio/Atlas77"
+repository = "https://github.com/RedGear-Studio/atlas-core"
 
 [lib]
 name = "atlas_core"

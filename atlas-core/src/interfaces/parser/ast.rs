@@ -8,7 +8,7 @@ use super::node::Node;
 pub type AbstractSyntaxTree = Vec<WithSpan<Box<Expression>>>;
 
 /// Literal
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
     /// Integer literal
     Integer(i64),
@@ -31,8 +31,99 @@ impl fmt::Display for Literal {
     }
 }
 
-/// Identifier
 #[derive(Debug, Clone)]
+pub enum Statement {
+    VariableDeclaration(VariableDeclaration),
+    Expression(Expression),
+    Return(Expression),
+}
+
+impl fmt::Display for Statement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::VariableDeclaration(v) => write!(f, "{};", v),
+            Self::Expression(e) => write!(f, "{};", e),
+            Self::Return(e) => write!(f, "return {};", e),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Type {
+    Integer,
+    Float,
+    String,
+    Bool,
+    Void,
+    List(Box<Type>),
+    Map(Box<Type>, Box<Type>),
+    Function(Vec<(String, Type)>, Box<Type>),
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Integer => write!(f, "i64"),
+            Self::Float => write!(f, "f64"),
+            Self::String => write!(f, "string"),
+            Self::Bool => write!(f, "bool"),
+            Self::Void => write!(f, "void"),
+            Self::List(t) => write!(f, "List[{}]", t),
+            Self::Map(k, v) => write!(f, "Map[{}, {}]", k, v),
+            Self::Function(args, ret) => write!(f, "({}) -> {}", args.iter().map(|(s, t)| format!("{}: {}", s, t)).collect::<Vec<String>>().join(", "), ret),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_type_display() {
+        assert_eq!(Type::Integer.to_string(), "i64");
+        assert_eq!(Type::Float.to_string(), "f64");
+        assert_eq!(Type::String.to_string(), "string");
+        assert_eq!(Type::Bool.to_string(), "bool");
+        assert_eq!(Type::Void.to_string(), "void");
+        assert_eq!(Type::List(Box::new(Type::Integer)).to_string(), "List[i64]");
+        assert_eq!(Type::Map(Box::new(Type::Integer), Box::new(Type::String)).to_string(), "Map[i64, string]");
+        assert_eq!(Type::Function(vec![(String::from("abc"), Type::Integer), (String::from("efg"), Type::Float)], Box::new(Type::Bool)).to_string(), "(abc: i64, efg: f64) -> bool");
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct VariableDeclaration {
+    pub name: String,
+    pub t: Type,
+    pub mutable: bool,
+    pub value: Option<WithSpan<Box<Expression>>>,
+}
+
+impl fmt::Display for VariableDeclaration {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.value.is_some() {
+            write!(f, "let {}{}: {} = {}\n", if self.mutable { "mut " } else { "" }, self.name, self.t, self.value.clone().unwrap().value)
+        } else {
+            write!(f, "let {}{}: {}\n", if self.mutable { "mut " } else { "" }, self.name, self.t)
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionExpression {
+    pub args: Vec<(String, Type)>,
+    pub body: WithSpan<Box<Expression>>,
+}
+
+impl fmt::Display for FunctionExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.body.value)
+    }
+}
+
+/// Identifier
+#[derive(Debug, Clone, PartialEq)]
 pub struct IdentifierNode {
     /// Name of the identifier
     pub name: String,
@@ -51,7 +142,7 @@ impl Node for IdentifierNode {
 }
 
 /// Binary expression 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BinaryExpression {
     /// Left member of the binary expression
     /// Can be any expression, including another binary expression
@@ -76,7 +167,7 @@ impl fmt::Display for BinaryExpression {
 }
 
 /// Binary operator
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BinaryOperator {
     /// Addition (`+`)
     OpAdd,
@@ -90,13 +181,13 @@ pub enum BinaryOperator {
     OpMod,
     /// Power (`^`)
     OpPow,
-    /*OpEq,
+    OpEq,
     OpNe,
     OpLt,
     OpLe,
     OpGt,
     OpGe,
-    OpAnd,
+    /*OpAnd,
     OpOr,
     OpXor,
     OpShl,
@@ -115,6 +206,12 @@ impl fmt::Display for BinaryOperator {
             Self::OpDiv => write!(f, "/"),
             Self::OpMod => write!(f, "%"),
             Self::OpPow => write!(f, "^"),
+            Self::OpEq => write!(f, "=="),
+            Self::OpNe => write!(f, "!="),
+            Self::OpLt => write!(f, "<"),
+            Self::OpLe => write!(f, "<="),
+            Self::OpGt => write!(f, ">"),
+            Self::OpGe => write!(f, ">="),
         }
     }
 }
@@ -128,13 +225,13 @@ impl From<&Token> for Option<BinaryOperator> {
             Token::OpDiv => Some(BinaryOperator::OpDiv),
             Token::OpMod => Some(BinaryOperator::OpMod),
             Token::OpPow => Some(BinaryOperator::OpPow),
-            /*Token::OpEq => Some(BinaryOperator::OpEq),
+            Token::OpEq => Some(BinaryOperator::OpEq),
             Token::OpNe => Some(BinaryOperator::OpNe),
             Token::OpLt => Some(BinaryOperator::OpLt),
             Token::OpLe => Some(BinaryOperator::OpLe),
             Token::OpGt => Some(BinaryOperator::OpGt),
             Token::OpGe => Some(BinaryOperator::OpGe),
-            Token::OpAnd => Some(BinaryOperator::OpAnd),
+            /*Token::OpAnd => Some(BinaryOperator::OpAnd),
             Token::OpOr => Some(BinaryOperator::OpOr),*/
             _ => None,
         }
@@ -142,7 +239,7 @@ impl From<&Token> for Option<BinaryOperator> {
 }
 
 /// Unary expression
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UnaryExpression {
     /// Operator of the unary expression, see `UnaryOperator`
     pub operator: Option<UnaryOperator>,
@@ -168,7 +265,7 @@ impl Node for UnaryExpression {
 }
 
 /// Unary operator
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum UnaryOperator {
     /// Addition (`+`)
     OpAdd,
@@ -188,8 +285,46 @@ impl fmt::Display for UnaryOperator {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct IfElseNode {
+    pub condition: WithSpan<Box<Expression>>,
+    pub if_body: WithSpan<Box<Expression>>,
+    pub else_body: Option<WithSpan<Box<Expression>>>,
+}
+
+impl fmt::Display for IfElseNode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(e) = &self.else_body {
+            write!(f, "if {}then\n\t{}else\n\t{}", self.condition.value, self.if_body.value, e.value)
+        } else {
+            write!(f, "if {} then\n\t{}", self.condition.value, self.if_body.value)
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionCall {
+    pub name: String,
+    pub args: Vec<WithSpan<Box<Expression>>>,
+}
+impl fmt::Display for FunctionCall {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}({})", self.name, self.args.iter().map(|a| a.value.to_string()).collect::<Vec<String>>().join(", "))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DoExpression {
+    pub body: Vec<WithSpan<Box<Expression>>>,
+}
+impl fmt::Display for DoExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "do\n\t{}", self.body.iter().map(|a| a.value.to_string()).collect::<Vec<String>>().join("\n\t"))
+    }
+}
+
 /// Expression
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     /// Contains the `Literal` enum
     Literal(Literal),
@@ -199,6 +334,11 @@ pub enum Expression {
     BinaryExpression(BinaryExpression),
     /// Contains the `UnaryExpression` struct
     UnaryExpression(UnaryExpression),
+    IfElseNode(IfElseNode),
+    FunctionExpression(FunctionExpression),
+    VariableDeclaration(VariableDeclaration),
+    FunctionCall(FunctionCall),
+    DoExpression(DoExpression),
 }
 
 impl fmt::Display for Expression {
@@ -208,6 +348,11 @@ impl fmt::Display for Expression {
             Self::Identifier(i) => write!(f, "{}", i),
             Self::BinaryExpression(b) => write!(f, "{}", b),
             Self::UnaryExpression(u) => write!(f, "{}", u),
+            Self::IfElseNode(i) => write!(f, "{}", i),
+            Self::FunctionExpression(fun) => write!(f, "{}", fun),
+            Self::VariableDeclaration(v) => write!(f, "{}", v),
+            Self::FunctionCall(fun) => write!(f, "{}", fun),
+            Self::DoExpression(d) => write!(f, "{}", d),
         }
     }
 }
@@ -215,7 +360,9 @@ impl fmt::Display for Expression {
 impl Node for Expression {
     fn accept(&mut self, visitor: &mut dyn Visitor) {
         match self {
-            Self::Identifier(i) => visitor.visit_identifier(i),
+            Self::Identifier(i) => {
+                visitor.visit_identifier(i);
+            },
             Self::BinaryExpression(b) => {
                 visitor.visit_binary_expression(b);
             },

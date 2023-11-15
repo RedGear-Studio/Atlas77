@@ -1,13 +1,30 @@
-use crate::interfaces::parser::ast::*;
+pub mod value;
+
+use crate::{interfaces::parser::ast::*, utils::span::WithSpan};
+
+use self::value::Value;
+
+pub type Program = Vec<WithSpan<Box<Expression>>>;
 
 /// TODO
 pub trait Visitor {
+    fn visit(&mut self, program: &Program) -> Value;
     /// TODO
-    fn visit_identifier(&mut self, identifier: &IdentifierNode);
+    fn visit_identifier(&mut self, identifier: &IdentifierNode) -> Value;
     /// TODO
-    fn visit_binary_expression(&mut self, expression: &BinaryExpression) -> f64;
+    fn visit_binary_expression(&mut self, expression: &BinaryExpression) -> Value;
     /// TODO
-    fn visit_unary_expression(&mut self, expression: &UnaryExpression) -> f64;
+    fn visit_unary_expression(&mut self, expression: &UnaryExpression) -> Value;
     /// TODO
-    fn visit_expression(&mut self, expression: &Expression) -> f64;
+    fn visit_expression(&mut self, expression: &Expression) -> Value;
+    /// TODO
+    fn visit_variable_declaration(&mut self, variable_declaration: &VariableDeclaration) -> Value;
+    /// TODO
+    fn visit_if_else_node(&mut self, if_else_node: &IfElseNode) -> Value;
+    /// TODO
+    fn visit_function_expression(&mut self, function_expression: &FunctionExpression) -> Value;
+    ///TODO
+    fn visit_function_call(&mut self, function_call: &FunctionCall) -> Value;
+    ///TODO
+    fn visit_do_expression(&mut self, do_expression: &DoExpression) -> Value;
 }

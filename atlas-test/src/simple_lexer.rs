@@ -22,27 +22,24 @@ impl Lexer for SimpleLexerV1 {
         }
         let mut keywords = HashMap::new();
         use Token::*;
-        keywords.insert("struct".to_string(), KwStruct);
-        keywords.insert("else".to_string(), KwElse);
-        keywords.insert("false".to_string(), KwFalse);
-        keywords.insert("fn".to_string(), KwFn);
-        keywords.insert("if".to_string(), KwIf);
-        keywords.insert("none".to_string(), KwNone);
-        keywords.insert("print".to_string(), KwPrint);
-        keywords.insert("return".to_string(), KwReturn);
-        keywords.insert("this".to_string(), KwSelf);
-        keywords.insert("true".to_string(), KwTrue);
-        keywords.insert("let".to_string(), KwLet);
-        keywords.insert("char".to_string(), KwChar);
-        keywords.insert("float".to_string(), KwFloat);
-        keywords.insert("int".to_string(), KwInt);
-        keywords.insert("string".to_string(), KwString);
-        keywords.insert("bool".to_string(), KwBool);
-        keywords.insert("void".to_string(), KwVoid);
-        keywords.insert("const".to_string(), KwConst);
-        keywords.insert("enum".to_string(), KwEnum);
-        keywords.insert("typedef".to_string(), KwTypeDef);
-        keywords.insert("pub".to_string(), KwPub);
+        keywords.insert("struct".to_owned(), KwStruct);
+        keywords.insert("else".to_owned(), KwElse);
+        keywords.insert("false".to_owned(), KwFalse);
+        keywords.insert("List".to_owned(), KwList);
+        keywords.insert("Map".to_owned(), KwMap);
+        keywords.insert("if".to_owned(), KwIf);
+        keywords.insert("return".to_owned(), KwReturn);
+        keywords.insert("true".to_owned(), KwTrue);
+        keywords.insert("let".to_owned(), KwLet);
+        keywords.insert("char".to_owned(), KwChar);
+        keywords.insert("f64".to_owned(), KwF64);
+        keywords.insert("i64".to_owned(), KwI64);
+        keywords.insert("string".to_owned(), KwString);
+        keywords.insert("bool".to_owned(), KwBool);
+        keywords.insert("enum".to_owned(), KwEnum);
+        keywords.insert("do".to_owned(), KwDo);
+        keywords.insert("end".to_owned(), KwEnd);
+        keywords.insert("then".to_owned(), KwThen);
 
         self.keywords = keywords;
         self.file_path = file_path;
@@ -164,7 +161,7 @@ impl SimpleLexerV1 {
     fn match_t_token(&mut self, ch: char) -> Option<Token> {
         use Token::*;
         match ch {
-            ' ' | '\t' | '\r' | '\n' => {
+            '\n' | '\t' | ' ' | '\r' => {
                 if !self.peek().is_none() {
                     let ch = self.next().unwrap();
                     self.match_t_token(ch)

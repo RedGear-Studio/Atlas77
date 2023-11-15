@@ -4,7 +4,7 @@
  * The core of a tool designed to help you make programming language
 */
 
-#![warn(missing_docs)]
+//#![warn(missing_docs)]
 
 //! # atlas-Core
 //! 
