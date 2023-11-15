@@ -10,7 +10,6 @@ use crate::simple_visitor::SimpleVisitorV1;
 
 use std::time::Instant;
 
-
 fn main() {
     let start = Instant::now();
 
@@ -22,13 +21,13 @@ fn main() {
     );
     language.lexer.with_file_path(path.clone()).expect("Failed to open the file");
     let tokens = language.lexer.tokenize();
-    println!("Tokens: {:?} ", tokens);
+    //println!("Tokens: {:?} ", tokens);
     //language.lexer.check(&tokens).expect("Failed to tokenize the file");
     let mut parser = SimpleParserV1::new();
     parser.with_file_path(path).expect("Failed to open the file");
     parser.with_tokens(tokens);
     let res = parser.parse().expect("Failed to parse the file");
-    println!("{}", res[0].value);
+    println!("{:?}", language.visitor.visit(&res));
 
     /*for _ in 0..10000 {
         let path = String::from("C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\atlas-test\\test.atlas");

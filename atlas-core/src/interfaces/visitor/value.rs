@@ -1,6 +1,8 @@
-use std::{collections::HashMap, ops::{Add, Sub, Mul, Div}};
+use std::{collections::HashMap, ops::{Add, Sub, Mul, Div}, default};
 
-#[derive(Debug, Clone)]
+use crate::ast::FunctionExpression;
+
+#[derive(Debug, Clone, Default)]
 pub enum Value {
     Integer(i64),
     Float(f64),
@@ -8,6 +10,9 @@ pub enum Value {
     Bool(bool),
     List(Vec<Value>),
     Map(HashMap<String, Value>),
+    FunctionBody(FunctionExpression),
+    #[default]
+    Undefined,
 }
 
 impl Add for Value {

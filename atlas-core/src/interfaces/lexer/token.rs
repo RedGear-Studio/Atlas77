@@ -1,3 +1,5 @@
+use core::fmt;
+
 #[derive(Debug, Clone, PartialEq)]
 /// Represents each potential tokens in atlas.
 /// 
@@ -8,20 +10,16 @@ pub enum Token {
     KwIf,
     /// Represents the ELSE keyword ("else")
     KwElse,
-    /// Represents the FN keyword ("fn")
-    KwFn,
     /// Represents the INT keyword ("int")
-    KwInt,      //int
+    KwI64,      //int
     /// Represents the FLOAT keyword ("float")
-    KwFloat,    //float
+    KwF64,    //float
     /// Represents the BOOL keyword ("bool")
     KwBool,     //bool
     /// Represents the CHAR keyword ("char")
     KwChar,     //char
     /// Represents the STRING keyword ("string")
     KwString,   //string
-    /// Represents the VOID keyword ("void")
-    KwVoid,     //void
     /// Represents the RETURN keyword ("return")
     KwReturn,   //return
     /// Represents the TRUE keyword ("true")
@@ -34,15 +32,12 @@ pub enum Token {
     KwStruct,   //struct
     /// Represents the ENUM keyword ("enum")
     KwEnum,     //enum
-    /// Represents the TYPEDEF keyword ("typedef")
-    KwTypeDef,     //type
-    /// Represents the CONST keyword ("const")
-    KwConst,    //const
     /// Represents the PRINT keyword ("print")
-    KwPrint,
-    KwFnType,
+    KwThen,
     KwList,
     KwMap,
+    KwDo,
+    KwEnd,
 
     //Identifiers
     /// Represents an identifier
@@ -159,86 +154,81 @@ pub enum Token {
     UnterminatedString,
     /// Represents a new line
     NewLine,
-    /// Represents a tabulation
-    Tabulation,
     /// Represents an EOF
     EOF,
 }
 
 
-impl ToString for Token {
-    fn to_string(&self) -> String {
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use Token::*;
         match self {
-            Token::KwIf => "if".to_string(),
-            Token::KwElse => "else".to_string(),
-            Token::KwFn => "fn".to_string(),
-            Token::KwInt => "int".to_string(),
-            Token::KwFloat => "float".to_string(),
-            Token::KwBool => "bool".to_string(),
-            Token::KwChar => "char".to_string(),
-            Token::KwString => "string".to_string(),
-            Token::KwVoid => "void".to_string(),
-            Token::KwReturn => "return".to_string(),
-            Token::KwTrue => "true".to_string(),
-            Token::KwFalse => "false".to_string(),
-            Token::KwLet => "let".to_string(),
-            Token::KwFnType => "Fn".to_string(),
-            Token::KwStruct => "struct".to_string(),
-            Token::KwEnum => "enum".to_string(),
-            Token::KwTypeDef => "typedef".to_string(),
-            Token::KwConst => "const".to_string(),
-            Token::KwPrint => "print".to_string(),
-            Token::KwList => "List".to_string(),
-            Token::KwMap => "Map".to_string(),
-            Token::Ident(s) => s.to_string(),
-            Token::Int(i) => i.to_string(),
-            Token::Float(f) => f.to_string(),
-            Token::Char(c) => c.to_string(),
-            Token::String_(s) => s.to_string(),
-            Token::LParen => "(".to_string(),
-            Token::RParen => ")".to_string(),
-            Token::LBrace => "{{".to_string(),
-            Token::RBrace => "}}".to_string(),
-            Token::LBracket => "[[".to_string(),
-            Token::RBracket => "]]".to_string(),
-            Token::OpAdd => "+".to_string(),
-            Token::OpSub => "-".to_string(),
-            Token::OpMul => "*".to_string(),
-            Token::OpDiv => "/".to_string(),
-            Token::OpMod => "%".to_string(),
-            Token::OpPow => "^".to_string(),
-            Token::OpEq => "==".to_string(),
-            Token::OpNe => "!=".to_string(),
-            Token::OpLt => "<".to_string(),
-            Token::OpLe => "<=".to_string(),
-            Token::OpGt => ">".to_string(),
-            Token::OpGe => ">=".to_string(),
-            Token::OpAnd => "&&".to_string(),
-            Token::OpOr => "||".to_string(),
-            Token::OpNot => "!".to_string(),
-            Token::OpAssign => "=".to_string(),
-            Token::OpAssignAdd => "+=".to_string(),
-            Token::OpAssignSub => "-=".to_string(),
-            Token::OpAssignMul => "*=".to_string(),
-            Token::OpAssignDiv => "/=".to_string(),
-            Token::OpAssignMod => "%=".to_string(),
-            Token::Colon => ":".to_string(),
-            Token::DoubleColon => "::".to_string(),
-            Token::Dot => ".".to_string(),
-            Token::DoubleDot => "..".to_string(),
-            Token::LArrow => "<-".to_string(),
-            Token::RArrow => "->".to_string(),
-            Token::FatArrow => "=>".to_string(),
-            Token::Pipe => "|".to_string(),
-            Token::Question => "?".to_string(),
-            Token::Semicolon => ";".to_string(),
-            Token::Comma => ",".to_string(),
-            Token::Ampersand => "&".to_string(),
-            Token::Unknown(c) => c.to_string(),
-            Token::UnterminatedString => "Unterminated string".to_string(),
-            Token::NewLine => "\n".to_string(),
-            Token::Tabulation => "\t".to_string(),
-            Token::EOF => "EOF".to_string(),
+            KwIf => write!(f, "if"),
+            KwElse => write!(f, "else"),
+            KwI64 => write!(f, "i64"),
+            KwF64 => write!(f, "f64"),
+            KwBool => write!(f, "bool"),
+            KwChar => write!(f, "char"),
+            KwString => write!(f, "string"),
+            KwReturn => write!(f, "return"),
+            KwTrue => write!(f, "true"),
+            KwFalse => write!(f, "false"),
+            KwLet => write!(f, "let"),
+            KwStruct => write!(f, "struct"),
+            KwEnum => write!(f, "enum"),
+            KwThen => write!(f, "then"),
+            KwList => write!(f, "List"),
+            KwDo => write!(f, "do"),
+            KwMap => write!(f, "Map"),
+            KwEnd => write!(f, "end"),
+            Ident(i) => write!(f, "{}", i),
+            Int(i) => write!(f, "{}", i),
+            Float(fl) => write!(f, "{}", fl),
+            Char(c) => write!(f, "{}", c),
+            String_(s) => write!(f, "{}", s),
+            LBrace => write!(f, "{{"),
+            RBrace => write!(f, "}}"),
+            LBracket => write!(f, "["),
+            RBracket => write!(f, "]"),
+            LParen => write!(f, "("),
+            RParen => write!(f, ")"),
+            OpAdd => write!(f, "+"),
+            OpSub => write!(f, "-"),
+            OpMul => write!(f, "*"),
+            OpDiv => write!(f, "/"),
+            OpMod => write!(f, "%"),
+            OpPow => write!(f, "^"),
+            OpEq => write!(f, "=="),
+            OpNe => write!(f, "!="),
+            OpLt => write!(f, "<"),
+            OpLe => write!(f, "<="),
+            OpGt => write!(f, ">"),
+            OpGe => write!(f, ">="),
+            OpAnd => write!(f, "&&"),
+            OpOr => write!(f, "||"),
+            OpNot => write!(f, "!"),
+            OpAssign => write!(f, "="),
+            OpAssignAdd => write!(f, "+="),
+            OpAssignSub => write!(f, "-="),
+            OpAssignMul => write!(f, "*="),
+            OpAssignDiv => write!(f, "/="),
+            OpAssignMod => write!(f, "%="),
+            Colon => write!(f, ":"),
+            DoubleColon => write!(f, "::"),
+            Dot => write!(f, "."),
+            DoubleDot => write!(f, ".."),
+            LArrow => write!(f, "<-"),
+            RArrow => write!(f, "->"),
+            FatArrow => write!(f, "=>"),
+            Pipe => write!(f, "|"),
+            Question => write!(f, "?"),
+            Semicolon => write!(f, ";"),
+            Comma => write!(f, ","),
+            Ampersand => write!(f, "&"),
+            Unknown(c) => write!(f, "{}", c),
+            UnterminatedString => write!(f, "Unterminated string"),
+            NewLine => write!(f, "NewLine"),
+            EOF => write!(f, "EOF"),
         }
     }
 }

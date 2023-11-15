@@ -6,7 +6,7 @@ use crate::{utils::span::WithSpan, prelude::visitor::Visitor, Token};
 use super::node::Node;
 
 /// Placeholder
-pub type AbstractSyntaxTree = Vec<WithSpan<Box<Statement>>>;
+pub type AbstractSyntaxTree = Vec<WithSpan<Box<Expression>>>;
 
 /// Literal
 #[derive(Debug, Clone)]
@@ -58,7 +58,7 @@ pub enum Type {
     Void,
     List(Box<Type>),
     Map(Box<Type>, Box<Type>),
-    Function(Vec<Type>, Box<Type>),
+    Function(Vec<(String, Type)>, Box<Type>),
 }
 
 impl fmt::Display for Type {
@@ -71,7 +71,7 @@ impl fmt::Display for Type {
             Self::Void => write!(f, "void"),
             Self::List(t) => write!(f, "List[{}]", t),
             Self::Map(k, v) => write!(f, "Map[{}, {}]", k, v),
-            Self::Function(args, ret) => write!(f, "Fn[{}] -> {}", args.into_iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", "), ret),
+            Self::Function(args, ret) => write!(f, "({}) -> {}", args.iter().map(|(s, t)| format!("{}: {}", s, t)).collect::<Vec<String>>().join(", "), ret),
         }
     }
 }
@@ -89,7 +89,7 @@ mod test {
         assert_eq!(Type::Void.to_string(), "void");
         assert_eq!(Type::List(Box::new(Type::Integer)).to_string(), "List[i64]");
         assert_eq!(Type::Map(Box::new(Type::Integer), Box::new(Type::String)).to_string(), "Map[i64, string]");
-        assert_eq!(Type::Function(vec![Type::Integer, Type::Float], Box::new(Type::Bool)).to_string(), "Fn[i64, f64] -> bool");
+        assert_eq!(Type::Function(vec![(String::from("abc"), Type::Integer), (String::from("efg"), Type::Float)], Box::new(Type::Bool)).to_string(), "(abc: i64, efg: f64) -> bool");
     }
 }
 
@@ -113,13 +113,13 @@ impl fmt::Display for VariableDeclaration {
 
 #[derive(Debug, Clone)]
 pub struct FunctionExpression {
-    args: Vec<String>,
-    body: Vec<Statement>,
+    pub args: Vec<(String, Type)>,
+    pub body: WithSpan<Box<Expression>>,
 }
 
 impl fmt::Display for FunctionExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "fn({}) -> \n\t{}\n", self.args.join(", "), self.body.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n\t"))
+        write!(f, "{}", self.body.value)
     }
 }
 
@@ -283,17 +283,38 @@ impl fmt::Display for UnaryOperator {
 #[derive(Debug, Clone)]
 pub struct IfElseNode {
     pub condition: WithSpan<Box<Expression>>,
-    pub if_body: WithSpan<Vec<Statement>>,
-    pub else_body: Option<WithSpan<Vec<Statement>>>,
+    pub if_body: WithSpan<Box<Expression>>,
+    pub else_body: Option<WithSpan<Box<Expression>>>,
 }
 
 impl fmt::Display for IfElseNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(e) = &self.else_body {
-            write!(f, "if {}then\n\t{}else\n\t{}", self.condition.value, self.if_body.value.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n\t"), e.value.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n\t"))
+            write!(f, "if {}then\n\t{}else\n\t{}", self.condition.value, self.if_body.value, e.value)
         } else {
-            write!(f, "if {} then\n\t{}", self.condition.value, self.if_body.value.iter().map(|s| s.to_string()).collect::<Vec<String>>().join("\n\t"))
+            write!(f, "if {} then\n\t{}", self.condition.value, self.if_body.value)
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionCall {
+    pub name: String,
+    pub args: Vec<WithSpan<Box<Expression>>>,
+}
+impl fmt::Display for FunctionCall {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}({})", self.name, self.args.iter().map(|a| a.value.to_string()).collect::<Vec<String>>().join(", "))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DoExpression {
+    pub body: Vec<WithSpan<Box<Expression>>>,
+}
+impl fmt::Display for DoExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "do\n\t{}", self.body.iter().map(|a| a.value.to_string()).collect::<Vec<String>>().join("\n\t"))
     }
 }
 
@@ -310,6 +331,9 @@ pub enum Expression {
     UnaryExpression(UnaryExpression),
     IfElseNode(IfElseNode),
     FunctionExpression(FunctionExpression),
+    VariableDeclaration(VariableDeclaration),
+    FunctionCall(FunctionCall),
+    DoExpression(DoExpression),
 }
 
 impl fmt::Display for Expression {
@@ -321,6 +345,9 @@ impl fmt::Display for Expression {
             Self::UnaryExpression(u) => write!(f, "{}", u),
             Self::IfElseNode(i) => write!(f, "{}", i),
             Self::FunctionExpression(fun) => write!(f, "{}", fun),
+            Self::VariableDeclaration(v) => write!(f, "{}", v),
+            Self::FunctionCall(fun) => write!(f, "{}", fun),
+            Self::DoExpression(d) => write!(f, "{}", d),
         }
     }
 }
