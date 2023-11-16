@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, VariableDeclaration, IdentifierNode, Type, FunctionExpression, FunctionCall, DoExpression, IfElseNode};
+use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, VariableDeclaration, IdentifierNode, Type, FunctionExpression, FunctionCall, DoExpression, IfElseNode, LoopExpression};
 use atlas_core::interfaces::parser::parse_errors::ParseError;
 use atlas_core::interfaces::parser::Parser;
 use atlas_core::utils::span::*;
@@ -155,7 +155,7 @@ impl SimpleParserV1 {
             Ident(s) => {
                 s
             }
-            _ => unreachable!()
+            _ => unreachable!("Unexpected token: {:?}", self.current().value)
         };
         self.expect(Colon)?;
         let t = *self.parse_type()?.value;
@@ -275,6 +275,18 @@ impl SimpleParserV1 {
                 self.advance();
                 Ok(WithSpan::new(Box::new(Expression::Literal(Literal::Integer(i))), Span::default()))
             }
+            String_(s) => {
+                self.advance();
+                Ok(WithSpan::new(Box::new(Expression::Literal(Literal::String(s))), Span::default()))
+            }
+            KwTrue => {
+                self.advance();
+                Ok(WithSpan::new(Box::new(Expression::Literal(Literal::Bool(true))), Span::default()))
+            }
+            KwFalse => {
+                self.advance();
+                Ok(WithSpan::new(Box::new(Expression::Literal(Literal::Bool(false))), Span::default()))
+            }
             LParen => {
                 self.advance();
                 let expr = self.parse_expr()?;
@@ -324,6 +336,19 @@ impl SimpleParserV1 {
                         Box::new(Expression::IfElseNode(IfElseNode { condition, if_body, else_body: None })), Span::default()
                     ))
                 }
+            }
+            KwLoop => {
+                self.expect(KwLoop)?;
+                let body = self.parse_expr()?;
+                Ok(WithSpan::new(
+                    Box::new(Expression::LoopExpression(LoopExpression { body })), Span::default()
+                ))
+            }
+            KwBreak => {
+                self.expect(KwBreak)?;
+                Ok(WithSpan::new(
+                    Box::new(Expression::BreakExpression), Span::default()
+                ))
             }
             _ => {
                 eprintln!("Unexpected token: {:?}", self.current().value);

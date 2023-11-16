@@ -66,6 +66,9 @@ impl Lexer for SimpleLexerV1 {
         keywords.insert("do".to_owned(), KwDo);
         keywords.insert("end".to_owned(), KwEnd);
         keywords.insert("then".to_owned(), KwThen);
+        keywords.insert("match".to_owned(), KwMatch);
+        keywords.insert("loop".to_owned(), KwLoop);
+        keywords.insert("break".to_owned(), KwBreak);
 
         self.keywords = keywords;
         self.file_path = file_path;
@@ -224,6 +227,9 @@ impl SimpleLexerV1 {
                     Some(self.either('=', OpAssignDiv, OpDiv))
                 }
             },
+            '\\' => {
+                Some(BackSlash)
+            }
             '%' => Some(self.either('=', OpAssignMod, OpMod)),
             '^' => Some(OpPow),
             '<' => {
@@ -272,10 +278,8 @@ impl SimpleLexerV1 {
             },
             '"' => {
                 let mut string = String::new();
-                string.push('"');
                 string.push_str(self.consume_while(|ch| ch != '"').iter().collect::<String>().as_ref());
                 self.next().unwrap();
-                string.push('"');
                 Some(String_(string))
             },
             //TODO: Be able to use the escape character (backslash) in strings and chars
