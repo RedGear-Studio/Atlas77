@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::utils::span::WithSpan;
 use crate::interfaces::lexer::token;
 
@@ -26,7 +28,7 @@ pub trait Parser {
     ///
     /// A `Result` that contains the parser instance if successful, or an `std::io::Error` if there's an issue
     /// with file I/O (e.g., file not found, permission issues).
-    fn with_file_path(&mut self, file_path: String) -> Result<(), std::io::Error>;
+    fn with_file_path(&mut self, file_path: PathBuf) -> Result<(), std::io::Error>;
     /// Adds the given tokens to the parser.
     /// 
     /// # Arguments

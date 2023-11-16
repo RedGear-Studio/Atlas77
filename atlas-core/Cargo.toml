@@ -19,7 +19,6 @@ debug = ["dep:env_logger"]
 
 [dependencies]
 ariadne = { version = "0.3.0", features = ["auto-color"] }
-clap = { version = "4.3.23", features = ["derive"] }
 heck = "0.4.1"
 # debug logs
 env_logger = { version = "0.10", optional = true }

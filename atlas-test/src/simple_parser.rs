@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, VariableDeclaration, IdentifierNode, Type, FunctionExpression, FunctionCall, DoExpression, IfElseNode};
 use atlas_core::interfaces::parser::parse_errors::ParseError;
 use atlas_core::interfaces::parser::Parser;
@@ -11,12 +13,12 @@ static EOF_TOKEN: WithSpan<Token> = WithSpan::new(EOF, Span::empty());
 #[derive(Debug, Clone, Default)]
 pub struct SimpleParserV1 {
     tokens: Vec<WithSpan<Token>>,
-    file_path: String,
+    file_path: PathBuf,
     pos: usize,
 }
 
 impl Parser for SimpleParserV1 {
-    fn with_file_path(&mut self, file_path: String) -> Result<(), std::io::Error> {
+    fn with_file_path(&mut self, file_path: PathBuf) -> Result<(), std::io::Error> {
         self.file_path = file_path;
         return Ok(());
     }
@@ -39,7 +41,7 @@ impl SimpleParserV1 {
     pub fn new() -> Self {
         SimpleParserV1 { 
             tokens: Vec::default(), 
-            file_path: String::default(), 
+            file_path: PathBuf::default(), 
             pos: usize::default(),
         }
     }
@@ -296,6 +298,7 @@ impl SimpleParserV1 {
                 let mut expressions = vec![];
                 while self.current().value != KwEnd {
                     expressions.push(self.parse_expression()?);
+                    self.expect(Semicolon)?;
                 }
                 self.expect(KwEnd)?;
                 Ok(WithSpan::new(
