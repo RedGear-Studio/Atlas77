@@ -1,4 +1,4 @@
-use std::{time::Instant, path::PathBuf, fs::File};
+use std::{time::Instant, path::PathBuf};
 
 use atlas_core::{Language, Parser};
 

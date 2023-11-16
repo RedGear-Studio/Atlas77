@@ -3,14 +3,6 @@ pub mod simple_parser;
 pub mod simple_visitor;
 pub mod simple_cli;
 
-use crate::simple_lexer::SimpleLexerV1;
-use atlas_core::Parser;
-use atlas_core::language::Language;
-use crate::simple_parser::SimpleParserV1;
-use crate::simple_visitor::SimpleVisitorV1;
-
-use std::time::Instant;
-
 use clap::Parser as ClapParser;
 
 #[derive(ClapParser, Debug)]

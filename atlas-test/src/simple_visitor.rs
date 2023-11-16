@@ -144,19 +144,57 @@ impl Visitor for SimpleVisitorV1 {
     }
 
     fn visit_function_call(&mut self, function_call: &FunctionCall) -> Value {
-        for arg in &function_call.args {
-            let val = self.visit_expression(&arg.value);
-            self.stack.push(val);
-        }
-        if let Some(f) = self.varmap[0].0.get(&function_call.name) {
-            match f {
-                Value::FunctionBody(f) => {
-                    return self.visit_function_expression(&f.clone());
+        match function_call.name.as_str() {
+            "print" => {
+                for arg in &function_call.args {
+                    let val = self.visit_expression(&arg.value);
+                    println!("{:?}", val);
                 }
-                _ => unimplemented!("Main function is not a function body")
+                Value::Undefined
+            },
+            "read_i64" => {
+                //read input from the console
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                if let Ok(i) = input.trim().parse::<i64>() {
+                    Value::Integer(i)
+                } else {
+                    Value::Undefined
+                }
+            },
+            "read_f64" => {
+                //read input from the console
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                if let Ok(i) = input.trim().parse::<f64>() {
+                    Value::Float(i)
+                } else {
+                    Value::Undefined
+                }
+            },
+            "read_str" => {
+                //read input from the console
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                input = input.trim().to_string();
+                Value::String(input)
             }
-        } else {
-            unreachable!("Function {} not found", function_call.name)
+            _ => {
+                for arg in &function_call.args {
+                    let val = self.visit_expression(&arg.value);
+                    self.stack.push(val);
+                }
+                if let Some(f) = self.varmap[0].0.get(&function_call.name) {
+                    match f {
+                        Value::FunctionBody(f) => {
+                            return self.visit_function_expression(&f.clone());
+                        }
+                        _ => unimplemented!("Main function is not a function body")
+                    }
+                } else {
+                    unreachable!("Function {} not found", function_call.name)
+                }
+            }
         }
     }
 

@@ -4,9 +4,19 @@ let fib: (a: i64) -> i64 =
     else
         fib(a - 1) + fib(a - 2)
 
-let main: () -> i64 = do 
-    ackermann(2, 3);
+//let main: () -> i64 = do 
+//    ackermann(2, 3);
+//end
+
+let loop: (n: i64) -> i64 = do 
+    print(n);
+    if n == 0 then
+        0
+    else
+        loop(n -1);
 end
+
+let main: () -> i64 = do print(read_str()); end
 
 
 // Ackermann function
