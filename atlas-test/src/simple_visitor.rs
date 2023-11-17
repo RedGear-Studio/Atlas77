@@ -145,12 +145,6 @@ impl Visitor for SimpleVisitorV1 {
             Expression::DoExpression(d) => {
                 self.visit_do_expression(d)
             }
-            Expression::LoopExpression(l) => {
-                self.visit_loop_expression(l)
-            }
-            Expression::BreakExpression => {
-                Value::Break
-            }
             _ => unimplemented!("Expression not implemented\n\t{}", expression)
         }
     }
@@ -323,15 +317,5 @@ impl Visitor for SimpleVisitorV1 {
         self.current_scope -= 1;
         self.varmap.pop();
         last_evaluated_expr
-    }
-
-    fn visit_loop_expression(&mut self, loop_expression: &LoopExpression) -> Value {
-        let expr = loop_expression.body.value.clone();
-        loop {
-            if self.visit_expression(&expr) == Value::Break {
-                break
-            }
-        }
-        Value::Undefined
     }
 }

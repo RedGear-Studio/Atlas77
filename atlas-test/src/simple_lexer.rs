@@ -67,8 +67,6 @@ impl Lexer for SimpleLexerV1 {
         keywords.insert("end".to_owned(), KwEnd);
         keywords.insert("then".to_owned(), KwThen);
         keywords.insert("match".to_owned(), KwMatch);
-        keywords.insert("loop".to_owned(), KwLoop);
-        keywords.insert("break".to_owned(), KwBreak);
 
         self.keywords = keywords;
         self.file_path = file_path;

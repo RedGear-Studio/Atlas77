@@ -337,19 +337,6 @@ impl SimpleParserV1 {
                     ))
                 }
             }
-            KwLoop => {
-                self.expect(KwLoop)?;
-                let body = self.parse_expr()?;
-                Ok(WithSpan::new(
-                    Box::new(Expression::LoopExpression(LoopExpression { body })), Span::default()
-                ))
-            }
-            KwBreak => {
-                self.expect(KwBreak)?;
-                Ok(WithSpan::new(
-                    Box::new(Expression::BreakExpression), Span::default()
-                ))
-            }
             _ => {
                 eprintln!("Unexpected token: {:?}", self.current().value);
                 unimplemented!()

@@ -13,7 +13,6 @@ pub enum Value {
     FunctionBody(FunctionExpression),
     #[default]
     Undefined,
-    Break,
 }
 
 impl Value {

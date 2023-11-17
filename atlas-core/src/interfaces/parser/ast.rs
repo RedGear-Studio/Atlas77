@@ -111,17 +111,6 @@ impl fmt::Display for VariableDeclaration {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LoopExpression {
-    pub body: WithSpan<Box<Expression>>,
-}
-
-impl fmt::Display for LoopExpression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "loop\n\t{}", self.body.value)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct FunctionExpression {
     pub args: Vec<(String, Type)>,
     pub body: WithSpan<Box<Expression>>,
@@ -350,8 +339,6 @@ pub enum Expression {
     VariableDeclaration(VariableDeclaration),
     FunctionCall(FunctionCall),
     DoExpression(DoExpression),
-    LoopExpression(LoopExpression),
-    BreakExpression,
 }
 
 impl fmt::Display for Expression {
@@ -366,8 +353,6 @@ impl fmt::Display for Expression {
             Self::VariableDeclaration(v) => write!(f, "{}", v),
             Self::FunctionCall(fun) => write!(f, "{}", fun),
             Self::DoExpression(d) => write!(f, "{}", d),
-            Self::LoopExpression(l) => write!(f, "{}", l),
-            Self::BreakExpression => write!(f, "break"),
         }
     }
 }
