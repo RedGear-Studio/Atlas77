@@ -203,6 +203,7 @@ impl SimpleLexerV1 {
             '[' => Some(LBracket),
             ']' => Some(RBracket),
             '+' => Some(self.either('=', OpAssignAdd, OpAdd)),
+            '_' => Some(Underscore),
             '-' => {
                 if self.consume_if(|c| c == '>') {
                     Some(RArrow)

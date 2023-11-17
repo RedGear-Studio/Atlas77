@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, VariableDeclaration, IdentifierNode, Type, FunctionExpression, FunctionCall, DoExpression, IfElseNode, LoopExpression};
+use atlas_core::ast::{AbstractSyntaxTree, Expression, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, VariableDeclaration, IdentifierNode, Type, FunctionExpression, FunctionCall, DoExpression, IfElseNode, MatchArm, MatchExpression, IndexExpression};
 use atlas_core::interfaces::parser::parse_errors::ParseError;
 use atlas_core::interfaces::parser::Parser;
 use atlas_core::utils::span::*;
@@ -279,6 +279,18 @@ impl SimpleParserV1 {
                 self.advance();
                 Ok(WithSpan::new(Box::new(Expression::Literal(Literal::String(s))), Span::default()))
             }
+            LBracket => {
+                self.expect(LBracket)?;
+                let mut exprs = vec![];
+                while self.current().value != RBracket {
+                    exprs.push(self.parse_expr()?.value.as_ref().clone());
+                    if self.current().value == Comma {
+                        self.advance();
+                    }
+                }
+                self.expect(RBracket)?;
+                Ok(WithSpan::new(Box::new(Expression::Literal(Literal::List(exprs))), Span::default()))
+            }
             KwTrue => {
                 self.advance();
                 Ok(WithSpan::new(Box::new(Expression::Literal(Literal::Bool(true))), Span::default()))
@@ -296,11 +308,17 @@ impl SimpleParserV1 {
             Ident(s) => {
                 self.advance();
                 if self.current().value == LParen {
-                    self.advance();
+                    self.expect(LParen)?;
                     let args = self.parse_arguments()?;
                     self.expect(RParen)?;
                     Ok(WithSpan::new(Box::new(Expression::FunctionCall(FunctionCall { name: s, args })), Span::default()))
-                } else {
+                } else if self.current().value == LBracket  {
+                    self.expect(LBracket)?;
+                    let index = self.parse_expr()?;
+                    self.expect(RBracket)?;
+                    Ok(WithSpan::new(Box::new(Expression::IndexExpression(IndexExpression { name: s, index })), Span::default()))
+                }
+                else{
                     Ok(WithSpan::new(Box::new(Expression::Identifier(IdentifierNode { name: s })), Span::default()))
                 }
             }
@@ -336,12 +354,41 @@ impl SimpleParserV1 {
                         Box::new(Expression::IfElseNode(IfElseNode { condition, if_body, else_body: None })), Span::default()
                     ))
                 }
+            },
+            KwMatch => {
+                self.expect(KwMatch)?;
+                let expr = self.parse_expr()?;
+                let mut match_arm = vec![];
+                while self.current().value != BackSlash {
+                    self.expect(Pipe)?;
+                    match_arm.push(self.parse_match_arm()?);
+                    self.expect(Comma)?;
+                }
+                self.expect(BackSlash)?;
+                let mut default_arm = None;
+                if self.current().value == Underscore {
+                    self.expect(Underscore)?;
+                    self.expect(FatArrow)?;
+                    default_arm = Some(self.parse_expr()?);
+                } else {
+                    match_arm.push(self.parse_match_arm()?);
+                }
+                Ok(WithSpan::new(
+                    Box::new(Expression::MatchExpression(MatchExpression { expr, arms: match_arm, default: default_arm })), Span::default()
+                ))
             }
             _ => {
                 eprintln!("Unexpected token: {:?}", self.current().value);
                 unimplemented!()
             }
         }
+    }
+
+    fn parse_match_arm(&mut self) -> Result<MatchArm, ParseError> {
+        let pattern = self.parse_expr()?;
+        self.expect(FatArrow)?;
+        let body = self.parse_expr()?;
+        Ok(MatchArm { pattern, body })
     }
 
     fn parse_arguments(&mut self) -> Result<Vec<WithSpan<Box<Expression>>>, ParseError> {
@@ -356,24 +403,4 @@ impl SimpleParserV1 {
         Ok(args)
     }
 
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn test_parse_type() {
-        let mut parser = SimpleParserV1::new();
-        parser.tokens = vec![
-            WithSpan::new(LParen, Span::default()),
-            WithSpan::new(Ident("a".to_string()), Span::default()),
-            WithSpan::new(Colon, Span::default()),
-            WithSpan::new(KwI64, Span::default()),
-            WithSpan::new(RParen, Span::default()),  
-            WithSpan::new(RArrow, Span::default()),  
-            WithSpan::new(KwI64, Span::default()),
-        ];
-        let t: WithSpan<Box<Type>> = parser.parse_type().unwrap();
-        println!("t: {}", t.value);
-    }       
 }

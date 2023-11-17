@@ -18,6 +18,7 @@ pub enum Literal {
     String(String),
     /// Boolean literal
     Bool(bool),
+    List(Vec<Expression>),
 }
 
 impl fmt::Display for Literal {
@@ -27,6 +28,7 @@ impl fmt::Display for Literal {
             Self::Float(fl) => write!(f, "{}", fl),
             Self::String(s) => write!(f, "{}", s),
             Self::Bool(b) => write!(f, "{}", b),
+            Self::List(l) => write!(f, "[{}]", l.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(", ")),
         }
     }
 }
@@ -314,12 +316,64 @@ impl fmt::Display for FunctionCall {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct IndexExpression {
+    pub name: String,
+    pub index: WithSpan<Box<Expression>>,
+}
+
+impl fmt::Display for IndexExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}[{}]", self.name, self.index.value)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct DoExpression {
     pub body: Vec<WithSpan<Box<Expression>>>,
 }
 impl fmt::Display for DoExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "do\n\t{}", self.body.iter().map(|a| a.value.to_string()).collect::<Vec<String>>().join("\n\t"))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchArm {
+    pub pattern: WithSpan<Box<Expression>>,
+    pub body: WithSpan<Box<Expression>>,
+}
+
+impl fmt::Display for MatchArm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} => {}", self.pattern.value, self.body.value)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchExpression {
+    pub expr: WithSpan<Box<Expression>>,
+    pub arms: Vec<MatchArm>,
+    pub default: Option<WithSpan<Box<Expression>>>,
+}
+
+impl fmt::Display for MatchExpression{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.default.is_some() {
+            write!(
+                f,
+                "match {} \n\t{}default\n\t{}",
+                self.expr.value,
+                self.arms.iter().map(|a| a.pattern.value.to_string() + "=>" + &a.body.value.to_string()).collect::<Vec<String>>().join("\n\t"),
+                self.default.clone().unwrap().value
+            )
+        } else {
+            write!(
+                f,
+                "match {} \n\t{}",
+                self.expr.value,
+                self.arms.iter().map(|a| a.pattern.value.to_string() + "=>" + &a.body.value.to_string()).collect::<Vec<String>>().join("\n\t")
+            )
+        }
     }
 }
 
@@ -339,6 +393,8 @@ pub enum Expression {
     VariableDeclaration(VariableDeclaration),
     FunctionCall(FunctionCall),
     DoExpression(DoExpression),
+    MatchExpression(MatchExpression),
+    IndexExpression(IndexExpression),
 }
 
 impl fmt::Display for Expression {
@@ -353,6 +409,8 @@ impl fmt::Display for Expression {
             Self::VariableDeclaration(v) => write!(f, "{}", v),
             Self::FunctionCall(fun) => write!(f, "{}", fun),
             Self::DoExpression(d) => write!(f, "{}", d),
+            Self::MatchExpression(m) => write!(f, "{}", m),
+            Self::IndexExpression(l) => write!(f, "{}", l),
         }
     }
 }

@@ -127,7 +127,14 @@ impl Visitor for SimpleVisitorV1 {
                     Literal::String(s) => {
                         Value::String(s.clone())
                     }
-                    _ => unimplemented!()
+                    Literal::List(l) => {
+                        let mut list = vec![];
+                        for e in l {
+                            list.push(self.visit_expression(e));
+                        }
+                        Value::List(list)
+                    }
+                    //_ => unimplemented!()
                 }
             }
             Expression::Identifier(i) => {
@@ -144,6 +151,12 @@ impl Visitor for SimpleVisitorV1 {
             }
             Expression::DoExpression(d) => {
                 self.visit_do_expression(d)
+            }
+            Expression::MatchExpression(m) => {
+                self.visit_match_expression(m)
+            }
+            Expression::IndexExpression(i) => {
+                self.visit_index_expression(i)
             }
             _ => unimplemented!("Expression not implemented\n\t{}", expression)
         }
@@ -318,4 +331,36 @@ impl Visitor for SimpleVisitorV1 {
         self.varmap.pop();
         last_evaluated_expr
     }
+
+    fn visit_match_expression(&mut self, match_expression: &MatchExpression) -> Value {
+        let val = self.visit_expression(&match_expression.expr.value);
+
+        for case in &match_expression.arms {
+            if self.visit_expression(case.pattern.value.as_ref()) == val {
+                return self.visit_expression(&case.body.value);
+            }
+        }
+        if let Some(e) = &match_expression.default {
+            return self.visit_expression(&e.value);
+        }
+        Value::Undefined
+    }
+    
+    fn visit_index_expression(&mut self, index_expression: &IndexExpression) -> Value {
+        let index = self.visit_expression(&index_expression.index.value);
+        if let Some(arr) = self.find_variable(&index_expression.name, self.current_scope) {
+            match arr {
+                Value::List(a) => {
+                    if let Value::Integer(i) = index {
+                        return a[i as usize].clone();
+                    }
+                    unimplemented!("Unsupported index type: {:?}", index);
+                },
+                _ => unimplemented!("You can only index lists")
+            }
+        } else {
+            unreachable!("Variable {} not found", index_expression.name)
+        };
+    }
+
 }
