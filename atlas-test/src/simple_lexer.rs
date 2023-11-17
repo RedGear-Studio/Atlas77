@@ -1,27 +1,20 @@
 use atlas_core::{utils::span::{WithSpan, BytePos, Span}, interfaces::lexer::{Lexer, token::Token}};
-use std::{fs::File, iter::Peekable, collections::HashMap};
+use std::{fs::File, iter::Peekable, collections::HashMap, path::PathBuf};
 use std::io::{BufRead, BufReader};
+use Token::*;
 
 /// Default Lexer and base one for the Atlas77 language
 pub struct SimpleLexerV1 {
-    file_path: String,
+    file_path: PathBuf,
     current_pos: BytePos,
     it: Peekable<std::vec::IntoIter<char>>,
     keywords: HashMap<String, Token>,
 }
 
 impl Lexer for SimpleLexerV1 {
-    fn with_file_path(&mut self, file_path: String) -> Result<(), std::io::Error> {
-        let file = File::open(file_path.clone())?;
-        let reader = BufReader::new(file);
-
-        let mut source_code = Vec::new();
-        for line in reader.lines() {
-            source_code.extend(line?.chars());
-            source_code.push('\n'); // Add newline character for line breaks
-        }
+    fn with_text(&mut self, text: String) -> Result<(), std::io::Error> {
+        self.it = text.chars().collect::<Vec<_>>().into_iter().peekable();
         let mut keywords = HashMap::new();
-        use Token::*;
         keywords.insert("struct".to_owned(), KwStruct);
         keywords.insert("else".to_owned(), KwElse);
         keywords.insert("false".to_owned(), KwFalse);
@@ -40,6 +33,40 @@ impl Lexer for SimpleLexerV1 {
         keywords.insert("do".to_owned(), KwDo);
         keywords.insert("end".to_owned(), KwEnd);
         keywords.insert("then".to_owned(), KwThen);
+
+        self.keywords = keywords;
+
+        Ok(())
+    }
+    fn with_file_path(&mut self, file_path: PathBuf) -> Result<(), std::io::Error> {
+        let file = File::open(file_path.clone())?;
+        let reader = BufReader::new(file);
+
+        let mut source_code = Vec::new();
+        for line in reader.lines() {
+            source_code.extend(line?.chars());
+            source_code.push('\n'); // Add newline character for line breaks
+        }
+        let mut keywords = HashMap::new();
+        keywords.insert("struct".to_owned(), KwStruct);
+        keywords.insert("else".to_owned(), KwElse);
+        keywords.insert("false".to_owned(), KwFalse);
+        keywords.insert("List".to_owned(), KwList);
+        keywords.insert("Map".to_owned(), KwMap);
+        keywords.insert("if".to_owned(), KwIf);
+        keywords.insert("return".to_owned(), KwReturn);
+        keywords.insert("true".to_owned(), KwTrue);
+        keywords.insert("let".to_owned(), KwLet);
+        keywords.insert("char".to_owned(), KwChar);
+        keywords.insert("f64".to_owned(), KwF64);
+        keywords.insert("i64".to_owned(), KwI64);
+        keywords.insert("string".to_owned(), KwString);
+        keywords.insert("bool".to_owned(), KwBool);
+        keywords.insert("enum".to_owned(), KwEnum);
+        keywords.insert("do".to_owned(), KwDo);
+        keywords.insert("end".to_owned(), KwEnd);
+        keywords.insert("then".to_owned(), KwThen);
+        keywords.insert("match".to_owned(), KwMatch);
 
         self.keywords = keywords;
         self.file_path = file_path;
@@ -77,7 +104,7 @@ impl SimpleLexerV1 {
     /// Create a new empty `SimpleLexerV1`
     pub fn new() -> Self {
         SimpleLexerV1 {
-            file_path: String::default(),
+            file_path: PathBuf::default(),
             it: " ".chars().collect::<Vec<_>>().into_iter().peekable(),
             current_pos: BytePos::default(),
             keywords: HashMap::new()
@@ -176,6 +203,7 @@ impl SimpleLexerV1 {
             '[' => Some(LBracket),
             ']' => Some(RBracket),
             '+' => Some(self.either('=', OpAssignAdd, OpAdd)),
+            '_' => Some(Underscore),
             '-' => {
                 if self.consume_if(|c| c == '>') {
                     Some(RArrow)
@@ -198,6 +226,9 @@ impl SimpleLexerV1 {
                     Some(self.either('=', OpAssignDiv, OpDiv))
                 }
             },
+            '\\' => {
+                Some(BackSlash)
+            }
             '%' => Some(self.either('=', OpAssignMod, OpMod)),
             '^' => Some(OpPow),
             '<' => {
@@ -246,10 +277,8 @@ impl SimpleLexerV1 {
             },
             '"' => {
                 let mut string = String::new();
-                string.push('"');
                 string.push_str(self.consume_while(|ch| ch != '"').iter().collect::<String>().as_ref());
                 self.next().unwrap();
-                string.push('"');
                 Some(String_(string))
             },
             //TODO: Be able to use the escape character (backslash) in strings and chars

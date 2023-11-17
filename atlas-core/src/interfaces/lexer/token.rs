@@ -32,12 +32,12 @@ pub enum Token {
     KwStruct,   //struct
     /// Represents the ENUM keyword ("enum")
     KwEnum,     //enum
-    /// Represents the PRINT keyword ("print")
     KwThen,
     KwList,
     KwMap,
     KwDo,
     KwEnd,
+    KwMatch,
 
     //Identifiers
     /// Represents an identifier
@@ -142,6 +142,8 @@ pub enum Token {
     Comma,
     /// Represents the ampersand (&)
     Ampersand,
+    BackSlash,
+    Underscore,
 
     //Others
     /// Represents an unknown token
@@ -181,6 +183,7 @@ impl fmt::Display for Token {
             KwDo => write!(f, "do"),
             KwMap => write!(f, "Map"),
             KwEnd => write!(f, "end"),
+            KwMatch => write!(f, "match"),
             Ident(i) => write!(f, "{}", i),
             Int(i) => write!(f, "{}", i),
             Float(fl) => write!(f, "{}", fl),
@@ -225,6 +228,8 @@ impl fmt::Display for Token {
             Semicolon => write!(f, ";"),
             Comma => write!(f, ","),
             Ampersand => write!(f, "&"),
+            BackSlash => write!(f, "\\"),
+            Underscore => write!(f, "_"),
             Unknown(c) => write!(f, "{}", c),
             UnterminatedString => write!(f, "Unterminated string"),
             NewLine => write!(f, "NewLine"),

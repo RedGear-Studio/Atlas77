@@ -3,6 +3,8 @@ pub mod token;
 /// Contains all the potential Lexer Error
 pub mod lex_errors;
 
+use std::path::PathBuf;
+
 use crate::utils::span::WithSpan;
 
 /// The `Lexer` trait defines the interface for lexical analysis.
@@ -17,7 +19,8 @@ pub trait Lexer {
     ///
     /// A `Result` that contains the lexer instance if successful, or an `std::io::Error` if there's an issue
     /// with file I/O (e.g., file not found, permission issues).
-    fn with_file_path(&mut self, file_path: String) -> Result<(), std::io::Error>;
+    fn with_file_path(&mut self, file_path: PathBuf) -> Result<(), std::io::Error>;
+    fn with_text(&mut self, text: String) -> Result<(), std::io::Error>;
     /// Tokenizes the source code, converting it into a sequence of tokens.
     ///
     /// # Returns

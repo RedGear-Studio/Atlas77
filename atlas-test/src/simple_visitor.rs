@@ -121,7 +121,20 @@ impl Visitor for SimpleVisitorV1 {
                     Literal::Float(f) => {
                         Value::Float(*f)
                     },
-                    _ => unimplemented!()
+                    Literal::Bool(b) => {
+                        Value::Bool(*b)
+                    },
+                    Literal::String(s) => {
+                        Value::String(s.clone())
+                    }
+                    Literal::List(l) => {
+                        let mut list = vec![];
+                        for e in l {
+                            list.push(self.visit_expression(e));
+                        }
+                        Value::List(list)
+                    }
+                    //_ => unimplemented!()
                 }
             }
             Expression::Identifier(i) => {
@@ -139,24 +152,68 @@ impl Visitor for SimpleVisitorV1 {
             Expression::DoExpression(d) => {
                 self.visit_do_expression(d)
             }
+            Expression::MatchExpression(m) => {
+                self.visit_match_expression(m)
+            }
+            Expression::IndexExpression(i) => {
+                self.visit_index_expression(i)
+            }
             _ => unimplemented!("Expression not implemented\n\t{}", expression)
         }
     }
 
     fn visit_function_call(&mut self, function_call: &FunctionCall) -> Value {
-        for arg in &function_call.args {
-            let val = self.visit_expression(&arg.value);
-            self.stack.push(val);
-        }
-        if let Some(f) = self.varmap[0].0.get(&function_call.name) {
-            match f {
-                Value::FunctionBody(f) => {
-                    return self.visit_function_expression(&f.clone());
+        match function_call.name.as_str() {
+            "print" => {
+                for arg in &function_call.args {
+                    let val = self.visit_expression(&arg.value);
+                    println!("{:?}", val);
                 }
-                _ => unimplemented!("Main function is not a function body")
+                Value::Undefined
+            },
+            "read_i64" => {
+                //read input from the console
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                if let Ok(i) = input.trim().parse::<i64>() {
+                    Value::Integer(i)
+                } else {
+                    Value::Undefined
+                }
+            },
+            "read_f64" => {
+                //read input from the console
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                if let Ok(i) = input.trim().parse::<f64>() {
+                    Value::Float(i)
+                } else {
+                    Value::Undefined
+                }
+            },
+            "read_str" => {
+                //read input from the console
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                input = input.trim().to_string();
+                Value::String(input)
             }
-        } else {
-            unreachable!("Function {} not found", function_call.name)
+            _ => {
+                for arg in &function_call.args {
+                    let val = self.visit_expression(&arg.value);
+                    self.stack.push(val);
+                }
+                if let Some(f) = self.varmap[0].0.get(&function_call.name) {
+                    match f {
+                        Value::FunctionBody(f) => {
+                            return self.visit_function_expression(&f.clone());
+                        }
+                        _ => unimplemented!("Main function is not a function body")
+                    }
+                } else {
+                    unreachable!("Function {} not found", function_call.name)
+                }
+            }
         }
     }
 
@@ -274,4 +331,36 @@ impl Visitor for SimpleVisitorV1 {
         self.varmap.pop();
         last_evaluated_expr
     }
+
+    fn visit_match_expression(&mut self, match_expression: &MatchExpression) -> Value {
+        let val = self.visit_expression(&match_expression.expr.value);
+
+        for case in &match_expression.arms {
+            if self.visit_expression(case.pattern.value.as_ref()) == val {
+                return self.visit_expression(&case.body.value);
+            }
+        }
+        if let Some(e) = &match_expression.default {
+            return self.visit_expression(&e.value);
+        }
+        Value::Undefined
+    }
+    
+    fn visit_index_expression(&mut self, index_expression: &IndexExpression) -> Value {
+        let index = self.visit_expression(&index_expression.index.value);
+        if let Some(arr) = self.find_variable(&index_expression.name, self.current_scope) {
+            match arr {
+                Value::List(a) => {
+                    if let Value::Integer(i) = index {
+                        return a[i as usize].clone();
+                    }
+                    unimplemented!("Unsupported index type: {:?}", index);
+                },
+                _ => unimplemented!("You can only index lists")
+            }
+        } else {
+            unreachable!("Variable {} not found", index_expression.name)
+        };
+    }
+
 }
