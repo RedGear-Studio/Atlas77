@@ -21,7 +21,7 @@ pub enum PrimitiveType {
 
     Char,
     
-    String,
+    StringType,
 }
 
 #[derive(Clone, Debug)]
@@ -73,7 +73,7 @@ pub enum Literal {
 
     Char(char),
 
-    String(String),
+    StringLiteral(String),
 }
 
 #[derive(Clone, Debug)]
