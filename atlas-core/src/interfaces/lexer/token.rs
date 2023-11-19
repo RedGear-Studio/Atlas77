@@ -1,4 +1,5 @@
 use core::fmt;
+use crate::Lexer;
 
 #[derive(Debug, Clone, PartialEq)]
 /// Represents each potential tokens in atlas.
@@ -148,11 +149,11 @@ pub enum Token {
     //Others
     /// Represents an unknown token
     /// 
-    /// NB: This will result in the errors in the checking phase of the [`Lexer`] trait
+    /// NB: This will result in the errors in the checking phase of the [Lexer] trait
     Unknown(char),
     /// Represents an unterminated string
     /// 
-    /// NB: This will result in the errors in the checking phase of the [`Lexer`] trait
+    /// NB: This will result in the errors in the checking phase of the [Lexer] trait
     UnterminatedString,
     /// Represents a new line
     NewLine,
