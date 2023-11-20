@@ -123,9 +123,9 @@ pub enum TokenKind {
     /// "!"
     Bang,
     /// "<"
-    Lt,
+    LAngle,
     /// ">"
-    Gt,
+    RAngle,
     /// "-"
     Minus,
     /// "&"
@@ -142,6 +142,10 @@ pub enum TokenKind {
     Caret,
     /// "%"
     Percent,
+    /// "_"
+    Underscore,
+    /// "\"
+    Backslash,
 
     //Two character tokens
     /// "=>"
@@ -155,11 +159,13 @@ pub enum TokenKind {
     /// ".."
     DoubleDot,
     /// "!="
-    Ne,
+    NEq,
     /// "<="
-    Le,
+    LtEq,
     /// ">="
-    Ge,
+    GtEq,
+    /// "=="
+    DoubleEq,
 
     //Others
     /// Represents an unknown character (not supported by the current Lexer)

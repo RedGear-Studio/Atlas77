@@ -7,16 +7,39 @@ pub enum AtlasLexerError {
     UnexpectedCharacter{
         val:char,
         span: Span,
+        recoverable: bool,
     },
     InvalidNumber {
         span: Span,
+        recoverable: bool,
     },
     UnterminatedStringLiteral{
         span: Span,
+        recoverable: bool,
     },
     UnterminatedComment {
         span: Span,
+        recoverable: bool,
     },
+}
+
+impl AtlasLexerError {
+    pub fn change_span(&mut self, span: Span) -> Self {
+        match self {
+            AtlasLexerError::UnexpectedCharacter { span: _, recoverable, val, .. } => AtlasLexerError::UnexpectedCharacter { span, recoverable: *recoverable,  val: *val },
+            AtlasLexerError::InvalidNumber { span: _, recoverable, .. } => AtlasLexerError::InvalidNumber { span, recoverable: *recoverable },
+            AtlasLexerError::UnterminatedStringLiteral { span: _, recoverable, .. } => AtlasLexerError::UnterminatedStringLiteral { span, recoverable: *recoverable },
+            AtlasLexerError::UnterminatedComment { span: _, recoverable, .. } => AtlasLexerError::UnterminatedComment { span, recoverable: *recoverable },
+        }
+    }
+    pub fn is_recoverable(&self) -> bool {
+        match self {
+            AtlasLexerError::UnexpectedCharacter { recoverable, .. } => *recoverable,
+            AtlasLexerError::InvalidNumber { recoverable, .. } => *recoverable,
+            AtlasLexerError::UnterminatedStringLiteral { recoverable, .. } => *recoverable,
+            AtlasLexerError::UnterminatedComment { recoverable, .. } => *recoverable,
+        }
+    }
 }
 
 impl Spanned for AtlasLexerError {

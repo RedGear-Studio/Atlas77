@@ -15,3 +15,4 @@ let main: () -> i64 = do
     let a: i64 = read_i64();
     fib(a);
 end
+/*    */

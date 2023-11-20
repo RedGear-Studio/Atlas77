@@ -4,6 +4,12 @@ pub mod simple_visitor;
 pub mod simple_cli;
 
 use clap::Parser as ClapParser;
+use atlas_lexer::{Lexer, AtlasLexer};
+
+use codespan_reporting::files::{SimpleFile, SimpleFiles};
+use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+use codespan_reporting::diagnostic::{Diagnostic, Label};
+use atlas_span::Spanned;
 
 #[derive(ClapParser, Debug)]
 #[clap(author = "Gipson62", version, about = "Programming language made in Rust", long_about = None)]
@@ -14,7 +20,31 @@ struct Args {
 }
 
 fn main() {
-    let args = Args::parse();
+    let path = "C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\atlas-test\\test.atlas";
+    let mut lexer = AtlasLexer::new_with_path(path);
+    let res = lexer.tokenize();
+    println!("{:?}", res);
+    if res.err.len() > 0 {
+                
+        let mut file = SimpleFiles::new();
+        let file_id = file.add(path, std::fs::read_to_string(path).unwrap());
 
-    simple_cli::run(args.run);    
+        for err in res.err.iter() {
+            let diagnostic= Diagnostic::error()
+                .with_message(err.to_string())
+                .with_code("Something")
+                .with_labels(vec![
+                    Label::primary(file_id, err.start()..err.end()).with_message(err.to_string()),
+                ])
+                .with_notes(vec!["Notes".to_string()]);
+            
+            let writer = StandardStream::stderr(ColorChoice::Always);
+            let config = codespan_reporting::term::Config::default();
+            
+
+            if let Ok(_c) = codespan_reporting::term::emit(&mut writer.lock(), &config, &file, &diagnostic) {
+                
+            };
+        }   
+    }
 }

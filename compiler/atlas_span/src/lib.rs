@@ -1,8 +1,6 @@
 use core::fmt;
 use std::path::Path;
 
-use ariadne::{Span as AriadneSpan, Line};
-
 /// Represents a position in bytes within a source file.
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Default)]
 pub struct BytePos(usize);
@@ -34,30 +32,6 @@ pub struct Span {
     pub end: BytePos,
     /// The source file path
     pub path: &'static str,
-}
-
-impl AriadneSpan for Span {
-    type SourceId = Path;
-
-    fn start(&self) -> usize {
-        self.start.0
-    }
-
-    fn end(&self) -> usize {
-        self.end.0
-    }
-
-    fn len(&self) -> usize {
-        self.end.0 - self.start.0
-    }
-
-    fn contains(&self, offset: usize) -> bool {
-        self.start.0 <= offset && offset <= self.end.0
-    }
-
-    fn source(&self) -> &Self::SourceId {
-        Path::new(self.path)
-    }
 }
 
 impl Span {
