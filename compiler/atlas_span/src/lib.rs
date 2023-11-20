@@ -96,16 +96,32 @@ impl Span {
     pub fn get_line_info(&self) -> LineInformation {
         let start_byte = self.start.0;
         let end_byte = self.end.0;
-
+        let content = std::fs::read_to_string(self.path).expect("Unable to read file");
         // Find the start and end of the line containing the span's start position
-        let line_start = self.path[..start_byte].rfind('\n').map(|idx| idx + 1).unwrap_or(0);
-        let line_end = self.path[end_byte..].find('\n').map(|idx| end_byte + idx).unwrap_or(end_byte);
+        let line_start = content[..start_byte].rfind('\n').map(|idx| idx + 1).unwrap_or(0);
+        let line_end = content[end_byte..].find('\n').map(|idx| end_byte + idx).unwrap_or(end_byte);
 
-        let line_text = self.path[line_start..=(line_end - 1)].to_owned();
-        let line_number = self.path[..start_byte].chars().filter(|&c| c == '\n').count() + 1;
+        let line_text = content[line_start..=(line_end - 1)].to_owned();
+        let line_number = content[..start_byte].chars().filter(|&c| c == '\n').count() + 1;
         let column_number = start_byte - line_start + 1;
 
         LineInformation::new(line_number, column_number, line_text)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_get_line_info() {
+        let span = super::Span{
+            start: super::BytePos(0),
+            end: super::BytePos(4),
+            path: "C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\compiler\\atlas_span\\src\\test.txt",
+        };
+        let line_info = span.get_line_info();
+        assert_eq!(line_info.line_number, 1);
+        assert_eq!(line_info.column_number, 1);
+        assert_eq!(line_info.line_text, "4444");
     }
 }
 
@@ -134,5 +150,21 @@ impl LineInformation {
 impl fmt::Display for LineInformation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}:{}:\n {}", self.line_number, self.column_number, self.line_text)
+    }
+}
+
+pub trait Spanned {
+    fn span(&self) -> Span;
+    fn start(&self) -> usize {
+        self.span().start.0
+    }
+    fn end(&self) -> usize {
+        self.span().end.0
+    }
+}
+
+impl Spanned for Span {
+    fn span(&self) -> Span {
+        *self
     }
 }

@@ -1,3 +1,5 @@
+use core::fmt;
+
 use atlas_span::{Span, BytePos, LineInformation};
 
 #[derive(Clone, Debug)]
@@ -19,6 +21,8 @@ pub enum PrimitiveType {
 
     Bool,
 
+    List,
+
     Char,
     
     StringType,
@@ -37,8 +41,6 @@ pub enum Keyword {
     Struct,
     
     Enum,
-
-    List,
     
     Do,
     End,
@@ -165,4 +167,74 @@ pub enum TokenKind {
 
     /// EOF
     EOF,
+}
+
+impl fmt::Display for PrimitiveType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use PrimitiveType::*;
+        match self {
+            Int64 => write!(f, "int64"),
+            Int32 => write!(f, "int32"),
+            UInt64 => write!(f, "u_int64"),
+            UInt32 => write!(f, "u_int32"),
+            Float64 => write!(f, "float64"),
+            Float32 => write!(f, "float32"),
+            Bool => write!(f, "bool"),
+            List => write!(f, "List"),
+            Char => write!(f, "char"),
+            StringType => write!(f, "string"),
+        }
+    }
+}
+
+impl fmt::Display for Keyword {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use Keyword::*;
+        match self {
+            PrimitiveType(t) => t.fmt(f),
+            If => write!(f, "if"),
+            Else => write!(f, "else"),
+            Then => write!(f, "then"),
+            Let => write!(f, "let"),
+            Struct => write!(f, "struct"),
+            Enum => write!(f, "enum"),
+            Do => write!(f, "do"),
+            End => write!(f, "end"),
+            Match => write!(f, "match"),
+            With => write!(f, "with"),
+            Or => write!(f, "or"),
+            And => write!(f, "and"),
+        }
+    }
+}
+
+impl fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use Literal::*;
+        match self {
+            Int64(i) => write!(f, "{}", i),
+            Int32(i) => write!(f, "{}", i),
+            UInt64(i) => write!(f, "{}", i),
+            UInt32(i) => write!(f, "{}", i),
+            Float64(i) => write!(f, "{}", i),
+            Float32(i) => write!(f, "{}", i),
+            Bool(i) => write!(f, "{}", i),
+            Identifier(i) => write!(f, "{}", i),
+            Char(i) => write!(f, "{}", i),
+            StringLiteral(i) => write!(f, "{}", i),
+        }
+    }
+}
+
+impl fmt::Display for TokenKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use TokenKind::*;
+        match self {
+            Keyword(k) => write!(f, "Keyword: {}", k),
+            Literal(l) => write!(f, "Literal: {}", l),
+            UnknownChar(c) => write!(f, "UnknownChar: {}", c),
+            EOF => write!(f, "EOF"),
+            _ => write!(f, "{:?}", self),
+        }
+    }
 }

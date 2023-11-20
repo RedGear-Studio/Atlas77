@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 atlas_lexer_token = { path = "../atlas_lexer_token" }
 atlas_span = { path = "../atlas_span" }
+atlas_utils = { path = "../atlas_utils" }
+atlas_lexer_error = { path = "../atlas_lexer_error" }

@@ -3,6 +3,7 @@ resolver = "1"
 members = [
     "atlas-core",
     "atlas-test",
+
     "compiler/atlas_hlir",
     "compiler/atlas_hlir_error",
     "compiler/atlas_hlir_interpreter",
