@@ -10,6 +10,7 @@ use codespan_reporting::files::{SimpleFile, SimpleFiles};
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use atlas_span::Spanned;
+use atlas_parser::{AtlasParser, Parser};
 
 #[derive(ClapParser, Debug)]
 #[clap(author = "Gipson62", version, about = "Programming language made in Rust", long_about = None)]
@@ -47,4 +48,10 @@ fn main() {
             };
         }   
     }
+
+    let mut parser = AtlasParser::new_with_path(path, res.tokens);
+    let res = parser.parse();
+    println!("{:?}", res);
+
+
 }

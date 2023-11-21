@@ -1,7 +1,7 @@
 use std::{iter::Peekable, vec::IntoIter, collections::HashMap};
 
 use atlas_lexer_token::{Token, TokenKind, Literal, Keyword, PrimitiveType};
-use atlas_span::{Span, BytePos, Spanned, LineInformation};
+use atlas_span::{Span, BytePos};
 use atlas_utils::map;
 use atlas_lexer_error::AtlasLexerError;
 
@@ -83,7 +83,7 @@ impl Lexer for AtlasLexer {
                         start: start_pos,
                         end: self.current_pos
                     },
-                    kind: TokenKind::EOF
+                    kind: TokenKind::EOI
                 });
                 break;
             }
@@ -102,7 +102,7 @@ impl AtlasLexer {
                 if let Some(ch) = self.next() {
                     self.lex(ch)
                 } else {
-                    Ok(EOF)
+                    Ok(EOI)
                 }
             },
             '(' => Ok(LParen),
@@ -128,7 +128,7 @@ impl AtlasLexer {
             '>' => Ok(RAngle),
             '\\' => Ok(Backslash),
             '=' => {
-                if self.consume_if_next(|c| c == '=') {
+                if self.consume_if(|c| c == '=') {
                     Ok(DoubleEq)
                 } else {
                     self.either('>', FatArrow, Eq)
@@ -160,7 +160,7 @@ impl AtlasLexer {
                     if let Some(ch) = self.next() {
                         self.lex(ch)
                     } else {
-                        Ok(EOF)
+                        Ok(EOI)
                     }
                 } else if self.consume_if(|c| c == '*') {
                     loop {
@@ -170,7 +170,7 @@ impl AtlasLexer {
                             if let Some(ch) = self.next() {
                                 return self.lex(ch)
                             } else {
-                                return Ok(EOF)
+                                return Ok(EOI)
                             };
                         } else {
                             println!("Looping again");

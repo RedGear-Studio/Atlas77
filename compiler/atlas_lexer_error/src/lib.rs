@@ -32,6 +32,7 @@ impl AtlasLexerError {
             AtlasLexerError::UnterminatedComment { span: _, recoverable, .. } => AtlasLexerError::UnterminatedComment { span, recoverable: *recoverable },
         }
     }
+    
     pub fn is_recoverable(&self) -> bool {
         match self {
             AtlasLexerError::UnexpectedCharacter { recoverable, .. } => *recoverable,

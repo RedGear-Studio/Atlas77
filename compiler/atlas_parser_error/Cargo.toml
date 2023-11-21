@@ -6,3 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+atlas_span = { path = "../atlas_span" }
+atlas_lexer_token = { path = "../atlas_lexer_token" }

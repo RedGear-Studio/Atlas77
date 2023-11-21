@@ -8,7 +8,7 @@ pub struct Token {
     pub kind: TokenKind,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrimitiveType {
     Int64,
     Int32,
@@ -28,7 +28,7 @@ pub enum PrimitiveType {
     StringType,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Keyword {
     PrimitiveType(PrimitiveType),
 
@@ -52,7 +52,7 @@ pub enum Keyword {
     And,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Literal {
     ///Default int literal, may change in the parser based on the type of the variable
     Int64(i64),
@@ -78,7 +78,7 @@ pub enum Literal {
     StringLiteral(String),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TokenKind {
     /// A literal see [Literal] for more information
     Literal(Literal),
@@ -171,8 +171,10 @@ pub enum TokenKind {
     /// Represents an unknown character (not supported by the current Lexer)
     UnknownChar(char),
 
-    /// EOF
-    EOF,
+    /// Start Of File
+    SOI,
+    /// End Of File
+    EOI,
 }
 
 impl fmt::Display for PrimitiveType {

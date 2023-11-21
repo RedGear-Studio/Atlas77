@@ -1,18 +1,1 @@
-let fib: (a: i64) -> i64 = 
-    match a 
-    | 0 => 0,
-    | 1 => 1,
-    \ _ => fib(a - 1) + fib(a - 2)
-
-let main: () -> i64 = do
-    print([
-        "Hello",
-        "World"
-    ]);
-    let b: List[i64] = [1, 2, 3];
-    print(b[0]);
-    print("How many fib numbers do you want?");
-    let a: i64 = read_i64();
-    fib(a);
-end
-/*    */
+5+10==15

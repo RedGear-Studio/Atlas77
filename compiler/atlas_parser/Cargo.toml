@@ -6,3 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+atlas_lexer_token = { path = "../atlas_lexer_token" }
+atlas_parser_ast = { path = "../atlas_parser_ast" }
+atlas_parser_error = { path = "../atlas_parser_error" }
+atlas_parser_interpreter = { path = "../atlas_parser_interpreter" }
+atlas_utils = { path = "../atlas_utils" }
+atlas_span = { path = "../atlas_span" }
