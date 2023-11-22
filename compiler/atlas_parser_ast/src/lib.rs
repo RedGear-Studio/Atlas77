@@ -4,7 +4,7 @@ use atlas_utils::{Expression, Value, Visitor, Type};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtlasExpression {
-    BinaryOperation(BinaryOperation),
+    BinaryExpression(BinaryExpression),
     UnaryExpression(UnaryExpression),
     //Value as in Literals 
     Value{
@@ -16,12 +16,13 @@ pub enum AtlasExpression {
         span: Span
     },
     CastingExpression(CastingExpression),
+    VariableExpression(VariableExpression),
 }
 
 impl Expression for AtlasExpression {
     fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
         match self {
-            Self::BinaryOperation(b) => visitor.visit(b),
+            Self::BinaryExpression(b) => visitor.visit(b),
             Self::UnaryExpression(u) => visitor.visit(u),
             Self::Value{val, ..} => val.clone(),
             Self::ArraysLiteral{val, ..} => {
@@ -32,6 +33,7 @@ impl Expression for AtlasExpression {
                 Value::Array(arr)
             },
             Self::CastingExpression(c) => visitor.visit(c),
+            Self::VariableExpression(v) => visitor.visit(v),
         }
     }
 }
@@ -40,9 +42,9 @@ impl AtlasExpression {
     pub fn change_span(&mut self, span: Span) -> Self {
         use AtlasExpression::*;
         match self {
-            BinaryOperation(b) => {
+            BinaryExpression(b) => {
                 b.span = span;
-                AtlasExpression::BinaryOperation(b.clone())
+                AtlasExpression::BinaryExpression(b.clone())
             }
             UnaryExpression(u) => {
                 u.span = span;
@@ -63,7 +65,11 @@ impl AtlasExpression {
             CastingExpression(c) => {
                 c.span = span;
                 AtlasExpression::CastingExpression(c.clone())
-            }
+            },
+            VariableExpression(v) => {
+                v.span = span;
+                AtlasExpression::VariableExpression(v.clone())
+            },
         }
     }
 }
@@ -72,7 +78,7 @@ impl Spanned for AtlasExpression {
     fn span(&self) -> Span {
         use AtlasExpression::*;
         match self {
-            BinaryOperation(b) => {
+            BinaryExpression(b) => {
                 b.span
             }
             UnaryExpression(u) => {
@@ -86,13 +92,16 @@ impl Spanned for AtlasExpression {
             },
             CastingExpression(c) => {
                 c.span
-            }
+            },
+            VariableExpression(v) => {
+                v.span
+            },
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct BinaryOperation {
+pub struct BinaryExpression {
     pub op: BinaryOperator,
     pub lhs: Box<AtlasExpression>,
     pub rhs: Box<AtlasExpression>,
@@ -135,7 +144,7 @@ pub enum BinaryOperator {
     None,
 }
 
-impl Expression for BinaryOperation {
+impl Expression for BinaryExpression {
     fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
         let lhs = self.lhs.evaluate(visitor);
         let rhs = self.rhs.evaluate(visitor);
@@ -265,3 +274,26 @@ impl Expression for CastingExpression {
         }
     }   
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct VariableExpression {
+    pub name: String,
+    pub ty: Type,
+    pub val: Option<Box<AtlasExpression>>,
+    pub span: Span,
+}
+
+impl Expression for VariableExpression {
+    fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
+        let val = &self.val;
+        if let Some(v) = val {
+            let value = v.evaluate(visitor);
+            let _ = visitor.register_variable(self.name.clone(), value);
+            Value::Undefined
+        } else {
+            let _ = visitor.register_variable(self.name.clone(), Value::Undefined);
+            Value::Undefined
+        }
+    }
+}
+

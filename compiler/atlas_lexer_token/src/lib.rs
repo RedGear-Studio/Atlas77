@@ -1,6 +1,6 @@
 use core::fmt;
 
-use atlas_span::{Span, BytePos, LineInformation};
+use atlas_span::Span;
 
 #[derive(Clone, Debug)]
 pub struct Token {
@@ -244,7 +244,6 @@ impl fmt::Display for TokenKind {
             Keyword(k) => write!(f, "Keyword: {}", k),
             Literal(l) => write!(f, "Literal: {}", l),
             UnknownChar(c) => write!(f, "UnknownChar: {}", c),
-            EOF => write!(f, "EOF"),
             _ => write!(f, "{:?}", self),
         }
     }

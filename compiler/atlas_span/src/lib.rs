@@ -1,5 +1,4 @@
 use core::fmt;
-use std::path::Path;
 
 /// Represents a position in bytes within a source file.
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Default)]

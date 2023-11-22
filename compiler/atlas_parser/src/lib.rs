@@ -1,7 +1,7 @@
 use std::{iter::Peekable, vec::IntoIter};
 
 use atlas_lexer_token::{Token, TokenKind, Literal, Keyword, PrimitiveType};
-use atlas_parser_ast::{AtlasExpression, BinaryOperation, BinaryOperator, UnaryOperator, UnaryExpression, CastingExpression};
+use atlas_parser_ast::{AtlasExpression, BinaryExpression, BinaryOperator, UnaryOperator, UnaryExpression, CastingExpression};
 use atlas_parser_error::ParseError;
 use atlas_span::{Span, Spanned};
 use atlas_utils::{Value, Type};
@@ -104,7 +104,7 @@ impl AtlasParser {
                         self.next();
                         let right = self.expr()?;
                         let end_span = right.span().clone();
-                        return Ok(AtlasExpression::BinaryOperation( BinaryOperation {
+                        return Ok(AtlasExpression::BinaryExpression( BinaryExpression {
                             lhs: Box::new(left),
                             op,
                             rhs: Box::new(right),
@@ -130,7 +130,7 @@ impl AtlasParser {
                         self.next();
                         let right = self.expr()?;
                         let end_span = right.span().clone();
-                        return Ok(AtlasExpression::BinaryOperation( BinaryOperation {
+                        return Ok(AtlasExpression::BinaryExpression( BinaryExpression {
                             lhs: Box::new(left),
                             op,
                             rhs: Box::new(right),
@@ -159,7 +159,7 @@ impl AtlasParser {
                         self.next();
                         let right = self.expr()?;
                         let end_span = right.span().clone();
-                        return Ok(AtlasExpression::BinaryOperation( BinaryOperation {
+                        return Ok(AtlasExpression::BinaryExpression( BinaryExpression {
                             lhs: Box::new(left),
                             op,
                             rhs: Box::new(right),
@@ -186,7 +186,7 @@ impl AtlasParser {
                         self.next();
                         let right = self.expr()?;
                         let end_span = right.span().clone();
-                        return Ok(AtlasExpression::BinaryOperation( BinaryOperation {
+                        return Ok(AtlasExpression::BinaryExpression( BinaryExpression {
                             lhs: Box::new(left),
                             op,
                             rhs: Box::new(right),
@@ -213,7 +213,7 @@ impl AtlasParser {
                         self.next();
                         let right = self.expr()?;
                         let end_span = right.span().clone();
-                        return Ok(AtlasExpression::BinaryOperation( BinaryOperation {
+                        return Ok(AtlasExpression::BinaryExpression( BinaryExpression {
                             lhs: Box::new(left),
                             op,
                             rhs: Box::new(right),
@@ -241,7 +241,7 @@ impl AtlasParser {
                         self.next();
                         let right = self.expr()?;
                         let end_span = right.span().clone();
-                        return Ok(AtlasExpression::BinaryOperation( BinaryOperation {
+                        return Ok(AtlasExpression::BinaryExpression( BinaryExpression {
                             lhs: Box::new(left),
                             op,
                             rhs: Box::new(right),
@@ -267,7 +267,7 @@ impl AtlasParser {
                         self.next();
                         let right = self.expr()?;
                         let end_span = right.span().clone();
-                        return Ok(AtlasExpression::BinaryOperation( BinaryOperation {
+                        return Ok(AtlasExpression::BinaryExpression( BinaryExpression {
                             lhs: Box::new(left),
                             op,
                             rhs: Box::new(right),
