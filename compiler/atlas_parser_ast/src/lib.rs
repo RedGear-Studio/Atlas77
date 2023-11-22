@@ -1,6 +1,6 @@
 use atlas_lexer_token::{TokenKind, Keyword};
 use atlas_span::{Span, Spanned};
-use atlas_utils::{Expression, Value, Visitor};
+use atlas_utils::{Expression, Value, Visitor, Type};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtlasExpression {
@@ -15,11 +15,24 @@ pub enum AtlasExpression {
         val: Vec<AtlasExpression>,
         span: Span
     },
+    CastingExpression(CastingExpression),
 }
 
 impl Expression for AtlasExpression {
     fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
-        todo!()
+        match self {
+            Self::BinaryOperation(b) => visitor.visit(b),
+            Self::UnaryExpression(u) => visitor.visit(u),
+            Self::Value{val, ..} => val.clone(),
+            Self::ArraysLiteral{val, ..} => {
+                let mut arr = vec![];
+                for expr in val {
+                    arr.push(expr.evaluate(visitor));
+                }
+                Value::Array(arr)
+            },
+            Self::CastingExpression(c) => visitor.visit(c),
+        }
     }
 }
 
@@ -46,6 +59,10 @@ impl AtlasExpression {
                     val: val.clone(),
                     span,
                 }
+            },
+            CastingExpression(c) => {
+                c.span = span;
+                AtlasExpression::CastingExpression(c.clone())
             }
         }
     }
@@ -66,6 +83,9 @@ impl Spanned for AtlasExpression {
             },
             ArraysLiteral{span, ..} => {
                 span.clone()
+            },
+            CastingExpression(c) => {
+                c.span
             }
         }
     }
@@ -115,6 +135,37 @@ pub enum BinaryOperator {
     None,
 }
 
+impl Expression for BinaryOperation {
+    fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
+        let lhs = self.lhs.evaluate(visitor);
+        let rhs = self.rhs.evaluate(visitor);
+        use BinaryOperator::*;
+        let val = match self.op {
+            OpAdd => lhs.add(&rhs),
+            OpSub => lhs.add(&rhs),
+            OpMul => lhs.mul(&rhs),
+            OpDiv => lhs.div(&rhs),
+            OpMod => lhs.mod_(&rhs),
+            OpPow => lhs.pow(&rhs),
+            OpEq => lhs.eq(&rhs),
+            OpNe => lhs.not_eq(&rhs),
+            OpLt => lhs.lt(&rhs),
+            OpLe => lhs.lt_eq(&rhs),
+            OpGt => lhs.gt(&rhs),
+            OpGe => lhs.gt_eq(&rhs),
+            OpAnd => lhs.and(&rhs),
+            OpOr => lhs.or(&rhs),
+            _ => unimplemented!()
+        };
+        if let Ok(v) = val {
+            v
+        } else {
+            println!("Error: {:?}", val);
+            std::process::exit(1);
+        }
+    }
+}
+
 impl From<&TokenKind> for BinaryOperator {
     fn from(value: &TokenKind) -> Self {
         match value {
@@ -152,6 +203,27 @@ pub struct UnaryExpression {
     pub span: Span,
 }
 
+impl Expression for UnaryExpression {
+    fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
+        let val = self.expr.evaluate(visitor);
+        match self.op.clone() {
+            Some(op) => {
+                let res = match op {
+                    UnaryOperator::OpAdd => Ok(val.clone()),
+                    UnaryOperator::OpSub => val.minus(),
+                    UnaryOperator::OpNot => val.not(),
+                };
+                if let Ok(v) = res {
+                    v
+                } else {
+                    println!("Error: {:?}", val);
+                    std::process::exit(1);
+                }
+            }
+            None => val
+        }
+    }
+}
 /// Unary operator
 #[derive(Debug, Clone, PartialEq)]
 pub enum UnaryOperator {
@@ -172,4 +244,24 @@ impl From<&TokenKind> for UnaryOperator {
             _ => unreachable!("Unknown unary operator: {:?}", value)
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CastingExpression {
+    pub expr: Box<AtlasExpression>,
+    pub ty: Type,
+    pub span: Span,
+}
+
+impl Expression for CastingExpression {
+    fn evaluate(&self, _visitor: &mut dyn Visitor) -> Value {
+        let val = self.expr.evaluate(_visitor);
+        let res = val.cast(&self.ty);
+        if let Ok(v) = res {
+            v
+        } else {
+            println!("Error: {}", res.unwrap_err());
+            std::process::exit(1);
+        }
+    }   
 }

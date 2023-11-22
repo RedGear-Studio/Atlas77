@@ -326,6 +326,7 @@ impl AtlasLexer {
             String::from("with") => TokenKind::Keyword(Keyword::With),
             String::from("or") => TokenKind::Keyword(Keyword::Or),
             String::from("and") => TokenKind::Keyword(Keyword::And),
+            String::from("as") => TokenKind::Keyword(Keyword::As),
             String::from("i64") => TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::Int64)),
             String::from("i32") => TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::Int32)),
             String::from("u64") => TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::UInt64)),

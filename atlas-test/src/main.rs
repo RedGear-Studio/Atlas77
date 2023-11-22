@@ -11,6 +11,8 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use atlas_span::Spanned;
 use atlas_parser::{AtlasParser, Parser};
+use atlas_parser_interpreter::ASTInterpreter;
+use atlas_utils::{Visitor, Expression, Value};
 
 #[derive(ClapParser, Debug)]
 #[clap(author = "Gipson62", version, about = "Programming language made in Rust", long_about = None)]
@@ -53,5 +55,15 @@ fn main() {
     let res = parser.parse();
     println!("{:?}", res);
 
+    let mut visitor = ASTInterpreter::new();
+
+    let mut exprs = Vec::new();
+    for expr in res.iter() {
+        exprs.push(expr as &dyn Expression);
+    }
+
+    let res = visitor.evaluate(exprs);
+    println!("{:?}", res);
+    
 
 }

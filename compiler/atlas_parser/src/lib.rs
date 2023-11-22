@@ -1,10 +1,10 @@
 use std::{iter::Peekable, vec::IntoIter};
 
-use atlas_lexer_token::{Token, TokenKind, Literal};
-use atlas_parser_ast::{AtlasExpression, BinaryOperation, BinaryOperator, UnaryOperator, UnaryExpression};
+use atlas_lexer_token::{Token, TokenKind, Literal, Keyword, PrimitiveType};
+use atlas_parser_ast::{AtlasExpression, BinaryOperation, BinaryOperator, UnaryOperator, UnaryExpression, CastingExpression};
 use atlas_parser_error::ParseError;
 use atlas_span::{Span, Spanned};
-use atlas_utils::Value;
+use atlas_utils::{Value, Type};
 
 
 type Program = Vec<AtlasExpression>;
@@ -15,7 +15,7 @@ pub trait Parser {
 }
 
 pub struct AtlasParser {
-    file: &'static str,
+    _file: &'static str,
     source: Peekable<IntoIter<Token>>,
     current: Token,
 }
@@ -23,7 +23,7 @@ pub struct AtlasParser {
 impl Parser for AtlasParser {
     fn new_with_path(file: &'static str, tokens:Vec<Token>) -> Self {
         Self {
-            file,
+            _file: file,
             source: tokens.into_iter().peekable(),
             current: Token { span: Span::empty(), kind: TokenKind::SOI },
         }
@@ -257,7 +257,7 @@ impl AtlasParser {
     }
 
     fn power(&mut self) -> Result<AtlasExpression, ParseError> {
-        let left = self.unary()?;
+        let left = self.casting()?;
         let start_span = left.span().clone();
         if let Some(tok) = self.peek().cloned() {
             let op = BinaryOperator::from(&tok.kind);
@@ -276,6 +276,28 @@ impl AtlasParser {
                     }
                     _ => return Ok(left)
                 }
+            }
+        }
+        
+        Ok(left)
+    }
+
+    fn casting(&mut self) -> Result<AtlasExpression, ParseError> {
+        let left = self.unary()?;
+        let start_span = left.span().clone();
+        if let Some(tok) = self.peek().cloned() {
+            match tok {
+                Token { kind: TokenKind::Keyword(Keyword::As), .. } => {
+                    self.next();
+                    let right = self.parse_type()?;
+                    let end_span = right.1;
+                    return Ok(AtlasExpression::CastingExpression( CastingExpression {
+                        expr: Box::new(left),
+                        ty: right.0,
+                        span: start_span.span().union_span(end_span.span())
+                    }))
+                }
+                _ => return Ok(left)
             }
         }
         
@@ -336,7 +358,7 @@ impl AtlasParser {
                             val: Value::UInt32(u),
                             span: tok.span 
                         }),
-                        Literal::Identifier(i) => todo!("identifier literal"),
+                        Literal::Identifier(_s) => todo!("identifier literal"),
                         Literal::Bool(b) => Ok(AtlasExpression::Value {
                             val: Value::Bool(b),
                             span: tok.span 
@@ -394,6 +416,89 @@ impl AtlasParser {
         } else {
             todo!("primary: unexpected end of input")
         }
+    }
+
+    fn parse_type(&mut self) -> Result<(Type, Span), ParseError> {
+        if let Some(tok) = self.peek().cloned() {
+            match tok.kind {
+                TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::Bool)) => {
+                    self.next();
+                    return Ok((Type::Bool, tok.span))
+                },
+                TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::Char)) => {
+                    self.next();
+                    return Ok((Type::Char, tok.span))
+                },
+                TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::Int32)) => {
+                    self.next();
+                    return Ok((Type::Int32, tok.span))
+                },
+                TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::Int64)) => {
+                    self.next();
+                    return Ok((Type::Int64, tok.span))
+                },
+                TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::UInt32)) => {
+                    self.next();
+                    return Ok((Type::UInt32, tok.span))
+                },
+                TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::UInt64)) => {
+                    self.next();
+                    return Ok((Type::UInt64, tok.span))
+                },
+                TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::Float32)) => {
+                    self.next();
+                    return Ok((Type::Float32, tok.span))
+                },
+                TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::Float64)) => {
+                    self.next();
+                    return Ok((Type::Float64, tok.span))
+                },
+                TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::StringType)) => {
+                    self.next();
+                    return Ok((Type::StringType, tok.span))
+                },
+                TokenKind::LParen => {
+                    self.next();
+                    let mut inputs = Vec::new();
+                    loop {
+                        if let Some(tok) = self.peek() {
+                            if tok.kind != TokenKind::RParen {
+                                let (ty, _) = self.parse_type()?;
+                                inputs.push(ty);
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                    self.expect(TokenKind::RArrow)?;
+                    let output = self.parse_type()?;
+                    if let Ok(tok) = self.expect(TokenKind::RParen) {
+                        return Ok((Type::FunctionType {
+                            input: inputs,
+                            output: Box::new(output.0)
+                        }, tok.span))
+                    } else {
+                        return Err(ParseError::MissingClosingDelimiter {
+                            span: Span::empty(),
+                            recoverable: false,
+                            expected: TokenKind::RParen
+                        })
+                    }
+                },
+                // Bool is the default expected type
+                _ => return Err(ParseError::UnexpectedToken {
+                    expected: TokenKind::Keyword(Keyword::PrimitiveType(PrimitiveType::Bool)),
+                    found: tok.kind,
+                    span: tok.span,
+                    recoverable: true
+                })
+            }
+        }
+
+        Err(ParseError::UnexpectedEndOfInput {
+            recoverable: false,
+            span: Span::default()
+        })
     }
 
     fn expect(&mut self, tok: TokenKind) -> Result<Token, ParseError> {

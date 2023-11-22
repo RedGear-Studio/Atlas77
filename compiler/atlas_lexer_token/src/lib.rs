@@ -35,6 +35,8 @@ pub enum Keyword {
     If,
     Else,
     Then,
+
+    As,
     
     Let,
     
@@ -203,6 +205,7 @@ impl fmt::Display for Keyword {
             If => write!(f, "if"),
             Else => write!(f, "else"),
             Then => write!(f, "then"),
+            As => write!(f, "as"),
             Let => write!(f, "let"),
             Struct => write!(f, "struct"),
             Enum => write!(f, "enum"),

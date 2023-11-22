@@ -13,4 +13,5 @@ atlas_lexer_error = { path = "../compiler/atlas_lexer_error" }
 codespan-reporting = "0.11.1"
 atlas_span = { path = "../compiler/atlas_span" }
 atlas_parser = { path = "../compiler/atlas_parser" }
-
+atlas_parser_interpreter = { path = "../compiler/atlas_parser_interpreter" }
+atlas_utils = { path = "../compiler/atlas_utils" }
