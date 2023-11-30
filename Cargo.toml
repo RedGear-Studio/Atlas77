@@ -9,10 +9,6 @@ members = [
     "compiler/atlas_hlir_interpreter",
     "compiler/atlas_hlir_passes",
 
-    "compiler/atlas_lexer",
-    "compiler/atlas_lexer_token",
-    "compiler/atlas_lexer_error",
-
     "compiler/atlas_parser",
     "compiler/atlas_parser_ast",
     "compiler/atlas_parser_error",

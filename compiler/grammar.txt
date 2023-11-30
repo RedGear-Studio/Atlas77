@@ -1,0 +1,51 @@
+program: import* variable_declaration*
+
+import: "import" ident ("::" ident)* ";"
+
+expr:
+  arithmetic_expr
+  | do_end_expr
+  | match_expression
+  | if_else_expr
+
+match_expression: "match" (function_call | arithmetic_expr) "with" (matchcase)* last_case
+match_case: "|" pattern "=>" expr ","
+last_case: "\" ("_" | pattern) "=>" expr
+pattern: literal | ident
+
+if_else_expr: "if" expr "then" expr ("else" expr)?
+
+do_end_expr: "do" (expr | variable_declaration)* "end"
+
+variable_declaration: "let" ident ":" type ("=" expr)?
+
+arithmetic_expr: logical_or
+logical_or: logical_and ("or" expr)*
+logical_and: comparison1 ("and" expr)*
+comparison1: comparison2 ((">" | ">=" | "<" | "<=") expr)*
+comparison2: additive (("==" | "!=") expr)*
+additive: multiplicative (("+" | "-") expr)*
+multiplicative: power (("" | "/" | "%") expr)
+power: casting ("^" expr)*
+casting: unary "as" type
+unary: ("-" | "+" | "!") primary
+
+primary:
+  literal
+  | "(" expr ")"
+  | function_call
+
+function_call: ident "(" (expr ("," expr))? ")" ("(" (expr ("," expr))? ")")*
+
+literal:
+  ident
+  | number
+  | array
+  | string
+
+array: "[" (expr ("," expr)*)? "]"
+string: "\"" letter* "\""
+ident: /* your definition for identifier */
+number: /* your definition for number */
+letter: /* your definition for letter */
+type: /* your definition for type */
