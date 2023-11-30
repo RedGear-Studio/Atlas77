@@ -1,0 +1,387 @@
+use std::str::FromStr;
+use crate::ast;
+grammar;
+
+pub Program: Vec<ast::Declaration> = {
+    <d: Declaration*> => d
+}
+
+Declaration: ast::Declaration = {
+    <f: Function> => f
+};
+
+Function: ast::Declaration = {
+    <l: @L> "fn" <i: Identifier> "(" <c: Comma<Arg>> ")" "->" <rt: Type> "=" <s: Statement> <r: @R> => ast::Declaration::Function(
+        ast::Function {
+            name: i,
+            args: c,
+            return_type: rt,
+            body: s,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    )
+}
+
+Arg: ast::Argument = {
+    <l: @L> <i: Identifier> ":" <t: Type> <r: @R>=> ast::Argument {
+        name: i,
+        ty: t,
+        span: ast::Span {
+            start: l,
+            end: r,
+        }
+    }
+}
+
+Statement: ast::Statement = {
+    <e: Expr>  => ast::Statement::Expression(e),
+    <d: DoStatement> => d,
+};
+
+Expr: ast::Expression = {
+    <e: LogicalOr> => e,
+    <m: MatchExpression> => m,
+    //<f: FunctionCall> => f,
+    <v: VariableDeclaration> => v,
+};
+
+VariableDeclaration: ast::Expression = {
+    <l: @L> "let" <i: Identifier> ":" <t: Type> "=" <e: Expr> <r: @R> => ast::Expression::VariableDeclaration(
+        ast::VariableDeclaration {
+            name: i,
+            ty: t,
+            expr: Box::new(e),
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+DoStatement: ast::Statement = {
+    <l: @L> "do" <e: EndLine<Expr>> "end" <r: @R> => ast::Statement::DoStatement(
+        ast::DoStatement {
+            exprs: e,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+MatchExpression: ast::Expression = {
+    <l: @L> "match" <e: Expr> "with" <p: Pipe<MatchCase>> <r:@R> => ast::Expression::MatchExpression(
+        ast::MatchExpression {
+            expr: Box::new(e),
+            arms: p,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+MatchCase: ast::MatchArm = {
+    <l: @L> <p: Expr> "=>" <e: Expr> <r: @R> => ast::MatchArm {
+        pattern: Box::new(p),
+        expr: Box::new(e),
+        span: ast::Span {
+            start: l,
+            end: r,
+        }
+    }
+};
+
+FunctionCall: ast::Expression = {
+    <l: @L> <i: Identifier> "(" <e: Comma<Expr>> ")" <r: @R> => ast::Expression::FunctionCall(
+        ast::FunctionCall {
+            name: i,
+            args: e,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    )
+};
+
+LogicalOr: ast::Expression = {
+    <e: LogicalAnd> => e,
+    <l: @L> <e: LogicalOr> "or" <t: LogicalAnd> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::Or,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+LogicalAnd: ast::Expression = {
+    <e: Comparison> => e,
+    <l: @L> <e: LogicalAnd> "and" <t: Comparison> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::And,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+Comparison: ast::Expression = {
+    <e: Equality> => e,
+    <l: @L> <e: Comparison> "<" <t: Equality> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::Lt,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+    <l: @L> <e: Comparison> "<=" <t: Equality> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::Lte,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+    <l: @L> <e: Comparison> ">" <t: Equality> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::Gt,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+    <l: @L> <e: Comparison> ">=" <t: Equality> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::Gte,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+Equality: ast::Expression = {
+    <e: Additive> => e,
+    <l: @L> <e: Equality> "==" <t: Additive> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::Eq,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+    <l: @L> <e: Equality> "!=" <t: Additive> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::Neq,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+Additive: ast::Expression = {
+    <t: Multiplicative> => t,
+    <l: @L> <e: Additive> "+" <t: Multiplicative> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::Add,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+    <l: @L> <e: Additive> "-" <t: Multiplicative> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(e),
+            right: Box::new(t),
+            op: ast::BinaryOperator::Sub,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+Multiplicative: ast::Expression = {
+    <f: Power> => f,
+    <l: @L> <t: Multiplicative> "*" <f: Power> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(t),
+            right: Box::new(f),
+            op: ast::BinaryOperator::Mul,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+    <l: @L> <t: Multiplicative> "/" <f: Power> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(t),
+            right: Box::new(f),
+            op: ast::BinaryOperator::Div,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+    <l: @L> <t: Multiplicative> "%" <f: Power> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(t),
+            right: Box::new(f),
+            op: ast::BinaryOperator::Mod,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+Power: ast::Expression = {
+    <f: Casting> => f,
+    <l: @L> <t: Power> "^" <f: Casting> <r:@R> => ast::Expression::BinaryExpression(
+        ast::BinaryExpression {
+            left: Box::new(t),
+            right: Box::new(f),
+            op: ast::BinaryOperator::Pow,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+};
+
+Casting: ast::Expression = {
+    <f: Unary> => f,
+    <l: @L> <t: Casting> "as" <f: Type> <r:@R> => ast::Expression::CastingExpression(
+        ast::CastingExpression {
+            expr: Box::new(t),
+            ty: f,
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    ),
+}
+
+Unary: ast::Expression = {
+    <p: Primary> => p,
+    <l: @L> "-" <p: Primary> <r: @R> => ast::Expression::UnaryExpression(
+        ast::UnaryExpression {
+            op: Some(ast::UnaryOperator::Minus),
+            operand: Box::new(p),
+            span: ast::Span {
+                start: l,
+                end: r,
+            }
+        }
+    )
+};
+
+Comma<Rule>: Vec<Rule> = {
+    <rules: (<Rule> ",")*> <last: Rule?> => {
+        let mut rules = rules;
+        rules.extend(last);
+        rules
+    }
+};
+
+Pipe<Rule>: Vec<Rule> = {
+    <rules: ("|" <Rule> ",")*> <last: ("\\" <Rule>)> => {
+        let mut rules = rules;
+        rules.push(last);
+        rules
+    }
+};
+
+RArrow<Rule>: Vec<Rule> = {
+    <rules: (<Rule> "->")*> <last: Rule> => {
+        let mut rules = rules;
+        rules.push(last);
+        rules
+    }
+};
+
+EndLine<Rule>: Vec<Rule> = {
+    <rules: (<Rule> ";")*> <last: Rule?> => {
+        let mut rules = rules;
+        rules.extend(last);
+        rules
+    }
+};
+
+Type: ast::Type = {
+    "i32" => ast::Type::I32,
+    "f63" => ast::Type::F64,
+    "string" => ast::Type::StringType,
+    "char" => ast::Type::Char,
+    "bool" => ast::Type::Bool,
+};
+
+pub FunctionType: ast::Type = {
+    <r: RArrow<Type>> => {
+        let mut ty = r.first().unwrap().clone();
+        r.iter().map(|t| ty = ast::Type::FunctionType(Box::new(ty.clone()), Box::new(t.clone()))).last().clone();
+        ty
+    },
+}
+
+Primary: ast::Expression = {
+    <f: Float64> => ast::Expression::Literal(ast::Value::F64(f)),
+    <i: Int32> => ast::Expression::Literal(ast::Value::I32(i)),
+    <i: Identifier> => ast::Expression::Literal(ast::Value::Identifier(i)),
+    <f: FunctionCall> => f,
+    <s: StringValue> => ast::Expression::Literal(ast::Value::StringValue(s)),
+    "true" => ast::Expression::Literal(ast::Value::Bool(true)),
+    "false" => ast::Expression::Literal(ast::Value::Bool(false)),
+    "(" <e: Expr> ")" => e,
+    "[" <e: Comma<Expr>> "]" => ast::Expression::Literal(ast::Value::ArrayLiteral(e)),
+};
+
+Identifier: String = <s: r"[a-zA-Z_][a-zA-Z0-9_]*"> => s.to_string();
+Int32: i32 = <s: r"[0-9]+"> => i32::from_str(s).unwrap();
+Float64: f64 = <s: r"[0-9]+\.[0-9]+"> => f64::from_str(s).unwrap();
+StringValue: String = <s: r#""[^"]*""#> => s.to_string();

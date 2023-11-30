@@ -4,11 +4,6 @@ members = [
     "atlas-core",
     "atlas-test",
 
-    "compiler/atlas_hlir",
-    "compiler/atlas_hlir_error",
-    "compiler/atlas_hlir_interpreter",
-    "compiler/atlas_hlir_passes",
-
     "compiler/atlas_parser",
     "compiler/atlas_parser_ast",
     "compiler/atlas_parser_error",
