@@ -17,6 +17,3 @@ fn abs(a: i32) -> i32 =
     match a < 0 with 
     | true => -a,
     \ _ => a
-
-fn print(str: string) -> string = 
-    print(str)

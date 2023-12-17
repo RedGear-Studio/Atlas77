@@ -1,5 +1,5 @@
 [package]
-name = "atlas_span"
+name = "common"
 version = "0.1.0"
 edition = "2021"
 

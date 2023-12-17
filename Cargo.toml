@@ -1,23 +1,12 @@
 [workspace]
 resolver = "1"
 members = [
-    "atlas-core",
-    "atlas-test",
-
-    "compiler/atlas_parser",
-    "compiler/atlas_parser_ast",
-    "compiler/atlas_parser_error",
-    "compiler/atlas_parser_interpreter",
-
-    "compiler/atlas_utils",
-
-    "compiler/atlas_span",
-
-
-
     "core/compiler",
     "core/runtime",
-    "core/format",
+    "core/common",
+]
+exclude = [
+    "examples"
 ]
 
 [profile.bench]

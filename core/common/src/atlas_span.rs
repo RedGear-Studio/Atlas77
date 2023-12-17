@@ -82,22 +82,6 @@ impl Span {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_get_line_info() {
-        let span = super::Span{
-            start: super::BytePos(0),
-            end: super::BytePos(4),
-            path: "C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\compiler\\atlas_span\\src\\test.txt",
-        };
-        let line_info = span.get_line_info();
-        assert_eq!(line_info.line_number, 1);
-        assert_eq!(line_info.column_number, 1);
-        assert_eq!(line_info.line_text, "4444");
-    }
-}
-
 impl fmt::Display for Span {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[{}:{} in \"{}\"]", self.start, self.end, self.path)
