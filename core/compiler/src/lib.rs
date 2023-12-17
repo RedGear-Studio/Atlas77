@@ -1,11 +1,7 @@
-extern crate lalrpop_util;
-
+pub mod ast;
 pub mod grammar;
-pub mod type_check;
 pub mod macros;
-pub mod ast {
-    pub use atlas_parser_ast::*;
-}
+pub mod type_check;
 
 pub fn parse(path: &'static str) {
     let mut content = match std::fs::read_to_string(path) {

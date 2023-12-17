@@ -8,10 +8,16 @@ members = [
     "compiler/atlas_parser_ast",
     "compiler/atlas_parser_error",
     "compiler/atlas_parser_interpreter",
-    
+
     "compiler/atlas_utils",
 
     "compiler/atlas_span",
+
+
+
+    "core/compiler",
+    "core/runtime",
+    "core/format",
 ]
 
 [profile.bench]

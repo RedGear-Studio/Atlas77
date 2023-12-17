@@ -1,0 +1,22 @@
+fn power(a: i32, b: i32) -> i32 =
+    match b with
+    | 0 => 1,
+    \ _ => a * power(a, b - 1)
+
+fn mul(a: i32, b: i32) -> i32 = a * b
+
+fn add(a: i32, b: i32) -> i32 = a + b
+
+fn sub(a: i32, b: i32) -> i32 = a - b
+
+fn div(a: i32, b: i32) -> i32 = a / b
+
+fn mod(a: i32, b: i32) -> i32 = a % b
+
+fn abs(a: i32) -> i32 = 
+    match a < 0 with 
+    | true => -a,
+    \ _ => a
+
+fn print(str: string) -> string = 
+    print(str)
