@@ -1,19 +1,19 @@
-fn power(a: i32, b: i32) -> i32 =
+fn power(a: i64, b: i64) -> i64 =
     match b with
     | 0 => 1,
     \ _ => a * power(a, b - 1)
 
-fn mul(a: i32, b: i32) -> i32 = a * b
+fn mul(a: i64, b: i64) -> i64 = a * b
 
-fn add(a: i32, b: i32) -> i32 = a + b
+fn add(a: i64, b: i64) -> i64 = a + b
 
-fn sub(a: i32, b: i32) -> i32 = a - b
+fn sub(a: i64, b: i64) -> i64 = a - b
 
-fn div(a: i32, b: i32) -> i32 = a / b
+fn div(a: i64, b: i64) -> i64 = a / b
 
-fn mod(a: i32, b: i32) -> i32 = a % b
+fn mod(a: i64, b: i64) -> i64 = a % b
 
-fn abs(a: i32) -> i32 = 
+fn abs(a: i64) -> i64 = 
     match a < 0 with 
     | true => -a,
     \ _ => a

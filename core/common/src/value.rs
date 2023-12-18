@@ -4,8 +4,6 @@ use core::fmt;
 pub enum Value {
     Int64(i64),
 
-    UInt64(u64),
-
     Float64(f64),
 
     Bool(bool),
@@ -16,6 +14,8 @@ pub enum Value {
 
     Array(Vec<Value>),
 
+    Identifier(String),
+
     #[default]
     Undefined,
 }
@@ -23,13 +23,8 @@ pub enum Value {
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum Type {
     Int64,
-    Int32,
-
-    UInt64,
-    UInt32,
 
     Float64,
-    Float32,
 
     Bool,
 
@@ -47,34 +42,29 @@ pub enum Type {
     #[default]
     Undefined,
 }
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 impl Value {
     pub fn cast(&self, ty: &Type) -> Result<Value, String> {
         use Value::*;
         match (self, ty) {
             (Int64(i), &Type::Int64) => Ok(Int64(*i)),
-            (Int64(i), &Type::UInt64) => Ok(UInt64(*i as u64)),
             (Int64(i), &Type::Float64) => Ok(Float64(*i as f64)),
             (Int64(i), &Type::Bool) => Ok(Bool(*i != 0)),
             (Int64(i), &Type::StringType) => Ok(StringValue(i.to_string())),
             (Int64(i), &Type::Char) => Ok(Char(*i as u8 as char)),
-            
-            (UInt64(u), &Type::Int64) => Ok(Int64(*u as i64)),
-            (UInt64(u), &Type::UInt64) => Ok(UInt64(*u)),
-            (UInt64(u), &Type::Float64) => Ok(Float64(*u as f64)),
-            (UInt64(u), &Type::Bool) => Ok(Bool(*u != 0)),
-            (UInt64(u), &Type::StringType) => Ok(StringValue(u.to_string())),
-            (UInt64(u), &Type::Char) => Ok(Char(*u as u8 as char)),
 
             (Float64(fl), &Type::Int64) => Ok(Int64(*fl as i64)),
-            (Float64(fl), &Type::UInt64) => Ok(UInt64(*fl as u64)),
             (Float64(fl), &Type::Float64) => Ok(Float64(*fl)),
             (Float64(fl), &Type::Bool) => Ok(Bool(*fl != 0.0)),
             (Float64(fl), &Type::StringType) => Ok(StringValue(fl.to_string())),
             (Float64(fl), &Type::Char) => Ok(Char(*fl as u8 as char)),
 
             (Bool(b), &Type::Int64) => Ok(Int64(*b as i64)),
-            (Bool(b), &Type::UInt64) => Ok(UInt64(*b as u64)),
             (Bool(b), &Type::Float64) => Ok(Float64(*b as u8 as f64)),
             (Bool(b), &Type::Bool) => Ok(Bool(*b)),
             (Bool(b), &Type::StringType) => Ok(StringValue(b.to_string())),
@@ -83,13 +73,6 @@ impl Value {
             (StringValue(s), &Type::Int64) => {
                 if let Ok(i) = s.parse::<i64>() {
                     Ok(Int64(i))
-                } else {
-                    Err(format!("Invalid cast: {:?} as {:?}", self, ty))
-                }
-            },
-            (StringValue(s), &Type::UInt64) => {
-                if let Ok(i) = s.parse::<u64>() {
-                    Ok(UInt64(i))
                 } else {
                     Err(format!("Invalid cast: {:?} as {:?}", self, ty))
                 }
@@ -134,7 +117,6 @@ impl Value {
     pub fn minus(&self) -> Result<Value, String> {
         match self {
             Value::Int64(i) => Ok(Value::Int64(-i.clone())),
-            Value::UInt64(_) => Err("Cannot minus UInt64".to_string()),
             Value::Float64(fl) => Ok(Value::Float64(-fl.clone())),
             _ => Err("Invalid minus".to_string()),
         }
@@ -143,7 +125,6 @@ impl Value {
     fn is_zero(&self) -> bool {
         match self {
             Value::Int64(i) => *i == 0,
-            Value::UInt64(u) => *u == 0,
             Value::Float64(fl) => *fl == 0.0,
             Value::Bool(b) => !*b,
             _ => false,
@@ -154,20 +135,17 @@ impl Value {
         match (self, rhs) {
             (Int64(i1), Int64(i2)) => Ok(Int64(i1 + i2)),
 
-            (UInt64(u1), UInt64(u2)) => Ok(UInt64(u1 + u2)),
-            
             (Float64(fl1), Float64(fl2)) => Ok(Float64(fl1 + fl2)),
             
             (StringValue(s), StringValue(s2)) => Ok(StringValue(format!("{}{}", s, s2))),
             _ => Err(format!("Invalid addition: {:?} + {:?}", self, rhs)),
         }
     }
+    //Should you be able to substract from a string?
     pub fn sub(&self, rhs: &Self) -> Result<Self, String> {
         use Value::*;
         match (self, rhs) {
             (Int64(i1), Int64(i2)) => Ok(Int64(i1 - i2)),
-            
-            (UInt64(u1), UInt64(u2)) => Ok(UInt64(u1 - u2)),
             
             (Float64(fl1), Float64(fl2)) => Ok(Float64(fl1 - fl2)),
 
@@ -179,8 +157,6 @@ impl Value {
         match (self, rhs) {
             (Int64(i1), Int64(i2)) => Ok(Int64(i1 * i2)),
             
-            (UInt64(u1), UInt64(u2)) => Ok(UInt64(u1 * u2)),
-            
             (Float64(fl1), Float64(fl2)) => Ok(Float64(fl1 * fl2)),
 
             _ => Err(format!("Invalid multiplication: {:?} * {:?}", self, rhs)),
@@ -191,8 +167,6 @@ impl Value {
         if !rhs.is_zero() {
             match (self, rhs) {
                 (Int64(i1), Int64(i2)) => Ok(Int64(i1 / i2)),
-                
-                (UInt64(u1), UInt64(u2)) => Ok(UInt64(u1 / u2)),
                 
                 (Float64(fl1), Float64(fl2)) => Ok(Float64(fl1 / fl2)),
                 
@@ -207,8 +181,6 @@ impl Value {
         match (self, rhs) {
             (Int64(i1), Int64(i2)) => Ok(Int64(i1 % i2)),
             
-            (UInt64(u1), UInt64(u2)) => Ok(UInt64(u1 % u2)),
-            
             (Float64(fl1), Float64(fl2)) => Ok(Float64(fl1 % fl2)),
             
             _ => Err(format!("Invalid modulo: {:?} % {:?}", self, rhs)),
@@ -218,8 +190,6 @@ impl Value {
         use Value::*;
         match (self, rhs) {
             (Int64(i1), Int64(i2)) => Ok(Int64(i64::pow(*i1, *i2 as u32))),
-            
-            (UInt64(u1), UInt64(u2)) => Ok(UInt64(u1.pow(*u2 as u32))),
             
             (Float64(fl1), Float64(fl2)) => Ok(Float64(fl1.powf(*fl2))),
             
@@ -249,8 +219,6 @@ impl Value {
 
             (Int64(i1), Int64(i2)) => Ok(Bool(*i1 == *i2)),
             
-            (UInt64(u1), UInt64(u2)) => Ok(Bool(*u1 == *u2)),
-            
             (Float64(fl1), Float64(fl2)) => Ok(Bool(*fl1 == *fl2)),
             
             (StringValue(s1), StringValue(s2)) => Ok(Bool(s1 == s2)),
@@ -267,8 +235,6 @@ impl Value {
 
             (Int64(i1), Int64(i2)) => Ok(Bool(*i1 != *i2)),
             
-            (UInt64(u1), UInt64(u2)) => Ok(Bool(*u1 != *u2)),
-            
             (Float64(fl1), Float64(fl2)) => Ok(Bool(*fl1 != *fl2)),
             
             (StringValue(s1), StringValue(s2)) => Ok(Bool(s1 != s2)),
@@ -283,8 +249,6 @@ impl Value {
         match (self, rhs) {
             (Int64(i1), Int64(i2)) => Ok(Bool(*i1 < *i2)),
             
-            (UInt64(u1), UInt64(u2)) => Ok(Bool(*u1 < *u2)),
-            
             (Float64(fl1), Float64(fl2)) => Ok(Bool(*fl1 < *fl2)),
 
             _ => Err(format!("Invalid less than: {:?} < {:?}", self, rhs)),
@@ -294,8 +258,6 @@ impl Value {
         use Value::*;
         match (self, rhs) {
             (Int64(i1), Int64(i2)) => Ok(Bool(*i1 > *i2)),
-            
-            (UInt64(u1), UInt64(u2)) => Ok(Bool(*u1 > *u2)),
             
             (Float64(fl1), Float64(fl2)) => Ok(Bool(*fl1 > *fl2)),
 
@@ -307,8 +269,6 @@ impl Value {
         match (self, rhs) {
             (Int64(i1), Int64(i2)) => Ok(Bool(*i1 <= *i2)),
             
-            (UInt64(u1), UInt64(u2)) => Ok(Bool(*u1 <= *u2)),
-            
             (Float64(fl1), Float64(fl2)) => Ok(Bool(*fl1 <= *fl2)),
 
             _ => Err(format!("Invalid less than or equal: {:?} <= {:?}", self, rhs)),
@@ -318,8 +278,6 @@ impl Value {
         use Value::*;
         match (self, rhs) {
             (Int64(i1), Int64(i2)) => Ok(Bool(*i1 >= *i2)),
-            
-            (UInt64(u1), UInt64(u2)) => Ok(Bool(*u1 >= *u2)),
             
             (Float64(fl1), Float64(fl2)) => Ok(Bool(*fl1 >= *fl2)),
 
@@ -332,8 +290,8 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use Value::*;
         match self {
+            Identifier(s) => write!(f, "{}", s),
             Int64(i) => write!(f, "{}_i64", i),
-            UInt64(u) => write!(f, "{}_u64", u),
             Float64(fl) => write!(f, "{}_f64", fl),
             Bool(i) => write!(f, "{}", i),
             StringValue(s) => write!(f, "\"{}\"", s),

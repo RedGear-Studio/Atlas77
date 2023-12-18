@@ -9,7 +9,7 @@ pub trait Visitor {
     fn end_scope(&mut self);
     fn push_stack(&mut self, value: Value);
     fn pop_stack(&mut self) -> Value;
-    fn register_variable(&mut self, name: String, value: Value) -> Result<(), String>;
+    fn register_variable(&mut self, name: String, value: Value);
 }
 
 pub trait Expression : std::fmt::Debug {

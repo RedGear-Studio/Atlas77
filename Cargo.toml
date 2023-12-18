@@ -4,6 +4,7 @@ members = [
     "core/compiler",
     "core/runtime",
     "core/common",
+    "core/atlas",
 ]
 exclude = [
     "examples"

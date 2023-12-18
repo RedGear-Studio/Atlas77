@@ -1,5 +1,6 @@
 use std::str::FromStr;
 use crate::ast;
+use common::value::{Value, Type};
 grammar;
 
 pub Program: Vec<ast::Declaration> = {
@@ -353,35 +354,39 @@ EndLine<Rule>: Vec<Rule> = {
     }
 };
 
-Type: ast::Type = {
-    "i32" => ast::Type::I32,
-    "f63" => ast::Type::F64,
-    "string" => ast::Type::StringType,
-    "char" => ast::Type::Char,
-    "bool" => ast::Type::Bool,
+Type: Type = {
+    "i64" => Type::Int64,
+    "f64" => Type::Float64,
+    "string" => Type::StringType,
+    "char" => Type::Char,
+    "bool" => Type::Bool,
 };
 
-pub FunctionType: ast::Type = {
-    <r: RArrow<Type>> => {
-        let mut ty = r.first().unwrap().clone();
-        r.iter().map(|t| ty = ast::Type::FunctionType(Box::new(ty.clone()), Box::new(t.clone()))).last().clone();
-        ty
-    },
-}
+//pub FunctionType: Type = {
+//    <r: RArrow<Type>> => {
+//        let mut ty = r.first().unwrap().clone();
+//        r.iter().map(|t| ty = Type::FunctionType(Box::new(ty.clone()), Box::new(t.clone()))).last().clone();
+//        ty
+//    },
+//}
 
 Primary: ast::Expression = {
-    <f: Float64> => ast::Expression::Literal(ast::Value::F64(f)),
-    <i: Int32> => ast::Expression::Literal(ast::Value::I32(i)),
-    <i: Identifier> => ast::Expression::Literal(ast::Value::Identifier(i)),
+    <l: Literal> => ast::Expression::Literal(l),
     <f: FunctionCall> => f,
-    <s: StringValue> => ast::Expression::Literal(ast::Value::StringValue(s)),
-    "true" => ast::Expression::Literal(ast::Value::Bool(true)),
-    "false" => ast::Expression::Literal(ast::Value::Bool(false)),
     "(" <e: Expr> ")" => e,
-    "[" <e: Comma<Expr>> "]" => ast::Expression::Literal(ast::Value::ArrayLiteral(e)),
+};
+
+Literal: Value = {
+    <f: Float64> => Value::Float64(f),
+    <i: Int64> => Value::Int64(i),
+    <i: Identifier> => Value::Identifier(i),
+    <s: StringValue> => Value::StringValue(s),
+    "true" => Value::Bool(true),
+    "false" => Value::Bool(false),
+    "[" <e: Comma<Literal>> "]" => Value::Array(e),
 };
 
 Identifier: String = <s: r"[a-zA-Z_][a-zA-Z0-9_]*"> => s.to_string();
-Int32: i32 = <s: r"[0-9]+"> => i32::from_str(s).unwrap();
+Int64: i64 = <s: r"[0-9]+"> => i64::from_str(s).unwrap();
 Float64: f64 = <s: r"[0-9]+\.[0-9]+"> => f64::from_str(s).unwrap();
 StringValue: String = <s: r#""[^"]*""#> => s.to_string();

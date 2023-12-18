@@ -1,7 +1,8 @@
 use crate::exit_err;
 use std::collections::HashMap;
 
-use crate::ast::{self, Function, Declaration, Type, Statement, DoStatement, Expression, BinaryExpression, Value, MatchExpression, FunctionCall};
+use crate::ast::{self, Function, Declaration, Statement, DoStatement, Expression, BinaryExpression, MatchExpression, FunctionCall};
+use common::value::{Value, Type};
 
 #[derive(Debug, Clone)]
 pub enum Contract {
@@ -35,7 +36,7 @@ pub struct TypeId {
 impl From<String> for TypeId {
     fn from(value: String) -> Self {
         match value.as_ref() {
-            "i32" => TypeId { id: 0, name: String::from("i32") },
+            "i64" => TypeId { id: 0, name: String::from("i64") },
             "f64" => TypeId { id: 1, name: String::from("f64") },
             "bool" => TypeId { id: 2, name: String::from("bool") },
             "string" => TypeId { id: 3, name: String::from("string") },
@@ -47,8 +48,8 @@ impl From<String> for TypeId {
 impl From<Type> for TypeId {
     fn from(value: Type) -> Self {
         match value {
-            Type::I32 => TypeId { id: 0, name: String::from("i32") },
-            Type::F64 => TypeId { id: 1, name: String::from("f64") },
+            Type::Int64 => TypeId { id: 0, name: String::from("i64") },
+            Type::Float64 => TypeId { id: 1, name: String::from("f64") },
             Type::Bool => TypeId { id: 2, name: String::from("bool") },
             Type::StringType => TypeId { id: 3, name: String::from("string") },
             _ => exit_err!("Unknown type: {:?}", value),
@@ -79,7 +80,7 @@ pub struct IRContext {
 impl IRContext {
     pub fn new(ast: Vec<ast::Declaration>) -> Self {
         let mut primitive_type = TypeHashMap::new();
-        primitive_type.insert(TypeId {id: 0, name: String::from("i32")}, vec![Contract::Add, Contract::Sub, Contract::Mul, Contract::Div, Contract::Mod, Contract::Eq, Contract::Neq, Contract::Lt, Contract::Lte, Contract::Gt, Contract::Gte, Contract::And, Contract::Or, Contract::Not]);
+        primitive_type.insert(TypeId {id: 0, name: String::from("i64")}, vec![Contract::Add, Contract::Sub, Contract::Mul, Contract::Div, Contract::Mod, Contract::Eq, Contract::Neq, Contract::Lt, Contract::Lte, Contract::Gt, Contract::Gte, Contract::And, Contract::Or, Contract::Not]);
         primitive_type.insert(TypeId { id: 1, name: String::from("f64") }, vec![Contract::Add, Contract::Sub, Contract::Mul, Contract::Div, Contract::Eq, Contract::Neq, Contract::Lt, Contract::Lte, Contract::Gt, Contract::Gte]);
         primitive_type.insert(TypeId { id: 2, name: String::from("bool") }, vec![Contract::Eq, Contract::Neq, Contract::And, Contract::Or, Contract::Not]);
         primitive_type.insert(TypeId { id: 3, name: String::from("string") }, vec![Contract::Eq, Contract::Neq, Contract::Add]);
@@ -202,8 +203,8 @@ impl IRContext {
             },
             Expression::Literal(lit) => {
                 match lit {
-                    Value::I32(_) => TypeId::from(Type::I32),
-                    Value::F64(_) => TypeId::from(Type::F64),
+                    Value::Int64(_) => TypeId::from(Type::Int64),
+                    Value::Float64(_) => TypeId::from(Type::Float64),
                     Value::Bool(_) => TypeId::from(Type::Bool),
                     Value::StringValue(_) => TypeId::from(Type::StringType),
                     Value::Identifier(s) => {
@@ -259,10 +260,10 @@ impl IRContext {
 
     fn precedence_type(&self, t1: &TypeId, t2: &TypeId) -> TypeId {
         match (t1, t2) {
-            (TypeId { id: 0, .. }, TypeId { id: 0, .. }) => TypeId::from(Type::I32),
-            (TypeId { id: 0, .. }, TypeId { id: 1, .. }) => TypeId::from(Type::F64),
-            (TypeId { id: 1, .. }, TypeId { id: 0, .. }) => TypeId::from(Type::F64),
-            (TypeId { id: 1, .. }, TypeId { id: 1, .. }) => TypeId::from(Type::F64),
+            (TypeId { id: 0, .. }, TypeId { id: 0, .. }) => TypeId::from(Type::Int64),
+            (TypeId { id: 0, .. }, TypeId { id: 1, .. }) => TypeId::from(Type::Float64),
+            (TypeId { id: 1, .. }, TypeId { id: 0, .. }) => TypeId::from(Type::Float64),
+            (TypeId { id: 1, .. }, TypeId { id: 1, .. }) => TypeId::from(Type::Float64),
             (TypeId { id: 2, .. }, TypeId { id: 2, .. }) => TypeId::from(Type::Bool),
             (TypeId { id: 3, .. }, TypeId { id: 3, .. }) => TypeId::from(Type::StringType),
             //String concatenation

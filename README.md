@@ -26,13 +26,13 @@
 
 # Example
 ```rs
-let fib: (n: i64) -> i64 =
+fn fib(n: i64) -> i64 = 
   match n with
   | 0 => 0,
   | 1 => 1,
   \ _ => fib(n - 1) + fib(n - 2)
 
-let main: () -> i64 = fib(10)
+fn main() -> i64 = fib(10)
 ```
 
 # State

@@ -1,5 +1,5 @@
 use core::fmt;
-
+use common::{value::{Value, Type}, visitor::{Expression as CommonExpression, Visitor}};
 
 #[derive(Debug, Clone)]
 pub enum Declaration {
@@ -33,12 +33,12 @@ pub struct Argument {
     pub ty: Type,
     pub span: Span,
 }
-
 impl fmt::Display for Argument {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}: {}", self.name, self.ty)
     }
 }
+
 #[derive(Debug, Clone)]
 pub enum Statement {
     DoStatement(DoStatement),
@@ -76,6 +76,11 @@ impl fmt::Display for Expression {
         }
     }
 }
+impl CommonExpression for Expression {
+    fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
+        todo!()
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct VariableDeclaration {
@@ -87,6 +92,13 @@ pub struct VariableDeclaration {
 impl fmt::Display for VariableDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "let {}: {} = {}", self.name, self.ty, self.expr)
+    }
+}
+impl CommonExpression for VariableDeclaration {
+    fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
+        let value = self.expr.evaluate(visitor);
+        visitor.register_variable(self.name.clone(), value.clone());
+        value
     }
 }
 
@@ -147,50 +159,6 @@ pub struct CastingExpression {
 impl fmt::Display for CastingExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({} as {})", self.expr, self.ty)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Type {
-    I32,
-    F64,
-    StringType,
-    Char,
-    Bool,
-    FunctionType(Box<Type>, Box<Type>)
-}
-impl fmt::Display for Type {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Type::I32 => write!(f, "i32"),
-            Type::F64 => write!(f, "f64"),
-            Type::StringType => write!(f, "string"),
-            Type::Char => write!(f, "char"),
-            Type::Bool => write!(f, "bool"),
-            Type::FunctionType(t1, t2) => write!(f, "({} -> {})", t1, t2)
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Value {
-    I32(i32),
-    F64(f64),
-    Identifier(String),
-    StringValue(String),
-    Bool(bool),
-    ArrayLiteral(Vec<Expression>)
-}
-impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Value::I32(i) => write!(f, "{}", i),
-            Value::F64(fl) => write!(f, "{}", fl),
-            Value::Identifier(s) => write!(f, "{}", s),
-            Value::StringValue(s) => write!(f, "\"{}\"", s),
-            Value::Bool(b) => write!(f, "{}", b),
-            Value::ArrayLiteral(a) => write!(f, "[{}]", a.iter().map(|e| format!("{}", e)).collect::<Vec<String>>().join(", "))
-        }
     }
 }
 
