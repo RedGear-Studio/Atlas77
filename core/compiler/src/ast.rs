@@ -175,6 +175,12 @@ impl fmt::Display for BinaryExpression {
     }
 }
 
+impl CommonExpression for BinaryExpression {
+    fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
+        todo!("BinaryExpression::evaluate")
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum BinaryOperator {
     Add,

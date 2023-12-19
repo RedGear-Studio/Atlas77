@@ -1,22 +1,17 @@
 pub mod ast;
 pub mod grammar;
-pub mod macros;
 pub mod type_check;
+use ast::Declaration;
+use common::exit_err;
 
-pub mod value {
-    use common::value::{Value, Type};
-}
-
-pub fn parse(path: &'static str) {
+pub fn parse(path: &'static str) -> Vec<Declaration> {
     let mut content = match std::fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => exit_err!("Error while reading file: {}", e)
     };
 
-    let lib = match std::fs::read_to_string("C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\lib\\std.atlas") {
-        Ok(s) => s,
-        Err(e) => exit_err!("Error while reading std lib file: {}", e)
-    };
+    let lib = include_str!("../../../lib/std.atlas");
+
     content.push('\n');
     content.push_str(&lib);
 
@@ -27,19 +22,20 @@ pub fn parse(path: &'static str) {
     );
     match res {
         Ok(decls) => {
-            for decl in &decls {
+            /*for decl in &decls {
                 println!("{}", decl)
-            }
-            let mut ir_context = type_check::IRContext::new(decls);
+            }*/
+            let mut ir_context = type_check::IRContext::new(decls.clone());
             match ir_context.type_check() {
                 Ok(_) => {
-                    println!("Type checked successfully")
+                    println!("Type checked successfully");
+                    decls
             },
-                Err(e) => println!("{:?}", e)
+                Err(e) => exit_err!("{:?}", e)
             }
             //println!("{:?}", ir_context);x
         },
-        Err(e) => println!("{:?}", e)
+        Err(e) => exit_err!("{:?}", e)
     }
 }
 

@@ -18,6 +18,17 @@ pub struct Runtime {
     stack: Vec<Value>,
 }
 
+impl Runtime {
+    pub fn new() -> Runtime {
+        Runtime {
+            varmaps: Vec::new(),
+            global: Varmap { map: HashMap::new(), parent: None },
+            current_varmap: None,
+            stack: Vec::new(),
+        }
+    }
+}
+
 impl Visitor for Runtime {
     fn visit(&mut self, expression: &dyn Expression) -> Value {
         expression.evaluate(self)

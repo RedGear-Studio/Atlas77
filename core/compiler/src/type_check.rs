@@ -1,8 +1,8 @@
-use crate::exit_err;
 use std::collections::HashMap;
 
 use crate::ast::{self, Function, Declaration, Statement, DoStatement, Expression, BinaryExpression, MatchExpression, FunctionCall};
 use common::value::{Value, Type};
+use common::exit_err;
 
 #[derive(Debug, Clone)]
 pub enum Contract {
