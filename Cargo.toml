@@ -1,8 +1,13 @@
 [workspace]
 resolver = "1"
 members = [
-    "atlas-core",
-    "atlas-test"
+    "core/compiler",
+    "core/runtime",
+    "core/common",
+    "core/atlas",
+]
+exclude = [
+    "examples"
 ]
 
 [profile.bench]
