@@ -1,6 +1,10 @@
 [workspace]
 resolver = "1"
 members = [
+    "core/compiler/parser",
+    "core/compiler/lexer",
+    "core/compiler/errors",
+    "core/compiler/semantic_analysis",
     "core/compiler",
     "core/runtime",
     "core/common",

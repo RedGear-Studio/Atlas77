@@ -11,4 +11,8 @@ lalrpop = "0.20.0"
 [dependencies]
 lalrpop-util = { version = "0.20.0", features = ["lexer", "unicode"] }
 common = { path = "../common" }
-rayon = "1.8.0"
+
+lexer = { path = "./lexer" }
+parser = { path = "./parser" }
+semantic_analysis = { path = "./semantic_analysis" }
+errors = { path = "./errors" }

@@ -17,7 +17,7 @@ pub fn parse(path: &'static str) -> Vec<Declaration> {
     content.push('\n');
     content.push_str(&lib);
 
-    let parser = grammar::ProgramParser::new();
+    /*let parser = grammar::ProgramParser::new();
     let res = grammar::ProgramParser::parse(
         &parser,
         &content
@@ -38,6 +38,8 @@ pub fn parse(path: &'static str) -> Vec<Declaration> {
             //println!("{:?}", ir_context);x
         },
         Err(e) => exit_err!("{:?}", e)
-    }
+    }*/
+    println!("{}", content);
+    unimplemented!("Parser is currently disabled")
 }
 

@@ -1,11 +1,22 @@
 use std::str::FromStr;
 use crate::ast;
+use common::span::{Span, BytePos};
 use common::value::{Value, Type};
+use crate::nodes;
+
+//Node:
+//    NodeKind
+//Declaration,:
+//    Function, Struct, Import, Contract, Signature
+//Expression:
+//   Lambda, BinaryExpression, BinaryOperator, UnaryExpression, UnaryOperator, Literal, VariableDeclaration, MatchExpression, MatchArm
+//DataType:
+//    DataTypeKind
 grammar;
 
 pub Program: Vec<ast::Declaration> = {
     <d: Declaration*> => d
-}
+};
 
 Declaration: ast::Declaration = {
     <f: Function> => f
@@ -18,9 +29,9 @@ Function: ast::Declaration = {
             args: c,
             return_type: rt,
             body: s,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     )
@@ -30,12 +41,12 @@ Arg: ast::Argument = {
     <l: @L> <i: Identifier> ":" <t: Type> <r: @R>=> ast::Argument {
         name: i,
         ty: t,
-        span: ast::Span {
-            start: l,
-            end: r,
+        span: Span {
+            start: BytePos(l),
+            end: BytePos(r),
         }
     }
-}
+};
 
 Statement: ast::Statement = {
     <e: Expr>  => ast::Statement::Expression(e),
@@ -55,9 +66,9 @@ VariableDeclaration: ast::Expression = {
             name: i,
             ty: t,
             expr: Box::new(e),
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -67,9 +78,9 @@ DoStatement: ast::Statement = {
     <l: @L> "do" <e: EndLine<Expr>> "end" <r: @R> => ast::Statement::DoStatement(
         ast::DoStatement {
             exprs: e,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -80,9 +91,9 @@ MatchExpression: ast::Expression = {
         ast::MatchExpression {
             expr: Box::new(e),
             arms: p,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -92,10 +103,10 @@ MatchCase: ast::MatchArm = {
     <l: @L> <p: Expr> "=>" <e: Expr> <r: @R> => ast::MatchArm {
         pattern: Box::new(p),
         expr: Box::new(e),
-        span: ast::Span {
-            start: l,
-            end: r,
-        }
+        span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
+            }
     }
 };
 
@@ -104,9 +115,9 @@ FunctionCall: ast::Expression = {
         ast::FunctionCall {
             name: i,
             args: e,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     )
@@ -119,9 +130,9 @@ LogicalOr: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::Or,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -134,9 +145,9 @@ LogicalAnd: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::And,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -149,9 +160,9 @@ Comparison: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::Lt,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -160,9 +171,9 @@ Comparison: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::Lte,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -171,9 +182,9 @@ Comparison: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::Gt,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -182,9 +193,9 @@ Comparison: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::Gte,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -197,9 +208,10 @@ Equality: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::Eq,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -208,13 +220,13 @@ Equality: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::Neq,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
-    ),
-};
+    )
+}
 
 Additive: ast::Expression = {
     <t: Multiplicative> => t,
@@ -223,9 +235,9 @@ Additive: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::Add,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -234,13 +246,13 @@ Additive: ast::Expression = {
             left: Box::new(e),
             right: Box::new(t),
             op: ast::BinaryOperator::Sub,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
-};
+}
 
 Multiplicative: ast::Expression = {
     <f: Power> => f,
@@ -249,9 +261,9 @@ Multiplicative: ast::Expression = {
             left: Box::new(t),
             right: Box::new(f),
             op: ast::BinaryOperator::Mul,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -260,9 +272,9 @@ Multiplicative: ast::Expression = {
             left: Box::new(t),
             right: Box::new(f),
             op: ast::BinaryOperator::Div,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -271,13 +283,13 @@ Multiplicative: ast::Expression = {
             left: Box::new(t),
             right: Box::new(f),
             op: ast::BinaryOperator::Mod,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
-};
+}
 
 Power: ast::Expression = {
     <f: Casting> => f,
@@ -286,13 +298,13 @@ Power: ast::Expression = {
             left: Box::new(t),
             right: Box::new(f),
             op: ast::BinaryOperator::Pow,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
-};
+}
 
 Casting: ast::Expression = {
     <f: Unary> => f,
@@ -300,9 +312,9 @@ Casting: ast::Expression = {
         ast::CastingExpression {
             expr: Box::new(t),
             ty: f,
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     ),
@@ -314,13 +326,13 @@ Unary: ast::Expression = {
         ast::UnaryExpression {
             op: Some(ast::UnaryOperator::Minus),
             operand: Box::new(p),
-            span: ast::Span {
-                start: l,
-                end: r,
+            span: Span {
+                start: BytePos(l),
+                end: BytePos(r),
             }
         }
     )
-};
+}
 
 Comma<Rule>: Vec<Rule> = {
     <rules: (<Rule> ",")*> <last: Rule?> => {
@@ -328,7 +340,7 @@ Comma<Rule>: Vec<Rule> = {
         rules.extend(last);
         rules
     }
-};
+}
 
 Pipe<Rule>: Vec<Rule> = {
     <rules: ("|" <Rule> ",")*> <last: ("\\" <Rule>)> => {
@@ -336,7 +348,7 @@ Pipe<Rule>: Vec<Rule> = {
         rules.push(last);
         rules
     }
-};
+}
 
 RArrow<Rule>: Vec<Rule> = {
     <rules: (<Rule> "->")*> <last: Rule> => {
@@ -344,7 +356,7 @@ RArrow<Rule>: Vec<Rule> = {
         rules.push(last);
         rules
     }
-};
+}
 
 EndLine<Rule>: Vec<Rule> = {
     <rules: (<Rule> ";")*> <last: Rule?> => {
@@ -352,7 +364,7 @@ EndLine<Rule>: Vec<Rule> = {
         rules.extend(last);
         rules
     }
-};
+}
 
 Type: Type = {
     "i64" => Type::Int64,
@@ -360,7 +372,7 @@ Type: Type = {
     "string" => Type::StringType,
     "char" => Type::Char,
     "bool" => Type::Bool,
-};
+}
 
 //pub FunctionType: Type = {
 //    <r: RArrow<Type>> => {
@@ -374,7 +386,7 @@ Primary: ast::Expression = {
     <l: Literal> => ast::Expression::Literal(l),
     <f: FunctionCall> => f,
     "(" <e: Expr> ")" => e,
-};
+}
 
 Literal: Value = {
     <f: Float64> => Value::Float64(f),
@@ -384,9 +396,9 @@ Literal: Value = {
     "true" => Value::Bool(true),
     "false" => Value::Bool(false),
     "[" <e: Comma<Literal>> "]" => Value::Array(e),
-};
+}
 
-Identifier: String = <s: r"[a-zA-Z_][a-zA-Z0-9_]*"> => s.to_string();
-Int64: i64 = <s: r"[0-9]+"> => i64::from_str(s).unwrap();
-Float64: f64 = <s: r"[0-9]+\.[0-9]+"> => f64::from_str(s).unwrap();
-StringValue: String = <s: r#""[^"]*""#> => s.to_string();
+Identifier: String = <s: r"[a-zA-Z_][a-zA-Z0-9_]*"> => s.to_string()
+Int64: i64 = <s: r"[0-9]+"> => i64::from_str(s).unwrap()
+Float64: f64 = <s: r"[0-9]+\.[0-9]+"> => f64::from_str(s).unwrap()
+StringValue: String = <s: r#""[^"]*""#> => s.to_string()

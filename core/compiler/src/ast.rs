@@ -1,4 +1,3 @@
-use rayon::prelude::*;
 use core::fmt;
 use common::{value::{Value, Type}, visitor::{Expression as CommonExpression, Visitor}, exit_err};
 use common::span::Span;

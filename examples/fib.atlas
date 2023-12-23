@@ -13,12 +13,12 @@ fn ack(m: i64, n: i64) -> i64 =
   match m with
   | 0 => n + 1,
   \ _ => match positive(m) with
-         | 1 => match n with
-                   | 0 => ack(m-1, 1),
-                   \ _ => match positive(n) with
-                     | 1 => ack(m - 1, ack(m, n - 1)),
-                     \ 0 => n + 1,
-         \ 0 => n + 1  
+    | 1 => match n with
+      | 0 => ack(m-1, 1),
+      \ _ => match positive(n) with
+        | 1 => ack(m - 1, ack(m, n - 1)),
+        \ 0 => n + 1,
+    \ 0 => n + 1  
 
 fn positive(a: i64) -> i64 = a > 0 as i64
 

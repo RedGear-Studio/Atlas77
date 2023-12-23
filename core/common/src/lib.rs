@@ -10,6 +10,7 @@ pub mod span {
 sti::define_key!(u32, pub StringIndex);
 
 fn heh() {
+    let two = 1 + 1;
     let hehe = StringIndex::new(0).unwrap();
     match hehe {
         StringIndex(1) => println!("heh"),
