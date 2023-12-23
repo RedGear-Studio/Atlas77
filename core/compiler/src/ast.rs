@@ -1,5 +1,7 @@
+use rayon::prelude::*;
 use core::fmt;
-use common::{value::{Value, Type}, visitor::{Expression as CommonExpression, Visitor}};
+use common::{value::{Value, Type}, visitor::{Expression as CommonExpression, Visitor}, exit_err};
+use common::span::Span;
 
 #[derive(Debug, Clone)]
 pub enum Declaration {
@@ -114,6 +116,12 @@ impl fmt::Display for DoStatement {
 }
 
 #[derive(Debug, Clone)]
+pub struct Lambda {
+    pub args: Vec<(String, Value)>,
+    pub body: Box<Expression>,
+}
+
+#[derive(Debug, Clone)]
 pub struct FunctionCall {
     pub name: String,
     pub args: Vec<Expression>,
@@ -174,10 +182,20 @@ impl fmt::Display for BinaryExpression {
         write!(f, "({} {} {})", self.left, self.op, self.right)
     }
 }
-
 impl CommonExpression for BinaryExpression {
     fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
-        todo!("BinaryExpression::evaluate")
+        match self.op {
+            BinaryOperator::Add => {
+                /*let (lhs, rhs) = rayon::join(|| self.left.evaluate(visitor), || self.left.evaluate(visitor));
+                if let Ok(res) = lhs.add(&rhs) {
+                    res
+                } else {
+                    exit_err!("Unsupported binary operator: {}", self.op)
+                }*/
+                todo!()
+            },
+            _ => exit_err!("Unsupported binary operator: {}", self.op)
+        }
     }
 }
 
@@ -233,6 +251,32 @@ impl fmt::Display for UnaryExpression {
         }
     }
 }
+impl CommonExpression for UnaryExpression {
+    fn evaluate(&self, visitor: &mut dyn Visitor) -> Value {
+        if let Some(op) = &self.op {
+            match op {
+                UnaryOperator::Minus => {
+                    let val = self.operand.evaluate(visitor);
+                    match val {
+                        Value::Float64(f) => Value::Float64(-f),
+                        Value::Int64(n) => Value::Int64(-n),
+                        _ => exit_err!("Expected number, got {}", val)
+                    }
+                },
+                UnaryOperator::Not => {
+                    let val = self.operand.evaluate(visitor);
+                    match val {
+                        Value::Bool(b) => Value::Bool(!b),
+                        _ => exit_err!("Expected boolean, got {}", val)
+                    }
+                },
+                UnaryOperator::Plus => self.operand.evaluate(visitor)
+            }
+        } else {
+            self.operand.evaluate(visitor)
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum UnaryOperator {
@@ -249,10 +293,4 @@ impl fmt::Display for UnaryOperator {
             UnaryOperator::Plus => write!(f, "+")
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct Span {
-    pub start: usize,
-    pub end: usize
 }

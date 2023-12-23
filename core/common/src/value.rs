@@ -1,6 +1,8 @@
 use core::fmt;
 
-#[derive(Debug, Clone, PartialEq, Default)]
+use crate::visitor::Expression;
+
+#[derive(Debug, Clone, Default)]
 pub enum Value {
     Int64(i64),
 
@@ -18,6 +20,12 @@ pub enum Value {
 
     #[default]
     Undefined,
+}
+
+pub struct Lambda {
+    pub name: String,
+    pub ctx: Vec<(String, Value)>,
+    pub point: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -223,7 +231,18 @@ impl Value {
             
             (StringValue(s1), StringValue(s2)) => Ok(Bool(s1 == s2)),
             
-            (Array(a1), Array(a2)) => Ok(Bool(a1 == a2)),
+            (Array(a1), Array(a2)) => {
+                if a1.len() == a2.len() {
+                    for (i, (x, (j, y))) in a1.iter().zip(a2.iter().enumerate()).enumerate() {
+                        if x.eq(y).is_err() {
+                            return Err(format!("Invalid equality: {:?} == {:?} at index {}", self, rhs, i));
+                        }
+                    }
+                    Ok(Bool(true))
+                } else {
+                    Ok(Bool(false))
+                }
+            },
             
             _ => Err(format!("Invalid equality: {:?} == {:?}", self, rhs)),
         }
@@ -239,7 +258,9 @@ impl Value {
             
             (StringValue(s1), StringValue(s2)) => Ok(Bool(s1 != s2)),
             
-            (Array(a1), Array(a2)) => Ok(Bool(a1 != a2)),
+            (Array(a1), Array(a2)) => {
+                self.eq(rhs).and_then(|b| b.not())
+            },
 
             _ => Err(format!("Invalid not equal: {:?} != {:?}", self, rhs)),
         }

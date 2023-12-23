@@ -3,11 +3,13 @@ use common::exit_err;
 use common::{value::{Value, Type}, visitor::{Visitor, Expression}};
 
 
+#[derive(Debug)]
 struct Varmap {
     map: HashMap<String, Value>,
     parent: Option<usize>,
 }
 
+#[derive(Debug)]
 pub struct Runtime {
     varmaps: Vec<Varmap>,
     global: Varmap,

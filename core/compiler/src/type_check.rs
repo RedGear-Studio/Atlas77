@@ -196,6 +196,7 @@ impl IRContext {
                 }
                 for arm in arm_types {
                     if arm != expr_type {
+                        println!("{}", expr);
                         exit_err!("Match arms have different types {:?} and {:?}", expr_type, arm);
                     }
                 }

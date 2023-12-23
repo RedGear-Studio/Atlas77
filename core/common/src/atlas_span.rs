@@ -35,6 +35,8 @@ pub struct Span {
 
 impl Span {
     /// Creates a new `Span` without bounds checking.
+    /// # Safety
+    /// It's the caller's responsibility to ensure that `start` and `end` are valid
     pub unsafe fn new_unchecked(start: usize, end:  usize, path: &'static str) -> Self {
         Span {
             start: BytePos(start),

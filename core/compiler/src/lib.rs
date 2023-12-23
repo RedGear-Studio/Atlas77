@@ -1,6 +1,8 @@
 pub mod ast;
 pub mod grammar;
 pub mod type_check;
+pub mod nodes;
+pub mod data_type;
 use ast::Declaration;
 use common::exit_err;
 

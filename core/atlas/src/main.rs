@@ -6,5 +6,6 @@ fn main() {
     let res = parse("C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\examples\\fib.atlas");
     println!("{:?}", res);
     let runtime = Runtime::new();
-    
+    println!("{:?}", runtime);
+    //let hehe = runtime.evaluate(res as Vec<&dyn Expression>);
 }

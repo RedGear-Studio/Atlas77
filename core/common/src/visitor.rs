@@ -1,6 +1,6 @@
 use crate::value::Value;
 
-pub trait Visitor {
+pub trait Visitor : Send + Sync {
     fn visit(&mut self, expression: &dyn Expression) -> Value;
     fn evaluate(&mut self, expression: Vec<&dyn Expression>) -> Value;
     fn find_variable(&self, name: String, scope: Option<usize>) -> Option<&Value>;
@@ -12,6 +12,6 @@ pub trait Visitor {
     fn register_variable(&mut self, name: String, value: Value);
 }
 
-pub trait Expression : std::fmt::Debug {
+pub trait Expression : std::fmt::Debug + Send + Sync {
     fn evaluate(&self, visitor: &mut dyn Visitor) -> Value;
 }
