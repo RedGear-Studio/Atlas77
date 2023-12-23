@@ -6,8 +6,7 @@ members = [
     "core/compiler/errors",
     "core/compiler/semantic_analysis",
     "core/compiler",
-    "core/runtime",
-    "core/common",
+    "core/compiler/common",
     "core/atlas",
 ]
 exclude = [

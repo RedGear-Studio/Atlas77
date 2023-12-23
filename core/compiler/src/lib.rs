@@ -5,6 +5,7 @@ pub mod nodes;
 pub mod data_type;
 use ast::Declaration;
 use common::exit_err;
+use lexer::lex;
 
 pub fn parse(path: &'static str) -> Vec<Declaration> {
     let mut content = match std::fs::read_to_string(path) {
@@ -43,3 +44,14 @@ pub fn parse(path: &'static str) -> Vec<Declaration> {
     unimplemented!("Parser is currently disabled")
 }
 
+/// This function compiles the program at the given path
+pub fn compile_with_path(path: &'static str) {
+    if let Ok(content) = std::fs::read_to_string(path) {
+        compile_with_content(&content);
+    }
+}
+
+pub fn compile_with_content(content: &str) {
+    let tokens = lex(content);
+    unimplemented!("Compiler is currently disabled")
+}

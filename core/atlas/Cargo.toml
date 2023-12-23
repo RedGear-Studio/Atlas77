@@ -5,5 +5,4 @@ edition = "2021"
 
 [dependencies]
 compiler = { path = "../compiler" }
-runtime = { path = "../runtime" }
-common = { path = "../common"}
+common = { path = "../compiler/common"}
