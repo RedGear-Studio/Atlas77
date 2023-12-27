@@ -12,14 +12,10 @@
 //! This core library currently serves as the building block for the creation of Atlas77, a functional programming language.
 
 /// TODO
-pub mod language;
-/// TODO
 pub mod utils;
 /// TODO
 pub mod interfaces;
 
-#[doc(inline)]
-pub use language::*;
 #[doc(inline)]
 pub use interfaces::parser::*;
 #[doc(inline)]
@@ -29,6 +25,5 @@ pub use interfaces::lexer::token::*;
 
 /// For alphas only
 pub mod prelude {
-    pub use crate::language::*;
     pub use crate::interfaces::*;
 }

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use atlas_core::prelude::visitor::{Visitor, Program};
+use atlas_core::prelude::runtime::{Visitor, Program};
 use atlas_core::ast::*;
-use atlas_core::prelude::visitor::value::Value;
+use atlas_core::prelude::runtime::value::Value;
 
 type VarMap = HashMap<String, Value>;
 type Stack = Vec<Value>;

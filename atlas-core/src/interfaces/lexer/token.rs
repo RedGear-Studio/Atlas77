@@ -1,10 +1,33 @@
 use core::fmt;
 
-#[derive(Debug, Clone, PartialEq)]
+use internment::Intern;
+
+use crate::utils::span::{Span, Spanned};
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Token {
+    kind: TokenKind,
+    span: Span,
+}
+
+impl Spanned for Token {
+    #[inline(always)]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.kind)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 /// Represents each potential tokens in atlas.
 /// 
 /// NB: true and false are handled as keywords not as literals. This may change in the future if needed
-pub enum Token {
+pub enum TokenKind {
     //Keywords
     /// Represents the IF keyword ("if")
     KwIf,
@@ -41,7 +64,7 @@ pub enum Token {
 
     //Identifiers
     /// Represents an identifier
-    Ident(String),
+    Ident(Intern<String>),
 
     // Literals
     /// Represents an integer (64-bit) literal
@@ -51,7 +74,7 @@ pub enum Token {
     /// Represents a char literal
     Char(char),
     /// Represents a string literal
-    String_(String),
+    String_(Intern<String>),
 
     //Groupings
     /// Represents a left parenthesis
@@ -161,9 +184,9 @@ pub enum Token {
 }
 
 
-impl fmt::Display for Token {
+impl fmt::Display for TokenKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use Token::*;
+        use TokenKind::*;
         match self {
             KwIf => write!(f, "if"),
             KwElse => write!(f, "else"),
@@ -235,14 +258,5 @@ impl fmt::Display for Token {
             NewLine => write!(f, "NewLine"),
             EOF => write!(f, "EOF"),
         }
-    }
-}
-
-impl Token {
-    /// Returns the size of the token in bytes
-    /// 
-    /// > The size of the token as in the size of the string representation of the token
-    pub fn get_size(&self) -> usize {
-        self.to_string().len()
     }
 }

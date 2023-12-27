@@ -1,4 +1,4 @@
-use crate::{Token, utils::span::WithSpan};
+use crate::Token;
 
 /// TODO
 #[derive(Debug)]
@@ -7,7 +7,7 @@ pub enum ParseError {
     ///
     /// The `UnexpectedToken` variant takes a value of type `WithSpan<Token>`,
     /// which represents a token with associated source code span information.
-    UnexpectedToken(WithSpan<Token>),
+    UnexpectedToken(Token),
     /// Represents an unused token encountered during parsing.
-    UnusedToken(WithSpan<Token>),
+    UnusedToken(Token),
 }

@@ -1,8 +1,8 @@
 [package]
 name = "atlas-core"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Gipson62 <j.h.gipson62@gmail.com>"]
-description = "Core library for a programming language tool"
+description = "(In Alpha) Embeddable functional programming language"
 keywords = ["language", "tool", "programming-language", "language-agnostic"]
 categories = ["development-tools", "development-tools::build-utils"]
 license = "MIT"
@@ -22,3 +22,4 @@ ariadne = { version = "0.3.0", features = ["auto-color"] }
 heck = "0.4.1"
 # debug logs
 env_logger = { version = "0.10", optional = true }
+internment = "0.7.4"

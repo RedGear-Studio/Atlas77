@@ -5,7 +5,7 @@ pub mod lex_errors;
 
 use std::path::PathBuf;
 
-use crate::utils::span::WithSpan;
+use crate::{TokenKind, Token};
 
 /// The `Lexer` trait defines the interface for lexical analysis.
 pub trait Lexer {
@@ -25,47 +25,7 @@ pub trait Lexer {
     ///
     /// # Returns
     ///
-    /// A `Vec` of `WithSpan` objects, where each `WithSpan` contains a `token::Token` along with its associated
+    /// A `Vec` of `WithSpan` objects, where each `WithSpan` contains a `TokenKind::TokenKind` along with its associated
     /// span in the source code.
-    fn tokenize(&mut self) -> Vec<WithSpan<token::Token>>;
-    /// Checks a sequence of tokens for unknown or unexpected tokens.
-    ///
-    /// # Arguments
-    ///
-    /// * `tokens` - A slice of `WithSpan` objects, each representing a token along with its span.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` that indicates success (`Ok`) if all tokens are known and expected, or an `errors::LexerError` if
-    /// there are any issues. If the `tokens` slice is empty, an `errors::LexerError::Empty` is returned.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use my_lexer::MyLexer;
-    ///
-    /// let mut my_lexer = MyLexer::new("source_file.txt".to_string()).unwrap();
-    /// let tokens = my_lexer.tokenize();
-    ///
-    /// if let Err(err) = my_lexer.check(&tokens) {
-    ///     eprintln!("Lexer error: {:?}", err);
-    /// }
-    /// ```
-    fn check(&mut self, tokens: &[WithSpan<token::Token>]) -> Result<(), lex_errors::LexerError> {
-        if tokens.len() == 0 {
-            return Err(lex_errors::LexerError::Empty);
-        }
-        for token in tokens {
-            match token.value {
-                token::Token::Unknown(c) => {
-                    return Err(lex_errors::LexerError::UnknownToken(c, token.span))
-                }
-                token::Token::UnterminatedString => {
-                    return Err(lex_errors::LexerError::UnterminatedString)
-                }
-                _ => ()
-            }
-        }
-        Ok(())
-    }
+    fn tokenize(&mut self) -> Vec<Token>;
 }

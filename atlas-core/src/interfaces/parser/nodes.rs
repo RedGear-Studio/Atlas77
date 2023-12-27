@@ -1,6 +1,10 @@
+use internment::Intern;
+
 use crate::utils::span::{Span, Spanned};
 
 use crate::interfaces::parser::data_types::DataType;
+
+pub type Program<'a> = Vec<Node<'a>>;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Node<'a> {
@@ -48,8 +52,8 @@ impl Spanned for NodeKind<'_> {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Declaration<'a> {
     Function(Function<'a>),
-    Struct,
-    Enum,
+    Struct(Struct<'a>),
+    Enum(Enum<'a>),
     //Equivalent to `trait` in Rust
     Contract,
     Import,
@@ -61,9 +65,9 @@ impl Spanned for Declaration<'_> {
     #[inline(always)]
     fn span(&self) -> Span {
         match self {
-            Declaration::Function(decl) => decl.span,
-            Declaration::Struct => todo!(),
-            Declaration::Enum => todo!(),
+            Declaration::Function(decl) => decl.span(),
+            Declaration::Struct(s) => s.span(),
+            Declaration::Enum(e) => e.span(),
             Declaration::Contract => todo!(),
             Declaration::Import => todo!(),
             Declaration::Signature => todo!(),
@@ -72,11 +76,39 @@ impl Spanned for Declaration<'_> {
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
+pub struct Enum<'a> {
+    pub name: Intern<String>,
+    pub variants: &'a [(Intern<String>, u16)],
+    span: Span,
+}
+
+impl Spanned for Enum<'_> {
+    #[inline(always)]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct Struct<'a> {
+    pub name: Intern<String>,
+    pub fields: &'a [(Intern<String>, DataType<'a>)],
+    span: Span,
+}
+
+impl Spanned for Struct<'_> {
+    #[inline(always)]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Function<'a> {
-    pub name: &'a str,
-    pub span: Span,
+    pub name: Intern<String>,
+    span: Span,
     pub body: &'a Node<'a>,
-    pub args: &'a [(&'a str, DataType<'a>)],
+    pub args: &'a [(Intern<String>, DataType<'a>)],
     pub return_type: DataType<'a>,
 }
 
@@ -90,7 +122,7 @@ impl Spanned for Function<'_> {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Expression<'a> {
     BinaryOp(BinaryExpression<'a>),
-    Literal(Literal<'a>),
+    Literal(Literal),
     UnaryOp(UnaryExpression<'a>),
     FunctionCall(FunctionCall<'a>),
     Variable(VariableDecl<'a>),
@@ -141,7 +173,7 @@ impl Spanned for MatchArm<'_> {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Lambda<'a> {
     //Should there only be one arg? (arity of 1 by default in the language for lambdas)
-    pub args: &'a [&'a str],
+    pub args: &'a [Intern<String>],
     pub body: &'a Node<'a>,
 }
 
@@ -181,7 +213,7 @@ impl Spanned for UnaryExpression<'_> {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct FunctionCall<'a> {
-    pub name: &'a str,
+    pub name: Intern<String>,
     pub args: &'a [Node<'a>],
     pub span: Span,
 }
@@ -195,7 +227,7 @@ impl Spanned for FunctionCall<'_> {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct VariableDecl<'a> {
-    pub name: &'a str,
+    pub name: Intern<String>,
     pub span: Span,
     pub ty: DataType<'a>,
 }
@@ -208,12 +240,12 @@ impl Spanned for VariableDecl<'_> {
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Literal<'a> {
-    val: LiteralValue<'a>,
+pub struct Literal {
+    val: LiteralValue,
     span: Span,
 }
 
-impl Spanned for Literal<'_> {
+impl Spanned for Literal {
     #[inline(always)]
     fn span(&self) -> Span {
         self.span
@@ -221,8 +253,8 @@ impl Spanned for Literal<'_> {
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub enum LiteralValue<'a> {
-    String(&'a str),
+pub enum LiteralValue {
+    String(Intern<String>),
     Int(i64),
     Float(f64),
     Bool(bool),
