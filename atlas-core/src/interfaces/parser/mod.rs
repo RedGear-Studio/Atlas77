@@ -12,6 +12,9 @@ pub mod parse_errors;
 /// Contains all the definition of the Node trait
 pub mod node;
 
+pub mod nodes;
+pub mod data_types;
+
 /// The `Parser` trait defines the interface for parsing source code and generating an abstract syntax tree (AST).
 /// 
 /// There should be at least 2 field on your parser:
