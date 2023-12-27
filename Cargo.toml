@@ -1,10 +1,9 @@
 [workspace]
 resolver = "1"
 members = [
-    "atlas-core",
-    "atlas-test"
+    "atlas",
+    "compiler",
 ]
-
 [profile.bench]
 opt-level = 3
 lto = true

@@ -1,18 +1,19 @@
-use atlas_core::{utils::span::{WithSpan, BytePos, Span}, interfaces::lexer::{Lexer, token::Token}};
-use std::{fs::File, iter::Peekable, collections::HashMap, path::PathBuf};
-use std::io::{BufRead, BufReader};
-use Token::*;
+use atlas_core::{utils::span::{BytePos, Span}, interfaces::lexer::{Lexer, token::Token}, Literal, TokenKind, Keyword};
+use std::{iter::Peekable, collections::HashMap, str::Chars};
+use internment::Intern;
+
+use crate::{map, exit_err};
 
 /// Default Lexer and base one for the Atlas77 language
-pub struct SimpleLexerV1 {
-    file_path: PathBuf,
+pub struct AtlasLexer<'a> {
+    path: &'static str,
     current_pos: BytePos,
-    it: Peekable<std::vec::IntoIter<char>>,
-    keywords: HashMap<String, Token>,
+    it: Peekable<Chars<'a>>,
+    keywords: HashMap<Intern<String>, TokenKind>,
 }
 
-impl Lexer for SimpleLexerV1 {
-    fn with_text(&mut self, text: String) -> Result<(), std::io::Error> {
+impl<'a> Lexer for AtlasLexer<'_> {
+    /*fn with_text(&mut self, text: String) -> Result<(), std::io::Error> {
         self.it = text.chars().collect::<Vec<_>>().into_iter().peekable();
         let mut keywords = HashMap::new();
         keywords.insert("struct".to_owned(), KwStruct);
@@ -37,46 +38,10 @@ impl Lexer for SimpleLexerV1 {
         self.keywords = keywords;
 
         Ok(())
-    }
-    fn with_file_path(&mut self, file_path: PathBuf) -> Result<(), std::io::Error> {
-        let file = File::open(file_path.clone())?;
-        let reader = BufReader::new(file);
+    }*/
 
-        let mut source_code = Vec::new();
-        for line in reader.lines() {
-            source_code.extend(line?.chars());
-            source_code.push('\n'); // Add newline character for line breaks
-        }
-        let mut keywords = HashMap::new();
-        keywords.insert("struct".to_owned(), KwStruct);
-        keywords.insert("else".to_owned(), KwElse);
-        keywords.insert("false".to_owned(), KwFalse);
-        keywords.insert("List".to_owned(), KwList);
-        keywords.insert("Map".to_owned(), KwMap);
-        keywords.insert("if".to_owned(), KwIf);
-        keywords.insert("return".to_owned(), KwReturn);
-        keywords.insert("true".to_owned(), KwTrue);
-        keywords.insert("let".to_owned(), KwLet);
-        keywords.insert("char".to_owned(), KwChar);
-        keywords.insert("f64".to_owned(), KwF64);
-        keywords.insert("i64".to_owned(), KwI64);
-        keywords.insert("string".to_owned(), KwString);
-        keywords.insert("bool".to_owned(), KwBool);
-        keywords.insert("enum".to_owned(), KwEnum);
-        keywords.insert("do".to_owned(), KwDo);
-        keywords.insert("end".to_owned(), KwEnd);
-        keywords.insert("then".to_owned(), KwThen);
-        keywords.insert("match".to_owned(), KwMatch);
-
-        self.keywords = keywords;
-        self.file_path = file_path;
-        self.it = source_code.into_iter().peekable();
-
-        Ok(())
-    }
-
-    fn tokenize(&mut self) -> Vec<WithSpan<Token>> {
-        let mut tokens: Vec<WithSpan<Token>> = Vec::new();
+    fn tokenize(&mut self, path: &'static str) -> Vec<Token> {
+        let mut tokens = Vec::new();
 
         loop {
             let start_pos = self.current_pos;
@@ -85,30 +50,31 @@ impl Lexer for SimpleLexerV1 {
                 Some(c) => c,
             };
             
-            if let Some(t_token) = self.match_t_token(ch) {
-                tokens.push(WithSpan {
+            if let Some(kind) = self.match_t_token(ch) {
+                tokens.push(Token {
+                    kind,
                     span: Span {
                         start: start_pos,
                         end: self.current_pos,
-                    },
-                    value: t_token,
-                })
+                        path: self.path,
+                    }
+                });
             }
         }
-
-        tokens
+        return tokens;
     }
 }
 
-impl SimpleLexerV1 {
-    /// Create a new empty `SimpleLexerV1`
-    pub fn new() -> Self {
-        SimpleLexerV1 {
-            file_path: PathBuf::default(),
-            it: " ".chars().collect::<Vec<_>>().into_iter().peekable(),
+impl<'a> AtlasLexer<'a> {
+    /// Create a new empty `AtlasLexer`
+    /// Is it really how I should do it?
+    pub fn new(path: &'static str, contents: &'a mut String) -> Self {
+        AtlasLexer {
+            path: path,
+            it: contents.chars().peekable(),
             current_pos: BytePos::default(),
             keywords: HashMap::new()
-        }
+        }        
     }
 
     fn next(&mut self) -> Option<char> {
@@ -123,7 +89,7 @@ impl SimpleLexerV1 {
         self.it.peek()
     }
 
-    fn either(&mut self, to_match: char, matched: Token, unmatched: Token) -> Token {
+    fn either(&mut self, to_match: char, matched: TokenKind, unmatched: TokenKind) -> TokenKind {
         if self.consume_if(|c| c == to_match) {
             matched
         } else {
@@ -185,8 +151,8 @@ impl SimpleLexerV1 {
         chars
     }
 
-    fn match_t_token(&mut self, ch: char) -> Option<Token> {
-        use Token::*;
+    fn match_t_token(&mut self, ch: char) -> Option<TokenKind> {
+        use TokenKind::*;
         match ch {
             '\n' | '\t' | ' ' | '\r' => {
                 if !self.peek().is_none() {
@@ -202,16 +168,10 @@ impl SimpleLexerV1 {
             '}' => Some(RBrace),
             '[' => Some(LBracket),
             ']' => Some(RBracket),
-            '+' => Some(self.either('=', OpAssignAdd, OpAdd)),
+            '+' => Some(Plus),
             '_' => Some(Underscore),
-            '-' => {
-                if self.consume_if(|c| c == '>') {
-                    Some(RArrow)
-                } else {
-                    Some(self.either('=', OpAssignSub, OpSub))
-                }
-            }
-            '*' => Some(self.either('=', OpAssignMul, OpMul)),
+            '-' => Some(self.either('>', RArrow, Minus)),
+            '*' => Some(Star),
             //TODO: Add support for multiline comments
             '/' => {
                 if self.consume_if(|c| c == '/') {
@@ -223,51 +183,38 @@ impl SimpleLexerV1 {
                         None
                     }
                 } else {
-                    Some(self.either('=', OpAssignDiv, OpDiv))
+                    Some(Slash)
                 }
             },
             '\\' => {
-                Some(BackSlash)
+                //Add support for escaping characters
+                Some(Backslash)
             }
-            '%' => Some(self.either('=', OpAssignMod, OpMod)),
-            '^' => Some(OpPow),
+            '%' => Some(Percent),
+            '^' => Some(Caret),
             '<' => {
                 if self.consume_if(|c| c == '=') {
-                    Some(OpLe)
+                    Some(LtEq)
                 } else {
-                    Some(self.either('-', LArrow, OpLt))
+                    Some(self.either('-', LArrow, LAngle))
                 }
             },
-            '>' => Some(self.either('=', OpGe, OpGt)),
+            '>' => Some(self.either('=', GtEq, RAngle)),
             '=' => {
                 if self.consume_if(|ch| ch == '>') {
                     Some(FatArrow)
                 } else {
-                    Some(self.either('=', OpEq, OpAssign))
+                    Some(self.either('=', DoubleEq, Eq))
                 }
             },
-            '&' => {
-                Some(self.either('&', OpAnd, Ampersand))
-            },
-            '|' => {
-                Some(self.either('|', OpOr, Pipe))
-            },
-            '!' => {
-                Some(self.either('=', OpNe, OpNot))
-            },
+            '&' => Some(Ampersand),
+            '|' => Some(Pipe),
+            '!' => Some(self.either('=', NEq, Bang)),
             //Logical
-            ':' => {
-                Some(self.either(':', DoubleColon, Colon))
-            },
-            ';' => {
-                Some(Semicolon)
-            },
-            ',' => {
-                Some(Comma)
-            },
-            '.' => {
-                Some(self.either('.', DoubleDot, Dot))
-            },
+            ':' => Some(self.either(':', DoubleColon, Colon)),
+            ';' => Some(SemiColon),
+            ',' => Some(Comma),
+            '.' => Some(self.either('.', DoubleDot, Dot)),
             //Identifiers
             ch if ch.is_alphabetic() || ch == '_' => {
                 Some(self.identifier(ch).unwrap())
@@ -279,21 +226,15 @@ impl SimpleLexerV1 {
                 let mut string = String::new();
                 string.push_str(self.consume_while(|ch| ch != '"').iter().collect::<String>().as_ref());
                 self.next().unwrap();
-                Some(String_(string))
-            },
-            //TODO: Be able to use the escape character (backslash) in strings and chars
-            '\'' => {
-                let ch = self.next().unwrap();
-                self.next().unwrap();
-                Some(Char(ch))
+                Some(TokenKind::Literal(atlas_core::Literal::StringLiteral(Intern::new(string))))
             },
             '?' => Some(Question),
 
-            c => Some(Unknown(c))
+            c => Some(UnknownChar(c))
         }
     }
 
-    fn identifier(&mut self, c: char) -> Option<Token> {
+    fn identifier(&mut self, c: char) -> Option<TokenKind> {
         let mut ident = String::new();
         ident.push(c);
 
@@ -304,15 +245,16 @@ impl SimpleLexerV1 {
                 break;
             }
         }
+        let id = Intern::new(ident.to_owned());
 
-        if let Some(k) = self.keywords.get(&ident) {
+        if let Some(k) = self.keywords.get(&id) {
             Some(k.clone())
         } else {
-            Some(Token::Ident(ident))
+            Some(TokenKind::Literal(Literal::Identifier(id)))
         }        
     }
 
-    fn number(&mut self, c: char) -> Option<Token> {
+    fn number(&mut self, c: char) -> Option<TokenKind> {
         let mut number = String::new();
         number.push(c);
 
@@ -331,10 +273,16 @@ impl SimpleLexerV1 {
                 .collect();
             number.push_str(&num);
 
-            Some(Token::Float(number.parse::<f64>().unwrap()))
+            Some(TokenKind::Literal(Literal::Float(number.parse::<f64>().unwrap())))
         } else {
-            Some(Token::Int(number.parse::<i64>().unwrap()))
+            Some(TokenKind::Literal(Literal::Int(number.parse::<i64>().unwrap())))
         }
     }
     
+    fn populate_keyword(&mut self) {
+
+        self.keywords = map!{
+            Intern::new(String::from("struct")) => TokenKind::Keyword(Keyword::Struct)
+        }
+    }
 }

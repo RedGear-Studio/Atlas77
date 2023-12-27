@@ -1,7 +1,5 @@
-pub mod simple_lexer;
 pub mod simple_parser;
 pub mod simple_visitor;
-pub mod simple_cli;
 
 use clap::Parser as ClapParser;
 
@@ -14,7 +12,22 @@ struct Args {
 }
 
 fn main() {
-    let args = Args::parse();
+    
+}
 
-    simple_cli::run(args.run);    
+#[macro_export]
+macro_rules! map {
+    (&key: ty, &val: ty) => {
+        {
+            let map: HashMap<&key, &val> = HashMap::new();
+            map
+        }
+    };
+    ($($key:expr => $val:expr),*) => {
+        {
+            let mut map = HashMap::new();
+            $(map.insert($key, $val);)*
+            map
+        }
+    }
 }
