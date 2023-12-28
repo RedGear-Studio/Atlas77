@@ -1,9 +1,13 @@
-use atlas_core::{utils::span::{BytePos, Span}, interfaces::lexer::{Lexer, token::Token}, Literal, TokenKind, Keyword};
+mod lex_error;
+
+use atlas_core::{utils::span::{BytePos, Span}, interfaces::lexer::{Lexer, token::Token}, Literal, TokenKind, Keyword, lexer_errors::LexerError};
 use std::{iter::Peekable, collections::HashMap, str::Chars};
 use internment::Intern;
 
-use crate::{map, exit_err};
+use crate::map;
+use self::lex_error::LexError;
 
+#[derive(Debug, Clone)]
 /// Default Lexer and base one for the Atlas77 language
 pub struct AtlasLexer<'a> {
     path: &'static str,
@@ -13,34 +17,7 @@ pub struct AtlasLexer<'a> {
 }
 
 impl<'a> Lexer for AtlasLexer<'_> {
-    /*fn with_text(&mut self, text: String) -> Result<(), std::io::Error> {
-        self.it = text.chars().collect::<Vec<_>>().into_iter().peekable();
-        let mut keywords = HashMap::new();
-        keywords.insert("struct".to_owned(), KwStruct);
-        keywords.insert("else".to_owned(), KwElse);
-        keywords.insert("false".to_owned(), KwFalse);
-        keywords.insert("List".to_owned(), KwList);
-        keywords.insert("Map".to_owned(), KwMap);
-        keywords.insert("if".to_owned(), KwIf);
-        keywords.insert("return".to_owned(), KwReturn);
-        keywords.insert("true".to_owned(), KwTrue);
-        keywords.insert("let".to_owned(), KwLet);
-        keywords.insert("char".to_owned(), KwChar);
-        keywords.insert("f64".to_owned(), KwF64);
-        keywords.insert("i64".to_owned(), KwI64);
-        keywords.insert("string".to_owned(), KwString);
-        keywords.insert("bool".to_owned(), KwBool);
-        keywords.insert("enum".to_owned(), KwEnum);
-        keywords.insert("do".to_owned(), KwDo);
-        keywords.insert("end".to_owned(), KwEnd);
-        keywords.insert("then".to_owned(), KwThen);
-
-        self.keywords = keywords;
-
-        Ok(())
-    }*/
-
-    fn tokenize(&mut self, path: &'static str) -> Vec<Token> {
+    fn tokenize(&mut self) -> Result<Vec<Token>, Box<dyn LexerError>> {
         let mut tokens = Vec::new();
 
         loop {
@@ -50,31 +27,62 @@ impl<'a> Lexer for AtlasLexer<'_> {
                 Some(c) => c,
             };
             
-            if let Some(kind) = self.match_t_token(ch) {
-                tokens.push(Token {
-                    kind,
-                    span: Span {
-                        start: start_pos,
-                        end: self.current_pos,
-                        path: self.path,
+            if let Some(kind) = self.lex(ch) {
+                match kind {
+                    TokenKind::EOI => {
+                        tokens.push(Token::new(
+                            Span {
+                                start: start_pos,
+                                end: self.current_pos,
+                                path: self.path,
+                            },
+                            TokenKind::EOI
+                        ));
+                        break
+                    },
+                    TokenKind::UnknownChar(c) => {
+                        let err = LexError::UnknownCharacter {
+                            ch: c,
+                            code: 0,
+                            span: Span {
+                                start: start_pos,
+                                end: self.current_pos,
+                                path: self.path,
+                            },
+                            recoverable: true
+                        };
+                        return Err(Box::new(err));
+                    },
+                    _ => {
+                        tokens.push(Token::new(
+                            Span {
+                                start: start_pos,
+                                end: self.current_pos,
+                                path: self.path,
+                            },
+                            kind
+                        ));
                     }
-                });
+                }
+                
             }
         }
-        return tokens;
+        return Ok(tokens);
     }
 }
 
 impl<'a> AtlasLexer<'a> {
     /// Create a new empty `AtlasLexer`
     /// Is it really how I should do it?
-    pub fn new(path: &'static str, contents: &'a mut String) -> Self {
-        AtlasLexer {
-            path: path,
+    pub fn new(path: &'static str, contents: &'a str) -> Self {
+        let mut a = AtlasLexer {
+            path,
             it: contents.chars().peekable(),
             current_pos: BytePos::default(),
             keywords: HashMap::new()
-        }        
+        };
+        a.populate_keyword();
+        a
     }
 
     fn next(&mut self) -> Option<char> {
@@ -151,13 +159,13 @@ impl<'a> AtlasLexer<'a> {
         chars
     }
 
-    fn match_t_token(&mut self, ch: char) -> Option<TokenKind> {
+    fn lex(&mut self, ch: char) -> Option<TokenKind> {
         use TokenKind::*;
         match ch {
             '\n' | '\t' | ' ' | '\r' => {
                 if !self.peek().is_none() {
                     let ch = self.next().unwrap();
-                    self.match_t_token(ch)
+                    self.lex(ch)
                 } else {
                     None
                 }
@@ -178,7 +186,7 @@ impl<'a> AtlasLexer<'a> {
                     self.consume_while(|c| c != '\n');
                     if !self.peek().is_none() {
                         let ch = self.next().unwrap();
-                        self.match_t_token(ch)
+                        self.lex(ch)
                     } else {
                         None
                     }
@@ -282,7 +290,21 @@ impl<'a> AtlasLexer<'a> {
     fn populate_keyword(&mut self) {
 
         self.keywords = map!{
-            Intern::new(String::from("struct")) => TokenKind::Keyword(Keyword::Struct)
+            Intern::new(String::from("struct")) => TokenKind::Keyword(Keyword::Struct),
+            Intern::new(String::from("let")) => TokenKind::Keyword(Keyword::Let)
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_lexer() {
+        let mut lexer = AtlasLexer::new("<stdin>", "let main() -> i64 = 5;");
+        println!("Lexer: {:?}", lexer);
+        let tokens = lexer.tokenize().unwrap();
+        assert_eq!(tokens[0].kind(), TokenKind::Keyword(Keyword::Let));
+        println!("Tokens: {:?}", tokens);
     }
 }

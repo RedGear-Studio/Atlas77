@@ -12,7 +12,7 @@ struct Args {
 }
 
 fn main() {
-    
+    std::fs::read_to_string("salut");   
 }
 
 #[macro_export]
