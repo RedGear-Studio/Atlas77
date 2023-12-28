@@ -223,6 +223,11 @@ impl<'a> AtlasLexer<'a> {
             ';' => Some(SemiColon),
             ',' => Some(Comma),
             '.' => Some(self.either('.', DoubleDot, Dot)),
+            '@' => Some(At),
+            '#' => Some(HashTag),
+            '~' => Some(Tilde),
+            '?' => Some(Question),
+            '$' => Some(Dollar),
             //Identifiers
             ch if ch.is_alphabetic() || ch == '_' => {
                 Some(self.identifier(ch).unwrap())
@@ -236,8 +241,6 @@ impl<'a> AtlasLexer<'a> {
                 self.next().unwrap();
                 Some(TokenKind::Literal(atlas_core::Literal::StringLiteral(Intern::new(string))))
             },
-            '?' => Some(Question),
-
             c => Some(UnknownChar(c))
         }
     }
@@ -291,7 +294,18 @@ impl<'a> AtlasLexer<'a> {
 
         self.keywords = map!{
             Intern::new(String::from("struct")) => TokenKind::Keyword(Keyword::Struct),
-            Intern::new(String::from("let")) => TokenKind::Keyword(Keyword::Let)
+            Intern::new(String::from("let")) => TokenKind::Keyword(Keyword::Let),
+            Intern::new(String::from("i64")) => TokenKind::Literal(Literal::Identifier(Intern::new(String::from("i64")))),
+            Intern::new(String::from("f64")) => TokenKind::Literal(Literal::Identifier(Intern::new(String::from("f64")))),
+            Intern::new(String::from("bool")) => TokenKind::Literal(Literal::Identifier(Intern::new(String::from("bool")))),
+            Intern::new(String::from("string")) => TokenKind::Literal(Literal::Identifier(Intern::new(String::from("string")))),
+            Intern::new(String::from("match")) => TokenKind::Keyword(Keyword::Match),
+            Intern::new(String::from("as")) => TokenKind::Keyword(Keyword::As),
+            Intern::new(String::from("enum")) => TokenKind::Keyword(Keyword::Enum),
+            Intern::new(String::from("do")) => TokenKind::Keyword(Keyword::Do),
+            Intern::new(String::from("with")) => TokenKind::Keyword(Keyword::With),
+            Intern::new(String::from("or")) => TokenKind::Keyword(Keyword::Or),
+            Intern::new(String::from("And")) => TokenKind::Keyword(Keyword::And)
         }
     }
 }
@@ -301,7 +315,7 @@ mod test {
     use super::*;
     #[test]
     fn test_lexer() {
-        let mut lexer = AtlasLexer::new("<stdin>", "let main() -> i64 = 5;");
+        let mut lexer = AtlasLexer::new("<stdin>", "let x: i64 = 5");
         println!("Lexer: {:?}", lexer);
         let tokens = lexer.tokenize().unwrap();
         assert_eq!(tokens[0].kind(), TokenKind::Keyword(Keyword::Let));

@@ -1,0 +1,4 @@
+let i: i64 = 5
+let f: f64 = 5.0
+let b: bool = true
+let s: string = "hello"

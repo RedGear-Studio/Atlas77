@@ -1,18 +1,24 @@
 pub mod simple_parser;
 pub mod simple_visitor;
-
-use clap::Parser as ClapParser;
-
-#[derive(ClapParser, Debug)]
-#[clap(author = "Gipson62", version, about = "Programming language made in Rust", long_about = None)]
-struct Args {
-    /// Run you program at the given <PATH>
-    #[arg(short, long, value_name = "PATH")]
-    run: String,
-}
+use atlas_core::{Lexer, Token, utils::span::Spanned};
+use compiler::lexer::AtlasLexer;
 
 fn main() {
-    std::fs::read_to_string("salut");   
+    let path: &'static str = "C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\examples\\test.atlas";
+    let contents = std::fs::read_to_string(path).unwrap();
+    let mut lexer = AtlasLexer::new(path, &contents);
+    let tokens = lexer.tokenize().unwrap();
+    tokens.iter().for_each(|t| print!("{}", t.to_string()));
+}
+
+impl Hehe for Token {
+    fn to_string(&self) -> String {
+        format!("[\"{}\"-{}:{}]", self.kind(), self.span().start(), self.span().end())
+    }
+}
+
+pub trait Hehe {
+    fn to_string(&self) -> String;
 }
 
 #[macro_export]
