@@ -1,4 +1,26 @@
+use atlas_core::{Lexer, Token, utils::span::Spanned};
+use lexer::AtlasLexer;
+
 pub mod lexer;
+pub mod parser;
+
+pub fn compile(path: &'static str) {
+    let contents = std::fs::read_to_string(path).unwrap();
+    let mut lexer = AtlasLexer::new(path, &contents);
+    let tokens = lexer.tokenize().unwrap();
+    tokens.iter().for_each(|t| print!("{}", t.to_string()));
+}
+
+//I forgot to implement `Display` in `Token` lmao
+impl Hehe for Token {
+    fn to_string(&self) -> String {
+        format!("[\"{}\"-{}:{}]", self.kind(), self.span().start(), self.span().end())
+    }
+}
+
+pub trait Hehe {
+    fn to_string(&self) -> String;
+}
 
 #[macro_export]
 macro_rules! map {

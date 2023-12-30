@@ -1,6 +1,6 @@
 mod lex_error;
 
-use atlas_core::{utils::span::{BytePos, Span}, interfaces::lexer::{Lexer, token::Token}, Literal, TokenKind, Keyword, lexer_errors::LexerError};
+use atlas_core::{utils::span::{BytePos, Span}, interfaces::{lexer::{Lexer, token::Token}, error::Error}, Literal, TokenKind, lexer_errors::LexerError};
 use std::{iter::Peekable, collections::HashMap, str::Chars};
 use internment::Intern;
 
@@ -9,7 +9,7 @@ use self::lex_error::LexError;
 
 #[derive(Debug, Clone)]
 /// Default Lexer and base one for the Atlas77 language
-pub struct AtlasLexer<'a> {
+pub(crate) struct AtlasLexer<'a> {
     path: &'static str,
     current_pos: BytePos,
     it: Peekable<Chars<'a>>,
@@ -18,7 +18,14 @@ pub struct AtlasLexer<'a> {
 
 impl<'a> Lexer for AtlasLexer<'_> {
     fn tokenize(&mut self) -> Result<Vec<Token>, Box<dyn LexerError>> {
-        let mut tokens = Vec::new();
+        let mut tokens = vec![
+            Token::new(Span {
+                start: BytePos::default(),
+                end: BytePos::default(),
+                path: self.path,
+            },
+            TokenKind::SoI)
+        ];
 
         loop {
             let start_pos = self.current_pos;
@@ -26,32 +33,57 @@ impl<'a> Lexer for AtlasLexer<'_> {
                 None => break,
                 Some(c) => c,
             };
+
+            match self.lex(ch) {
+                Ok(kind) => {
+                    tokens.push(Token::new(
+                        Span {
+                            start: start_pos,
+                            end: self.current_pos,
+                            path: self.path,
+                        },
+                        kind
+                    ));
+                    if kind == TokenKind::EoI {
+                        break;
+                    }
+                },
+                Err(err) => {
+                    println!("Error: {}", err);
+                    if !err.recoverable() {
+                        break
+                    }
+                }
+            }
             
-            if let Some(kind) = self.lex(ch) {
+            /*if let Ok(kind) = self.lex(ch) {
                 match kind {
-                    TokenKind::EOI => {
+                    TokenKind::EoI => {
                         tokens.push(Token::new(
                             Span {
                                 start: start_pos,
                                 end: self.current_pos,
                                 path: self.path,
                             },
-                            TokenKind::EOI
+                            kind
                         ));
                         break
                     },
                     TokenKind::UnknownChar(c) => {
-                        let err = LexError::UnknownCharacter {
-                            ch: c,
-                            code: 0,
-                            span: Span {
-                                start: start_pos,
-                                end: self.current_pos,
-                                path: self.path,
-                            },
-                            recoverable: true
-                        };
-                        return Err(Box::new(err));
+                        return Err(
+                            Box::new(
+                                LexError::UnknownCharacter {
+                                    ch: c,
+                                    code: 0,
+                                    span: Span {
+                                        start: start_pos,
+                                        end: self.current_pos,
+                                        path: self.path,
+                                    },
+                                    recoverable: true
+                                }
+                            )
+                        );
                     },
                     _ => {
                         tokens.push(Token::new(
@@ -67,6 +99,16 @@ impl<'a> Lexer for AtlasLexer<'_> {
                 
             }
         }
+        if tokens.last().unwrap().kind() != TokenKind::EoI {
+            tokens.push(Token::new(
+                Span {
+                    start: self.current_pos,
+                    end: self.current_pos,
+                    path: self.path,
+                }, 
+                TokenKind::EoI
+            ));*/
+        }
         return Ok(tokens);
     }
 }
@@ -74,7 +116,7 @@ impl<'a> Lexer for AtlasLexer<'_> {
 impl<'a> AtlasLexer<'a> {
     /// Create a new empty `AtlasLexer`
     /// Is it really how I should do it?
-    pub fn new(path: &'static str, contents: &'a str) -> Self {
+    pub(crate) fn new(path: &'static str, contents: &'a str) -> Self {
         let mut a = AtlasLexer {
             path,
             it: contents.chars().peekable(),
@@ -159,7 +201,7 @@ impl<'a> AtlasLexer<'a> {
         chars
     }
 
-    fn lex(&mut self, ch: char) -> Option<TokenKind> {
+    fn lex(&mut self, ch: char) -> Result<TokenKind, LexError> {
         use TokenKind::*;
         match ch {
             '\n' | '\t' | ' ' | '\r' => {
@@ -167,19 +209,27 @@ impl<'a> AtlasLexer<'a> {
                     let ch = self.next().unwrap();
                     self.lex(ch)
                 } else {
-                    None
+                    Err(LexError::UnexpectedEndOfInput { 
+                        span: Span {
+                            start: self.current_pos,
+                            end: self.current_pos,
+                            path: self.path,
+                        },
+                        recoverable: false,
+                        code: 2
+                    })
                 }
             },
-            '(' => Some(LParen),
-            ')' => Some(RParen),
-            '{' => Some(LBrace),
-            '}' => Some(RBrace),
-            '[' => Some(LBracket),
-            ']' => Some(RBracket),
-            '+' => Some(Plus),
-            '_' => Some(Underscore),
-            '-' => Some(self.either('>', RArrow, Minus)),
-            '*' => Some(Star),
+            '(' => Ok(LParen),
+            ')' => Ok(RParen),
+            '{' => Ok(LBrace),
+            '}' => Ok(RBrace),
+            '[' => Ok(LBracket),
+            ']' => Ok(RBracket),
+            '+' => Ok(Plus),
+            '_' => Ok(Underscore),
+            '-' => Ok(self.either('>', RArrow, Minus)),
+            '*' => Ok(Star),
             //TODO: Add support for multiline comments
             '/' => {
                 if self.consume_if(|c| c == '/') {
@@ -188,60 +238,77 @@ impl<'a> AtlasLexer<'a> {
                         let ch = self.next().unwrap();
                         self.lex(ch)
                     } else {
-                        None
+                        Err(LexError::UnexpectedEndOfInput { 
+                            span: Span {
+                                start: self.current_pos,
+                                end: self.current_pos,
+                                path: self.path,
+                            },
+                            recoverable: false,
+                            code: 2
+                        })
                     }
                 } else {
-                    Some(Slash)
+                    Ok(Slash)
                 }
             },
             '\\' => {
                 //Add support for escaping characters
-                Some(Backslash)
+                Ok(Backslash)
             }
-            '%' => Some(Percent),
-            '^' => Some(Caret),
+            '%' => Ok(Percent),
+            '^' => Ok(Caret),
             '<' => {
                 if self.consume_if(|c| c == '=') {
-                    Some(LtEq)
+                    Ok(LtEq)
                 } else {
-                    Some(self.either('-', LArrow, LAngle))
+                    Ok(self.either('-', LArrow, LAngle))
                 }
             },
-            '>' => Some(self.either('=', GtEq, RAngle)),
+            '>' => Ok(self.either('=', GtEq, RAngle)),
             '=' => {
                 if self.consume_if(|ch| ch == '>') {
-                    Some(FatArrow)
+                    Ok(FatArrow)
                 } else {
-                    Some(self.either('=', DoubleEq, Eq))
+                    Ok(self.either('=', DoubleEq, Eq))
                 }
             },
-            '&' => Some(Ampersand),
-            '|' => Some(Pipe),
-            '!' => Some(self.either('=', NEq, Bang)),
+            '&' => Ok(Ampersand),
+            '|' => Ok(Pipe),
+            '!' => Ok(self.either('=', NEq, Bang)),
             //Logical
-            ':' => Some(self.either(':', DoubleColon, Colon)),
-            ';' => Some(SemiColon),
-            ',' => Some(Comma),
-            '.' => Some(self.either('.', DoubleDot, Dot)),
-            '@' => Some(At),
-            '#' => Some(HashTag),
-            '~' => Some(Tilde),
-            '?' => Some(Question),
-            '$' => Some(Dollar),
+            ':' => Ok(self.either(':', DoubleColon, Colon)),
+            ';' => Ok(SemiColon),
+            ',' => Ok(Comma),
+            '.' => Ok(self.either('.', DoubleDot, Dot)),
+            '@' => Ok(At),
+            '#' => Ok(HashTag),
+            '~' => Ok(Tilde),
+            '?' => Ok(Question),
+            '$' => Ok(Dollar),
             //Identifiers
             ch if ch.is_alphabetic() || ch == '_' => {
-                Some(self.identifier(ch).unwrap())
+                Ok(self.identifier(ch).unwrap())
             },
             x if x.is_numeric() => {
-                Some(self.number(x).unwrap())
+                Ok(self.number(x).unwrap())
             },
             '"' => {
                 let mut string = String::new();
                 string.push_str(self.consume_while(|ch| ch != '"').iter().collect::<String>().as_ref());
                 self.next().unwrap();
-                Some(TokenKind::Literal(atlas_core::Literal::StringLiteral(Intern::new(string))))
+                Ok(TokenKind::Literal(atlas_core::Literal::StringLiteral(Intern::new(string))))
             },
-            c => Some(UnknownChar(c))
+            c => Err(LexError::UnknownCharacter {
+                ch: c,
+                code: 0,
+                span: Span {
+                    start: self.current_pos,
+                    end: self.current_pos.shift(c),
+                    path: self.path,
+                },
+                recoverable: true
+            })
         }
     }
 
@@ -293,19 +360,18 @@ impl<'a> AtlasLexer<'a> {
     fn populate_keyword(&mut self) {
 
         self.keywords = map!{
-            Intern::new(String::from("struct")) => TokenKind::Keyword(Keyword::Struct),
-            Intern::new(String::from("let")) => TokenKind::Keyword(Keyword::Let),
-            Intern::new(String::from("i64")) => TokenKind::Literal(Literal::Identifier(Intern::new(String::from("i64")))),
-            Intern::new(String::from("f64")) => TokenKind::Literal(Literal::Identifier(Intern::new(String::from("f64")))),
-            Intern::new(String::from("bool")) => TokenKind::Literal(Literal::Identifier(Intern::new(String::from("bool")))),
-            Intern::new(String::from("string")) => TokenKind::Literal(Literal::Identifier(Intern::new(String::from("string")))),
-            Intern::new(String::from("match")) => TokenKind::Keyword(Keyword::Match),
-            Intern::new(String::from("as")) => TokenKind::Keyword(Keyword::As),
-            Intern::new(String::from("enum")) => TokenKind::Keyword(Keyword::Enum),
-            Intern::new(String::from("do")) => TokenKind::Keyword(Keyword::Do),
-            Intern::new(String::from("with")) => TokenKind::Keyword(Keyword::With),
-            Intern::new(String::from("or")) => TokenKind::Keyword(Keyword::Or),
-            Intern::new(String::from("And")) => TokenKind::Keyword(Keyword::And)
+            Intern::new(String::from("match")) => TokenKind::Keyword(Intern::new(String::from("match"))),
+            Intern::new(String::from("as")) => TokenKind::Keyword(Intern::new(String::from("as"))),
+            Intern::new(String::from("enum")) => TokenKind::Keyword(Intern::new(String::from("enum"))),
+            Intern::new(String::from("do")) => TokenKind::Keyword(Intern::new(String::from("do"))),
+            Intern::new(String::from("with")) => TokenKind::Keyword(Intern::new(String::from("with"))),
+            Intern::new(String::from("or")) => TokenKind::Keyword(Intern::new(String::from("or"))),
+            Intern::new(String::from("And")) => TokenKind::Keyword(Intern::new(String::from("and"))),
+            Intern::new(String::from("struct")) => TokenKind::Keyword(Intern::new(String::from("struct"))),
+            Intern::new(String::from("let")) => TokenKind::Keyword(Intern::new(String::from("let"))),
+            Intern::new(String::from("fn")) => TokenKind::Keyword(Intern::new(String::from("fn"))),
+            Intern::new(String::from("in")) => TokenKind::Keyword(Intern::new(String::from("in")))
+
         }
     }
 }
@@ -318,7 +384,7 @@ mod test {
         let mut lexer = AtlasLexer::new("<stdin>", "let x: i64 = 5");
         println!("Lexer: {:?}", lexer);
         let tokens = lexer.tokenize().unwrap();
-        assert_eq!(tokens[0].kind(), TokenKind::Keyword(Keyword::Let));
+        assert_eq!(tokens[1].kind(), TokenKind::Keyword(Intern::new(String::from("let"))));
         println!("Tokens: {:?}", tokens);
     }
 }

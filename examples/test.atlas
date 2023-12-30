@@ -1,4 +1,19 @@
-let i: i64 = 5
-let f: f64 = 5.0
-let b: bool = true
-let s: string = "hello"
+fn fib(n: i64) -> i64 = 
+  match a
+  | 0 => 0,
+  | 1 => 1,
+  \ _ => fib(n-1) + fib(n-2)
+
+//do because you'll use non pure stuff in the function like print and read. It also allows to have a sequence of statements instead of a sequence of just on expression
+fn main() -> i64 = do {
+  //this is still an expression tho
+  let hello: string = "Hello World";
+  print(hello);
+  let a: i64 = read();
+  fib(a)
+}
+
+fn example_add() -> i64 = 
+  let a: i64 = 5 in
+  let b: i64 = 5 in
+  a + b
