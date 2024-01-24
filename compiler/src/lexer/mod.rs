@@ -17,6 +17,7 @@ pub(crate) struct AtlasLexer<'a> {
 }
 
 impl<'a> Lexer for AtlasLexer<'_> {
+    //Guess it'll be better to use this like that: `AtlasLexer::tokenize(path, contents)` and everything lives and dies in it.
     fn tokenize(&mut self) -> Result<Vec<Token>, Box<dyn LexerError>> {
         let mut tokens = vec![
             Token::new(Span {
@@ -55,59 +56,6 @@ impl<'a> Lexer for AtlasLexer<'_> {
                     }
                 }
             }
-            
-            /*if let Ok(kind) = self.lex(ch) {
-                match kind {
-                    TokenKind::EoI => {
-                        tokens.push(Token::new(
-                            Span {
-                                start: start_pos,
-                                end: self.current_pos,
-                                path: self.path,
-                            },
-                            kind
-                        ));
-                        break
-                    },
-                    TokenKind::UnknownChar(c) => {
-                        return Err(
-                            Box::new(
-                                LexError::UnknownCharacter {
-                                    ch: c,
-                                    code: 0,
-                                    span: Span {
-                                        start: start_pos,
-                                        end: self.current_pos,
-                                        path: self.path,
-                                    },
-                                    recoverable: true
-                                }
-                            )
-                        );
-                    },
-                    _ => {
-                        tokens.push(Token::new(
-                            Span {
-                                start: start_pos,
-                                end: self.current_pos,
-                                path: self.path,
-                            },
-                            kind
-                        ));
-                    }
-                }
-                
-            }
-        }
-        if tokens.last().unwrap().kind() != TokenKind::EoI {
-            tokens.push(Token::new(
-                Span {
-                    start: self.current_pos,
-                    end: self.current_pos,
-                    path: self.path,
-                }, 
-                TokenKind::EoI
-            ));*/
         }
         return Ok(tokens);
     }
