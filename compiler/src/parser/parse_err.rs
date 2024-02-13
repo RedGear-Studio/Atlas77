@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use atlas_core::{parser_errors::ParseError, interfaces::error::Error, utils::span::{Spanned, Span}, TokenKind};
+use atlas_core::{ParseError, interfaces::error::Error, utils::span::{Spanned, Span}, TokenKind};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum ParseErr {

@@ -6,8 +6,7 @@ pub mod parser;
 
 pub fn compile(path: &'static str) {
     let contents = std::fs::read_to_string(path).unwrap();
-    let mut lexer = AtlasLexer::new(path, &contents);
-    let tokens = lexer.tokenize().unwrap();
+    let tokens = AtlasLexer::tokenize(path, &contents).unwrap();
     tokens.iter().for_each(|t| print!("{}", t.to_string()));
 }
 

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use atlas_core::{lexer_errors::LexerError, interfaces::error::Error, utils::span::{Spanned, Span}};
+use atlas_core::{LexerError, interfaces::error::Error, utils::span::{Spanned, Span}};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum LexError {

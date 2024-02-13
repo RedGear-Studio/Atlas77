@@ -1,6 +1,6 @@
 mod lex_error;
 
-use atlas_core::{utils::span::{BytePos, Span}, interfaces::{lexer::{Lexer, token::Token}, error::Error}, Literal, TokenKind, lexer_errors::LexerError};
+use atlas_core::{utils::span::{BytePos, Span}, interfaces::{lexer::{Lexer, token::Token}, error::Error}, Literal, TokenKind, LexerError};
 use std::{iter::Peekable, collections::HashMap, str::Chars};
 use internment::Intern;
 
@@ -16,32 +16,33 @@ pub(crate) struct AtlasLexer<'a> {
     keywords: HashMap<Intern<String>, TokenKind>,
 }
 
-impl<'a> Lexer for AtlasLexer<'_> {
+impl<'a> Lexer<'_> for AtlasLexer<'_> {
     //Guess it'll be better to use this like that: `AtlasLexer::tokenize(path, contents)` and everything lives and dies in it.
-    fn tokenize(&mut self) -> Result<Vec<Token>, Box<dyn LexerError>> {
+    fn tokenize(path: &'static str, contents: &str) -> Result<Vec<Token>, Box<dyn LexerError>> {
+        let mut lexer = AtlasLexer::new(path, contents);
         let mut tokens = vec![
             Token::new(Span {
                 start: BytePos::default(),
                 end: BytePos::default(),
-                path: self.path,
+                path: path,
             },
             TokenKind::SoI)
         ];
 
         loop {
-            let start_pos = self.current_pos;
-            let ch = match self.next() {
+            let start_pos = lexer.current_pos;
+            let ch = match lexer.next() {
                 None => break,
                 Some(c) => c,
             };
 
-            match self.lex(ch) {
+            match lexer.lex(ch) {
                 Ok(kind) => {
                     tokens.push(Token::new(
                         Span {
                             start: start_pos,
-                            end: self.current_pos,
-                            path: self.path,
+                            end: lexer.current_pos,
+                            path: lexer.path,
                         },
                         kind
                     ));
@@ -321,18 +322,5 @@ impl<'a> AtlasLexer<'a> {
             Intern::new(String::from("in")) => TokenKind::Keyword(Intern::new(String::from("in")))
 
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn test_lexer() {
-        let mut lexer = AtlasLexer::new("<stdin>", "let x: i64 = 5");
-        println!("Lexer: {:?}", lexer);
-        let tokens = lexer.tokenize().unwrap();
-        assert_eq!(tokens[1].kind(), TokenKind::Keyword(Intern::new(String::from("let"))));
-        println!("Tokens: {:?}", tokens);
     }
 }

@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 # Maybe I should link the repository directly
-atlas-core = "0.4.4"
+atlas-core = {git = "https://github.com/RedGear-Studio/atlas-core", branch="main"}
 internment = "0.7.4"
