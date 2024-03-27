@@ -1,28 +1,40 @@
-use atlas_core::{nodes::{Expression, Literal, LiteralValue, Node, NodeKind, Program}, ParseError, utils::span::Spanned, Parser, Token, TokenKind};
+/*use atlas_core::{nodes::{Expression, Literal, LiteralValue, Node, NodeKind, Program}, ParseError, utils::span::Spanned, Parser, Token, TokenKind};
 
 use parse_err::ParseErr;
 
 pub(crate) mod data_type;
 pub(crate) mod parse_err;
 
-pub(crate) struct AtlasParser<'p> {
-    tokens: &'p [Token],
+pub(crate) struct AtlasParser {
+    tokens: Vec<Token>,
     errors: Vec<ParseErr>,
     pos: usize
 }
 
-impl Parser for AtlasParser<'_> {
-    fn parse(tokens: Vec<Token>, path: &'static str) -> Result<Program, Box<dyn ParseError>> {
+pub fn parse<'p>(tokens: &[Token], _path: &'static str) -> (Program<'p>, Vec<Box<dyn ParseError>>) {
+    let mut parser = AtlasParser {
+        tokens: tokens.into(),
+        errors: Vec::new(),
+        pos: 0
+    };
+    let res = parser.parse_program().unwrap();
+    (res, Vec::new())
+}
+
+impl Parser for AtlasParser {
+    fn parse(tokens: Vec<Token>, _path: &'static str) -> (Program, Vec<Box<dyn ParseError>>) {
         let mut parser = AtlasParser {
-            tokens: &tokens,
+            tokens: tokens,
             errors: Vec::new(),
             pos: 0
         };
-        parser.parse_program()
+        let res = parser.parse_program().unwrap();
+        (res, Vec::new())
+        
     }
 }
 
-impl<'p> AtlasParser<'p> {
+impl AtlasParser {
     fn parse_program(&mut self) -> Result<Program, Box<dyn ParseError>> {
         todo!()
     }
@@ -65,4 +77,4 @@ impl<'p> AtlasParser<'p> {
         }
         todo!()
     }
-}
+}*/

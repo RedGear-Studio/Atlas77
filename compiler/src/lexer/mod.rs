@@ -1,8 +1,10 @@
 mod lex_error;
+mod token;
 
-use atlas_core::{utils::span::{BytePos, Span}, interfaces::{lexer::{Lexer, token::Token}, error::Error}, Literal, TokenKind, LexerError};
+use atlas_core::{utils::span::{BytePos, Span}, interfaces::error::Error, LexerError};
 use std::{iter::Peekable, collections::HashMap, str::Chars};
 use internment::Intern;
+use self::token::{TokenKind, Token};
 
 use crate::map;
 use self::lex_error::LexError;
@@ -16,9 +18,9 @@ pub(crate) struct AtlasLexer<'a> {
     keywords: HashMap<Intern<String>, TokenKind>,
 }
 
-impl<'a> Lexer<'_> for AtlasLexer<'_> {
+impl AtlasLexer<'_> {
     //Guess it'll be better to use this like that: `AtlasLexer::tokenize(path, contents)` and everything lives and dies in it.
-    fn tokenize(path: &'static str, contents: &str) -> Result<Vec<Token>, Box<dyn LexerError>> {
+    pub fn tokenize(path: &'static str, contents: &str) -> Result<Vec<Token>, Box<dyn LexerError>> {
         let mut lexer = AtlasLexer::new(path, contents);
         let mut tokens = vec![
             Token::new(Span {
@@ -246,7 +248,7 @@ impl<'a> AtlasLexer<'a> {
                 let mut string = String::new();
                 string.push_str(self.consume_while(|ch| ch != '"').iter().collect::<String>().as_ref());
                 self.next().unwrap();
-                Ok(TokenKind::Literal(atlas_core::Literal::StringLiteral(Intern::new(string))))
+                Ok(TokenKind::Literal(self::token::Literal::StringLiteral(Intern::new(string))))
             },
             c => Err(LexError::UnknownCharacter {
                 ch: c,
@@ -277,7 +279,7 @@ impl<'a> AtlasLexer<'a> {
         if let Some(k) = self.keywords.get(&id) {
             Some(k.clone())
         } else {
-            Some(TokenKind::Literal(Literal::Identifier(id)))
+            Some(TokenKind::Literal(self::token::Literal::Identifier(id)))
         }        
     }
 
@@ -300,9 +302,9 @@ impl<'a> AtlasLexer<'a> {
                 .collect();
             number.push_str(&num);
 
-            Some(TokenKind::Literal(Literal::Float(number.parse::<f64>().unwrap())))
+            Some(TokenKind::Literal(self::token::Literal::Float(number.parse::<f64>().unwrap())))
         } else {
-            Some(TokenKind::Literal(Literal::Int(number.parse::<i64>().unwrap())))
+            Some(TokenKind::Literal(self::token::Literal::Int(number.parse::<i64>().unwrap())))
         }
     }
     
@@ -322,5 +324,22 @@ impl<'a> AtlasLexer<'a> {
             Intern::new(String::from("in")) => TokenKind::Keyword(Intern::new(String::from("in")))
 
         }
+    }
+}
+
+
+//Rust test unit
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_tokenize() {
+        let path = "test.atlas";
+        let content = std::fs::read_to_string("C:\\Users\\JHGip\\OneDrive\\Documents\\GitHub\\Atlas77\\examples\\test.atlas").unwrap();
+
+        let tokens = AtlasLexer::tokenize(path, &content).unwrap();
+        println!("{:?}", tokens);
     }
 }

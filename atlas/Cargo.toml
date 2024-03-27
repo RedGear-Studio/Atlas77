@@ -7,5 +7,4 @@ edition = "2021"
 
 [dependencies]
 # Maybe I should link the repository directly
-atlas-core = "0.4.3"
 compiler = { path = "../compiler" }
