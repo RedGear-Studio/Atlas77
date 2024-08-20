@@ -1,13 +1,7 @@
 [workspace]
 resolver = "1"
 members = [
-    "core/compiler",
-    "core/runtime",
-    "core/common",
-    "core/atlas",
-]
-exclude = [
-    "examples"
+    "vm"
 ]
 
 [profile.bench]
