@@ -1,3 +1,3 @@
-pub(crate) mod object_map;
-pub(crate) mod stack;
-pub(crate) mod vm_data;
+pub mod object_map;
+pub mod stack;
+pub mod vm_data;

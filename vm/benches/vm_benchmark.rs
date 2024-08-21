@@ -16,7 +16,7 @@ fn vm_test_benchmark(c: &mut Criterion) {
         Dup,
         PushI(2),
         Lt,
-        JumpIfFalse(Address::Val(9)),
+        JmpZ(Address::Val(9)),
         Ret,
         Dup,
         PushI(1),

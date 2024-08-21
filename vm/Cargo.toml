@@ -16,7 +16,7 @@ opt-level = 3
 codegen-units = 1
 
 [dependencies]
-atlas-core = "0.6.0-beta3"
+atlas-core = "0.6.0-beta5"
 internment = "0.8.4"
 
 [dev-dependencies]

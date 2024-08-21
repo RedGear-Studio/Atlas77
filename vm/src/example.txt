@@ -1,25 +1,26 @@
 .section
+    @u_int fib_number 40
 .code
-#[start]
 main:
-    push $40
+    load_const #fib_number ; Should be made into a constant
     call &fib
     print
     hlt
 fib:
-    dup
-    push $2
+    dup 
+    push_i $2
     lt
-    jmpz $9
+    jmp_z &next_
     ret
+next_:
     dup
-    push $1
-    sub
+    push_i $1
+    sub_i
     call &fib
 
     swap
-    push $2
-    sub
+    push_i $2
+    sub_i
     call &fib
-    add
+    add_i
     ret

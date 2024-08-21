@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{format, Display};
 
 use crate::memory::vm_data::VMData;
 
@@ -54,9 +54,9 @@ impl Display for Stack {
             "Stack: {{ values: {}, top: {}}}",
             {
                 let mut s = "[".to_string();
-                self.values.into_iter().for_each(|v| {
-                    s.push_str(&format!("{}, ", &v.to_string()));
-                });
+                for i in 0..self.top-1 {
+                    s.push_str(&format!("{:?}, ", self.values[i]))
+                }
                 s.push(']');
                 s
             },

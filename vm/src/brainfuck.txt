@@ -1,0 +1,331 @@
+.section
+    ; The State is stored at the address 0
+    ; struct State { Cell* ptr; int counter }
+@object state_ptr 0
+    ; The address of the first cell in memory 
+    ; struct Cell { int val }
+@object first 2
+    ; A string is considered an Object too
+@string input 1
+
+.code
+; #[start] drop for now, but it'll come back later
+main: 
+    create_struct $2    ; Initialize the state struct with 2 fields (it's empty for now)
+    
+    load_const #first   ; Adress after the state and the input in memory
+    swap                ; swap over the top 2 so the next instruction has everything in the right order
+    set_struct $0       ; set the 0th field of State to 2 and return the adress (cuz it may change :shrug:)
+    read                ; read the input and put it at the 2nd place in the memory
+    pop                 ; we already know where it is, no need to take more place in the stack
+
+    ; creating 10 cells of memory for the interpreter to work with
+    push_i $0
+    create_struct $1
+    set_struct $0
+    push_i $0
+    create_struct $1
+    set_struct $0
+    push_i $0
+    create_struct $1
+    set_struct $0
+    push_i $0
+    create_struct $1
+    set_struct $0
+    push_i $0
+    create_struct $1
+    set_struct $0
+    push_i $0
+    create_struct $1
+    set_struct $0
+    push_i $0
+    create_struct $1
+    set_struct $0
+    push_i $0
+    create_struct $1
+    set_struct $0
+    push_i $0
+    create_struct $1
+    set_struct $0
+    push_i $0
+    create_struct $1
+    set_struct $0
+
+    ; Now we can really start to implement the interpreter
+
+    push_i $0 ; i
+    main_loop:
+        dup
+        load_const #input
+        str_len
+        lt
+        jmp_z &end
+        dup
+        load_const #input
+        read_char       ; Get the char in the "input_place" string at the i index
+        cast_to_int
+
+        case_l_angle:
+            dup
+            push_i $60        ; 60 is the equivalent of '<' in ASCII
+            eq
+            jmp_z &case_r_angle
+            call &r_angle
+            jmp &i_inc
+        
+        case_r_angle:
+            dup
+            push_i $62
+            eq
+            jmp_z &case_inc
+            call &l_angle
+            jmp &i_inc
+
+        case_inc:
+            dup
+            push_i $43
+            eq
+            jmp_z &case_dec
+            call &inc
+            jmp &i_inc
+
+        case_dec:
+            dup
+            push_i $45
+            eq
+            jmp_z &case_dot
+            call &dec
+            jmp &i_inc
+
+        case_dot:
+            dup
+            push_i $46
+            eq
+            jmp_z &case_comma
+            call &dot
+            jmp &i_inc
+        
+        case_comma:
+            dup
+            push_i $44
+            eq
+            jmp_z &case_l_brace
+            call &comma
+            jmp &i_inc
+        
+        case_l_brace:
+            dup
+            push_i $91
+            eq
+            jmp_z &default_case
+            dup         ; duplicate i for future use
+            call &l_brace
+            jmp &i_inc
+
+        default_case:
+            push_i $123456
+            print
+            hlt
+        
+        i_inc:
+            push_i $1
+            add_i
+            jmp &main_loop
+
+
+    end:
+        hlt
+
+
+r_angle:
+    load_const #state_ptr
+    get_struct $0 ; return the value at the 0th field (state.ptr)
+    push_i $1
+    add_i
+    load_const #state_ptr
+    set_struct $0
+    pop
+    ret
+
+l_angle:
+    load_const #state_ptr
+    get_struct $0
+    push_i $1
+    sub_i
+    load_const #state_ptr
+    set_struct $0
+    pop
+    ret
+
+inc:
+    load_const #state_ptr
+    get_struct $0 ; return the Cell ptr (state.ptr)
+    dup
+    get_struct $0 ; return the value of the cell ptr (cell.val)
+    push_i $1
+    add_i
+    swap
+    set_struct $0 ; inc val (cell.val = cell.val + 1)
+    pop
+    ret
+
+dec:
+    load_const #state_ptr
+    get_struct $0 ; return the Cell ptr (state.ptr)
+    dup
+    get_struct $0 ; return the value of the cell ptr (cell.val)
+    push_i $1
+    sub_i
+    swap
+    set_struct $0 ; dec val (cell.val = cell.val - 1)
+    pop
+    ret
+
+dot:
+    load_const #state_ptr
+    get_struct $0 ; return the Cell ptr (state.ptr)
+    get_struct $0 ; return the value of the cell ptr (cell.val)
+    cast_to_char
+    print_char
+    pop
+    ret
+
+comma:
+    load_const #state_ptr
+    read_i          ; read an i64 from stdin
+    swap
+    get_struct $0
+    get_struct $0
+    set_struct $0
+    ret
+
+
+; The stack should look like if you want the call to work [i, ObjPtr] (if not it doesn't work)
+l_brace:
+    load_const #state_ptr
+    get_struct $0
+    get_struct $0       ; get the value of the current cell
+    jmp_z &l_is_zero
+    pop     ; pop the unused i before returning
+    ret
+
+    l_is_zero:
+        load_const #state_ptr
+        push_i $1
+        swap
+        ; need to keep track of all the '[' before reaching the actual ']'
+        set_struct $1 ; state.counter = state.counter + 1
+
+        l_brace_loop:
+            dup                 ; duplicate i
+            load_const #state_ptr
+            get_struct $1
+            push_i $0
+            eq
+            jmp_nz &l_exit_loop
+            load_const #input
+            read_char
+            dup
+            push_i $91            ; '[' -> 91
+            eq
+            jmp_nz &l_l_brace_found
+            push_i $93            ; ']' -> 93
+            eq
+            jmp_nz &l_r_brace_found
+            jmp &l_inc_i
+
+            l_l_brace_found:
+                pop ; getting rid of the unnecessary duplicated char
+                load_const #state_ptr
+                dup
+                get_struct $2
+                push_i $1
+                add_i
+                swap
+                set_struct $2
+                jmp &l_inc_i
+
+            l_r_brace_found:
+                load_const #state_ptr
+                dup
+                get_struct $2
+                push_i $1
+                sub_i
+                swap
+                set_struct $2
+                jmp &l_inc_i
+
+            l_inc_i:
+                push_i $1
+                add_i
+                jmp &l_brace_loop
+
+            l_exit_loop:
+                pop     ; pop the unused i before returning
+                ret
+
+
+; The stack should look like if you want the call to work [i, ObjPtr] (if not it doesn't work)
+r_brace:
+    load_const #state_ptr
+    get_struct $0
+    get_struct $0       ; get the value of the current cell
+    jmp_nz &r_is_not_zero
+    pop     ; pop the unused i before returning
+    ret
+
+    r_is_not_zero:
+        load_const #state_ptr
+        push_i $1
+        swap
+        ; need to keep track of all the '[' before reaching the actual ']'
+        set_struct $1 ; state.counter = state.counter + 1
+
+        r_brace_loop:
+            dup                 ; duplicate i
+            load_const #state_ptr
+            get_struct $1
+            push_i $0
+            eq
+            jmp_nz &r_exit_loop
+            load_const #input
+            read_char
+            dup
+            push_i $91            ; '[' -> 91
+            eq
+            jmp_nz &r_l_brace_found
+            push_i $93            ; ']' -> 93
+            eq
+            jmp_nz &r_r_brace_found
+            jmp &r_inc_i
+
+            r_l_brace_found:
+                pop ; getting rid of the unnecessary duplicated char
+                load_const #state_ptr
+                dup
+                get_struct $2
+                push_i $1
+                sub_i
+                swap
+                set_struct $2
+                jmp &l_inc_i
+
+            r_r_brace_found:
+                load_const #state_ptr
+                dup
+                get_struct $2
+                push_i $1
+                add_i
+                swap
+                set_struct $2
+                jmp &l_inc_i
+
+            r_inc_i:
+                push_i $1
+                add_i
+                jmp &l_brace_loop
+
+            r_exit_loop:
+                pop     ; pop the unused i before returning
+                ret
+
