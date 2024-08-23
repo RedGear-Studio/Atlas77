@@ -1,13 +1,6 @@
-use std::time::Duration;
-
 use vm::instruction::compiler::parser::Parser;
-use vm::instruction::{Address, Instruction::*};
 
-use vm::memory::object_map::Structure;
-use vm::memory::vm_data::VMData;
 use vm::runtime::VM;
-
-const TEST_AMOUNT: usize = 10;
 
 fn main() {
     // std::env::set_var("RUST_BACKTRACE", "1");

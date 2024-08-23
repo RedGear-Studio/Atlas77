@@ -1,4 +1,4 @@
-use std::fmt::{format, Display};
+use std::fmt::Display;
 
 use crate::memory::vm_data::VMData;
 
@@ -7,6 +7,11 @@ const STACK_SIZE: usize = 16 * 1024 / size_of::<VMData>();
 pub struct Stack {
     values: [VMData; STACK_SIZE],
     pub top: usize,
+}
+impl Default for Stack {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 // TODO: this implementation should be overhauled a bit cuz it's kinda clunky
@@ -19,7 +24,7 @@ impl Stack {
     }
 
     pub fn push(&mut self, val: VMData) {
-        if !(self.top >= STACK_SIZE) {
+        if self.top < STACK_SIZE {
             self.values[self.top] = val;
             self.top += 1;
         } else {

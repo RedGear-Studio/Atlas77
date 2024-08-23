@@ -1,12 +1,7 @@
-use std::{
-    thread::{self, sleep},
-    time::Duration,
-};
-
 use crate::{
     instruction::Instruction,
     memory::{
-        object_map::{Memory, Object, ObjectIndex, Structure},
+        object_map::{Memory, ObjectIndex, Structure},
         stack::Stack,
         vm_data::VMData,
     },
@@ -22,6 +17,11 @@ pub struct VM {
     pc: usize,
 }
 
+impl Default for VM {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl VM {
     pub fn new() -> Self {
         Self {
@@ -198,7 +198,7 @@ impl VM {
                 self.pc = address.into();
                 #[cfg(debug_assertions)]
                 {
-                    let name = (&self.fn_name).into_iter().find(|f| f.1 == address.into());
+                    let name = self.fn_name.iter().find(|f| f.1 == address.into());
                     match name {
                         Some(n) => println!("call {}", n.0),
                         None => panic!("Tf you calling?, {} in {:?}", self.pc, self.fn_name),
@@ -245,7 +245,7 @@ impl VM {
                 let res = match val.tag {
                     VMData::TAG_CHAR => val.as_char() as i64 as f64,
                     VMData::TAG_I64 => val.as_i64() as f64,
-                    VMData::TAG_FLOAT => val.as_f64() as f64,
+                    VMData::TAG_FLOAT => val.as_f64(),
                     VMData::TAG_U64 => val.as_u64() as f64,
                     VMData::TAG_BOOL => val.as_bool() as i64 as f64,
                     _ => unimplemented!("cast_to_float isn't implement for tag: {}", val.tag),
@@ -258,7 +258,7 @@ impl VM {
                     VMData::TAG_CHAR => val.as_char() as u64,
                     VMData::TAG_I64 => val.as_i64() as u64,
                     VMData::TAG_FLOAT => val.as_f64() as u64,
-                    VMData::TAG_U64 => val.as_u64() as u64,
+                    VMData::TAG_U64 => val.as_u64(),
                     VMData::TAG_BOOL => val.as_bool() as u64,
                     _ => unimplemented!("cast_to_uint isn't implement for tag: {}", val.tag),
                 };
@@ -267,7 +267,7 @@ impl VM {
             CastToChar => {
                 let val = self.stack.pop().expect("Stack Underflow");
                 let res = match val.tag {
-                    VMData::TAG_CHAR => val.as_char() as char,
+                    VMData::TAG_CHAR => val.as_char(),
                     VMData::TAG_I64 => val.as_i64() as u8 as char,
                     VMData::TAG_FLOAT => char::from_u32(val.as_f64() as u32).unwrap(),
                     VMData::TAG_U64 => char::from_u32(val.as_u64() as u32).unwrap(),

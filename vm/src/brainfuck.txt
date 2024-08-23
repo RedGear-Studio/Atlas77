@@ -121,7 +121,9 @@ main:
             push_i $91
             eq
             jmp_z &default_case
+            pop
             dup         ; duplicate i for future use
+            print
             call &l_brace
             jmp &i_inc
 
@@ -215,18 +217,19 @@ l_brace:
     ret
 
     l_is_zero:
-        load_const #state_ptr
         push_i $1
-        swap
+        load_const #state_ptr
         ; need to keep track of all the '[' before reaching the actual ']'
         set_struct $1 ; state.counter = state.counter + 1
 
         l_brace_loop:
             dup                 ; duplicate i
+            print
             load_const #state_ptr
             get_struct $1
             push_i $0
             eq
+            cast_to_int
             jmp_nz &l_exit_loop
             load_const #input
             read_char
@@ -243,21 +246,21 @@ l_brace:
                 pop ; getting rid of the unnecessary duplicated char
                 load_const #state_ptr
                 dup
-                get_struct $2
+                get_struct $1
                 push_i $1
                 add_i
                 swap
-                set_struct $2
+                set_struct $1
                 jmp &l_inc_i
 
             l_r_brace_found:
                 load_const #state_ptr
                 dup
-                get_struct $2
+                get_struct $1
                 push_i $1
                 sub_i
                 swap
-                set_struct $2
+                set_struct $1
                 jmp &l_inc_i
 
             l_inc_i:
@@ -292,6 +295,7 @@ r_brace:
             get_struct $1
             push_i $0
             eq
+            cast_to_int
             jmp_nz &r_exit_loop
             load_const #input
             read_char
@@ -308,21 +312,21 @@ r_brace:
                 pop ; getting rid of the unnecessary duplicated char
                 load_const #state_ptr
                 dup
-                get_struct $2
+                get_struct $1
                 push_i $1
                 sub_i
                 swap
-                set_struct $2
+                set_struct $1
                 jmp &l_inc_i
 
             r_r_brace_found:
                 load_const #state_ptr
                 dup
-                get_struct $2
+                get_struct $1
                 push_i $1
                 add_i
                 swap
-                set_struct $2
+                set_struct $1
                 jmp &l_inc_i
 
             r_inc_i:

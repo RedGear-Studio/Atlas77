@@ -1,8 +1,8 @@
-use std::{collections::HashMap, iter::Peekable, vec::IntoIter};
+use std::{iter::Peekable, vec::IntoIter};
 
 use crate::instruction::compiler::lexer::{Literal, Token, TokenKind};
 use crate::instruction::{Address, Instruction};
-use crate::memory::object_map::{Object, ObjectIndex};
+use crate::memory::object_map::ObjectIndex;
 use crate::memory::vm_data::VMData;
 use atlas_core::prelude::Spanned;
 use internment::Intern;
@@ -78,7 +78,7 @@ impl Parser {
                     })
                 }
                 Err(_e) => {
-                    return Err(());
+                    Err(())
                 }
             }
         } else {
@@ -125,7 +125,7 @@ impl Parser {
                                 "string" => Type::String,
                                 _ => unreachable!("This isn't good bro"),
                             },
-                            k => {
+                            _ => {
                                 unreachable!("This isn't good bro")
                             }
                         };
@@ -210,7 +210,7 @@ impl Parser {
                     match i {
                         Instruction::Call(a) => {
                             let mut position = 0;
-                            (&blocks).into_iter().for_each(|b| {
+                            blocks.iter().for_each(|b| {
                                 if b.id
                                     == match a {
                                         Address::ToDefine(i) => *i,
@@ -225,7 +225,7 @@ impl Parser {
                         }
                         Instruction::Jmp(a) => {
                             let mut position = 0;
-                            (&blocks).into_iter().for_each(|b| {
+                            blocks.iter().for_each(|b| {
                                 if b.id
                                     == match a {
                                         Address::ToDefine(i) => *i,
@@ -240,7 +240,7 @@ impl Parser {
                         }
                         Instruction::JmpNZ(a) => {
                             let mut position = 0;
-                            (&blocks).into_iter().for_each(|b| {
+                            blocks.iter().for_each(|b| {
                                 if b.id
                                     == match a {
                                         Address::ToDefine(i) => *i,
@@ -255,7 +255,7 @@ impl Parser {
                         }
                         Instruction::JmpZ(a) => {
                             let mut position = 0;
-                            (&blocks).into_iter().for_each(|b| {
+                            blocks.iter().for_each(|b| {
                                 if b.id
                                     == match a {
                                         Address::ToDefine(i) => *i,
@@ -396,7 +396,6 @@ impl Parser {
                                                     .for_each(|(u, c)| {
                                                         if c.id == i {
                                                             position = u;
-                                                            return;
                                                         }
                                                     });
                                                 block.ins.push(Instruction::LoadConst(position))
@@ -759,6 +758,6 @@ impl Parser {
                 //consume the token
             }
         }
-        return Ok(block);
+        Ok(block)
     }
 }
