@@ -1,4 +1,7 @@
-use std::{thread::{self, sleep}, time::Duration};
+use std::{
+    thread::{self, sleep},
+    time::Duration,
+};
 
 use crate::{
     instruction::Instruction,
@@ -195,13 +198,10 @@ impl VM {
                 self.pc = address.into();
                 #[cfg(debug_assertions)]
                 {
-                    let name = (&self.fn_name).into_iter().find(|f| {
-                        f.1 == address.into() 
-                    });
-                    println!("{:?}", self.fn_name);
+                    let name = (&self.fn_name).into_iter().find(|f| f.1 == address.into());
                     match name {
                         Some(n) => println!("call {}", n.0),
-                        None => panic!("Tf you calling?")
+                        None => panic!("Tf you calling?, {} in {:?}", self.pc, self.fn_name),
                     }
                 }
                 return;
@@ -214,122 +214,90 @@ impl VM {
             CastToI => {
                 let val = self.stack.pop().expect("Stack Underflow");
                 let res = match val.tag {
-                    VMData::TAG_CHAR => {
-                        val.as_char() as i64
-                    },
-                    VMData::TAG_I64 => {
-                        val.as_i64()
+                    VMData::TAG_CHAR => val.as_char() as i64,
+                    VMData::TAG_I64 => val.as_i64(),
+                    VMData::TAG_FLOAT => val.as_f64() as i64,
+                    VMData::TAG_U64 => val.as_u64() as i64,
+                    VMData::TAG_BOOL => val.as_bool() as i64,
+                    f if f > 256 | VMData::TAG_STR => val.as_object().idx as i64,
+                    _ => {
+                        if val.tag > 256 || val.tag == VMData::TAG_STR {
+                            val.as_object().idx as i64
+                        } else {
+                            unimplemented!("cast_to_int isn't implemented for tag: {}", val.tag)
+                        }
                     }
-                    VMData::TAG_FLOAT => {
-                        val.as_f64() as i64
-                    }
-                    VMData::TAG_U64 => {
-                        val.as_u64() as i64
-                    }
-                    VMData::TAG_BOOL => {
-                        val.as_bool() as i64
-                    }
-                    _ => unimplemented!("cast_to_int isn't implement for tag: {}", val.tag)
                 };
                 self.stack.push(VMData::new_i64(res));
-            },
+            }
+            CastToPtr => {
+                let val = self.stack.pop().expect("Stack Underflow");
+                let res = match val.tag {
+                    VMData::TAG_I64 => ObjectIndex::new(val.as_i64() as u64),
+                    VMData::TAG_U64 => ObjectIndex::new(val.as_u64()),
+                    f if f > 256 | VMData::TAG_STR => val.as_object(),
+                    _ => unimplemented!("cast_to_ptr isn't implemented for tag; {}", val.tag),
+                };
+                self.stack.push(VMData::new_object(257, res));
+            }
             CastToF => {
                 let val = self.stack.pop().expect("Stack Underflow");
                 let res = match val.tag {
-                    VMData::TAG_CHAR => {
-                        val.as_char() as i64 as f64
-                    },
-                    VMData::TAG_I64 => {
-                        val.as_i64() as f64
-                    }
-                    VMData::TAG_FLOAT => {
-                        val.as_f64() as f64
-                    }
-                    VMData::TAG_U64 => {
-                        val.as_u64() as f64
-                    }
-                    VMData::TAG_BOOL => {
-                        val.as_bool() as i64 as f64
-                    }
-                    _ => unimplemented!("cast_to_float isn't implement for tag: {}", val.tag)
+                    VMData::TAG_CHAR => val.as_char() as i64 as f64,
+                    VMData::TAG_I64 => val.as_i64() as f64,
+                    VMData::TAG_FLOAT => val.as_f64() as f64,
+                    VMData::TAG_U64 => val.as_u64() as f64,
+                    VMData::TAG_BOOL => val.as_bool() as i64 as f64,
+                    _ => unimplemented!("cast_to_float isn't implement for tag: {}", val.tag),
                 };
                 self.stack.push(VMData::new_f64(res));
-            },
+            }
             CastToU => {
                 let val = self.stack.pop().expect("Stack Underflow");
                 let res = match val.tag {
-                    VMData::TAG_CHAR => {
-                        val.as_char() as u64
-                    },
-                    VMData::TAG_I64 => {
-                        val.as_i64() as u64
-                    }
-                    VMData::TAG_FLOAT => {
-                        val.as_f64() as u64
-                    }
-                    VMData::TAG_U64 => {
-                        val.as_u64() as u64
-                    }
-                    VMData::TAG_BOOL => {
-                        val.as_bool() as u64
-                    }
-                    _ => unimplemented!("cast_to_uint isn't implement for tag: {}", val.tag)
+                    VMData::TAG_CHAR => val.as_char() as u64,
+                    VMData::TAG_I64 => val.as_i64() as u64,
+                    VMData::TAG_FLOAT => val.as_f64() as u64,
+                    VMData::TAG_U64 => val.as_u64() as u64,
+                    VMData::TAG_BOOL => val.as_bool() as u64,
+                    _ => unimplemented!("cast_to_uint isn't implement for tag: {}", val.tag),
                 };
                 self.stack.push(VMData::new_u64(res));
-            },
+            }
             CastToChar => {
                 let val = self.stack.pop().expect("Stack Underflow");
-                println!("[{:?}; {}]", val, self.pc);
                 let res = match val.tag {
-                    VMData::TAG_CHAR => {
-                        val.as_char() as char
-                    },
-                    VMData::TAG_I64 => {
-                        println!("cast {}", self.stack);
-                        val.as_i64() as u8 as char
-                    }
-                    VMData::TAG_FLOAT => {
-                        char::from_u32(val.as_f64() as u32).unwrap()
-                    }
-                    VMData::TAG_U64 => {
-                        char::from_u32(val.as_u64() as u32).unwrap()
-                    }
-                    VMData::TAG_BOOL => {
-                        val.as_bool() as u8 as char
-                    }
-                    _ => unimplemented!("cast_to_int isn't implement for tag: {} [{}]", val.tag, self.pc)
+                    VMData::TAG_CHAR => val.as_char() as char,
+                    VMData::TAG_I64 => val.as_i64() as u8 as char,
+                    VMData::TAG_FLOAT => char::from_u32(val.as_f64() as u32).unwrap(),
+                    VMData::TAG_U64 => char::from_u32(val.as_u64() as u32).unwrap(),
+                    VMData::TAG_BOOL => val.as_bool() as u8 as char,
+                    _ => unimplemented!(
+                        "cast_to_int isn't implement for tag: {} [{}]",
+                        val.tag,
+                        self.pc
+                    ),
                 };
                 self.stack.push(VMData::new_char(res));
-            },
+            }
             CastToBool => {
                 let val = self.stack.pop().expect("Stack Underflow");
                 let res = match val.tag {
-                    VMData::TAG_CHAR => {
-                        val.as_char() as i64
-                    },
-                    VMData::TAG_I64 => {
-                        val.as_i64()
-                    }
-                    VMData::TAG_FLOAT => {
-                        val.as_f64() as i64
-                    }
-                    VMData::TAG_U64 => {
-                        val.as_u64() as i64
-                    }
-                    VMData::TAG_BOOL => {
-                        val.as_bool() as i64
-                    }
-                    _ => unimplemented!("cast_to_int isn't implement for tag: {}", val.tag)
+                    VMData::TAG_CHAR => val.as_char() as i64,
+                    VMData::TAG_I64 => val.as_i64(),
+                    VMData::TAG_FLOAT => val.as_f64() as i64,
+                    VMData::TAG_U64 => val.as_u64() as i64,
+                    VMData::TAG_BOOL => val.as_bool() as i64,
+                    _ => unimplemented!("cast_to_int isn't implement for tag: {}", val.tag),
                 };
                 self.stack.push(VMData::new_i64(res));
-            },
+            }
             Read => {
                 let mut input = String::new();
                 std::io::stdin()
                     .read_line(&mut input)
                     .expect("Failed to read input");
                 let val = String::from(input.trim());
-                //println!("Read string: {}", val);
                 match self.object_map.put(val.into()) {
                     Ok(i) => {
                         self.stack.push(VMData::new_string(i));
@@ -375,7 +343,6 @@ impl VM {
                     }
                 }
             }
-
             CreateString => match self.object_map.put(String::new().into()) {
                 Ok(ptr) => {
                     self.stack.push(VMData::new_string(ptr));
@@ -387,7 +354,6 @@ impl VM {
             StrLen => {
                 let ptr = self.stack.pop().expect("Stack underflow").as_object();
                 let len = self.object_map.get(ptr).string().len();
-                //println!("ptr: {:?}, len: {}", ptr, len);
                 self.stack.push(VMData::new_i64(len as i64));
             }
             WriteCharToString => {
@@ -452,8 +418,7 @@ impl VM {
             }
             PrintChar => {
                 let value = self.stack.pop().expect("Stack Underflow").as_char();
-                println!("{}", value);
-                
+                print!("{}", value);
             }
             Nop => {}
             _ => unimplemented!(),

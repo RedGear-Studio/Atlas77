@@ -65,6 +65,7 @@ pub enum Instruction {
     CastToU,
     CastToChar,
     CastToBool,
+    CastToPtr,
 
     HLT,
 

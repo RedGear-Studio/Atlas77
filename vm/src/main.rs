@@ -23,27 +23,32 @@ fn main() {
         stack_machine.clean();
     }
     println!("tmp1: {:?}", tmp.div_f32(TEST_AMOUNT as f32));*/
-
-    if let Ok(content) = std::fs::read_to_string("./vm/src/example.txt") {
+    let tmp = std::time::Instant::now();
+    if let Ok(content) = std::fs::read_to_string("./vm/src/brainfuck.txt") {
         let mut lexer = vm::instruction::compiler::lexer::AtlasLexer::default();
-        lexer.set_path("src/example.txt");
+        lexer.set_path("src/brainfuck.txt");
         lexer.set_source(content);
         lexer.add_system(vm::instruction::compiler::lexer::identifier_system);
         lexer.add_system(vm::instruction::compiler::lexer::comment_system);
         let res = lexer.tokenize();
         match res {
             Ok(t) => {
-                println!("ok lexer");
+                println!("Ok Lexer: {:?}", tmp.elapsed());
+                let tmp = std::time::Instant::now();
                 //t.clone().into_iter().for_each(|ins| println!("{:?}, ", ins.kind()));
                 let parser = Parser::parse(t);
                 match parser {
                     Ok(code) => {
-                        println!("ok parser");
+                        println!("Ok Parser: {:?}", tmp.elapsed());
+                        let tmp = std::time::Instant::now();
                         //code.clone().into_iter().for_each(|ins| println!("{:?}", ins));
                         let mut vm = VM::new();
                         #[cfg(debug_assertions)]
+                        println!("{:?}", code.fn_name);
+                        #[cfg(debug_assertions)]
                         vm.set_fn_name(code.fn_name);
                         vm.execute(code.ins, code.constants);
+                        println!("Ok Excution: {:?}", tmp.elapsed())
                     }
                     Err(e) => {
                         panic!("{:?}", e);

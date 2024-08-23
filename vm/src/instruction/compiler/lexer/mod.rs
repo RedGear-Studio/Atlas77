@@ -68,6 +68,7 @@ keywords!(
     "cast_to_float",
     "cast_to_char",
     "cast_to_bool",
+    "cast_to_ptr",
     "int",
     "u_int",
     "float",

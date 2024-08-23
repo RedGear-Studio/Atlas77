@@ -18,7 +18,7 @@ pub enum Type {
     Bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Block {
     pub id: Intern<String>,
     pub ins: Vec<Instruction>,
@@ -27,7 +27,7 @@ pub struct Block {
 #[derive(Debug, Clone, Copy)]
 pub struct Constant {
     pub id: Intern<String>,
-    pub value: VMData
+    pub value: VMData,
 }
 
 pub struct Program {
@@ -56,22 +56,25 @@ impl Parser {
             match parser.parse_section() {
                 Ok(constants) => {
                     parser.constants = constants;
-                    let ins = parser.parse_code()?;
+                    let ins = parser.parse_code()?.clone();
                     let mut consts = vec![];
-                    parser.constants.into_iter().for_each(|c| consts.push(c.value));
+                    parser
+                        .constants
+                        .into_iter()
+                        .for_each(|c| consts.push(c.value));
                     Ok(Program {
                         ins,
                         constants: consts,
                         fn_name: {
                             let mut names = vec![];
+                            let mut current_pos = 0;
+                            // need to change this to get the correct address (call trace)
                             parser.blocks.into_iter().for_each(|b| {
-                                names.push((b.id.as_str().to_owned(), b.ins.len()));
+                                names.push((b.id.as_str().to_owned(), current_pos));
+                                current_pos += b.ins.len();
                             });
-                            for i in 1..names.len() {
-                                names[i].1 += names[i-1].1
-                            }
                             names
-                        }
+                        },
                     })
                 }
                 Err(_e) => {
@@ -112,63 +115,44 @@ impl Parser {
                             panic!("There should be a constant definition after an \"@\"")
                         }
                         let t = match self.tokens.next().unwrap().kind() {
-                            TokenKind::Keyword(k) => {
-                                println!("{}", k.as_str());
-                                match k.as_str() {
-                                    "int" => Type::I64,
-                                    "float" => Type::F64,
-                                    "u_int" => Type::U64,
-                                    "char" => Type::Char,
-                                    "bool" => Type::Bool,
-                                    "object" => Type::Object,
-                                    "string" => Type::String,
-                                    _ => unreachable!("This isn't good bro")
-                                }
-                            }
+                            TokenKind::Keyword(k) => match k.as_str() {
+                                "int" => Type::I64,
+                                "float" => Type::F64,
+                                "u_int" => Type::U64,
+                                "char" => Type::Char,
+                                "bool" => Type::Bool,
+                                "object" => Type::Object,
+                                "string" => Type::String,
+                                _ => unreachable!("This isn't good bro"),
+                            },
                             k => {
-                                println!("k: {:?}", k);
                                 unreachable!("This isn't good bro")
                             }
                         };
                         let name = match self.tokens.next().unwrap().kind() {
-                            TokenKind::Literal(Literal::Identifier(i)) => {
-                                i
-                            }
+                            TokenKind::Literal(Literal::Identifier(i)) => i,
                             _ => unreachable!("need a name"),
                         };
                         let value = match self.tokens.next().unwrap().kind() {
-                            TokenKind::Literal(l) => {
-                                match (t, l) {
-                                    (Type::I64, Literal::Float(f)) => {
-                                        VMData::new_i64(f as i64)
-                                    }
-                                    (Type::U64, Literal::Float(f)) => {
-                                        VMData::new_u64(f as u64)
-                                    }
-                                    (Type::F64, Literal::Float(f)) => {
-                                        VMData::new_f64(f)
-                                    }
-                                    (Type::Object, Literal::Float(f)) => {
-                                        VMData::new_object(257, ObjectIndex::new(f as u64))
-                                    }
-                                    (Type::String, Literal::Float(f)) => {
-                                        println!("Value of {} = {}", name, f);
-                                        VMData::new_string(ObjectIndex::new(f as u64))
-                                    }
-                                    _ => {
-                                        println!("({:?}, {:?})", t, l);
-                                        unreachable!("need a correct value based on the type")
-                                    }
+                            TokenKind::Literal(l) => match (t, l) {
+                                (Type::I64, Literal::Float(f)) => VMData::new_i64(f as i64),
+                                (Type::U64, Literal::Float(f)) => VMData::new_u64(f as u64),
+                                (Type::F64, Literal::Float(f)) => VMData::new_f64(f),
+                                (Type::Object, Literal::Float(f)) => {
+                                    VMData::new_object(257, ObjectIndex::new(f as u64))
                                 }
-                            }
-                            _ => unreachable!("Need to reach it")
+                                (Type::String, Literal::Float(f)) => {
+                                    VMData::new_string(ObjectIndex::new(f as u64))
+                                }
+                                _ => {
+                                    unreachable!("need a correct value based on the type")
+                                }
+                            },
+                            _ => unreachable!("Need to reach it"),
                         };
-                        constants.push(Constant {
-                            id: name,
-                            value
-                        })
+                        constants.push(Constant { id: name, value })
                     }
-                    _ => return Ok(constants)
+                    _ => return Ok(constants),
                 }
             }
             Ok(constants)
@@ -207,7 +191,7 @@ impl Parser {
                                 blocks.push(res);
                             }
                             _ => {
-                                panic!("There should be a colon");
+                                panic!("There should be a colon {}", i.as_str());
                             }
                         }
                     }
@@ -219,6 +203,7 @@ impl Parser {
                     }
                 }
             }
+            self.blocks = blocks.clone();
             let mut ins: Vec<Instruction> = vec![];
             for b in &blocks {
                 for i in &b.ins {
@@ -404,15 +389,17 @@ impl Parser {
                                                 t.kind()
                                             {
                                                 let mut position = 0;
-                                                self.constants.clone().into_iter().enumerate().for_each(|(u, c)| {
-                                                    if c.id == i {
-                                                        position = u;
-                                                        return
-                                                    }
-                                                });
-                                                block.ins.push(Instruction::LoadConst(
-                                                    position
-                                                ))
+                                                self.constants
+                                                    .clone()
+                                                    .into_iter()
+                                                    .enumerate()
+                                                    .for_each(|(u, c)| {
+                                                        if c.id == i {
+                                                            position = u;
+                                                            return;
+                                                        }
+                                                    });
+                                                block.ins.push(Instruction::LoadConst(position))
                                             }
                                         } else {
                                             panic!(
@@ -631,6 +618,7 @@ impl Parser {
                             "cast_to_float" => block.ins.push(Instruction::CastToF),
                             "cast_to_char" => block.ins.push(Instruction::CastToChar),
                             "cast_to_bool" => block.ins.push(Instruction::CastToBool),
+                            "cast_to_ptr" => block.ins.push(Instruction::CastToPtr),
                             "set_struct" => {
                                 if let Some(t) = self.tokens.next() {
                                     let start = t.start();

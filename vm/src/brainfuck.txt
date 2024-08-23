@@ -58,7 +58,10 @@ main:
         dup
         load_const #input
         str_len
-        lt
+        push_i $1
+        sub_i
+        lte
+        cast_to_int
         jmp_z &end
         dup
         load_const #input
@@ -132,26 +135,28 @@ main:
             add_i
             jmp &main_loop
 
-
     end:
         hlt
 
-
-r_angle:
+l_angle:
     load_const #state_ptr
     get_struct $0 ; return the value at the 0th field (state.ptr)
+    cast_to_int
     push_i $1
     add_i
+    cast_to_ptr
     load_const #state_ptr
     set_struct $0
     pop
     ret
 
-l_angle:
+r_angle:
     load_const #state_ptr
     get_struct $0
+    cast_to_int
     push_i $1
     sub_i
+    cast_to_ptr
     load_const #state_ptr
     set_struct $0
     pop

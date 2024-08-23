@@ -54,7 +54,7 @@ impl Display for Stack {
             "Stack: {{ values: {}, top: {}}}",
             {
                 let mut s = "[".to_string();
-                for i in 0..self.top-1 {
+                for i in 0..self.top - 1 {
                     s.push_str(&format!("{:?}, ", self.values[i]))
                 }
                 s.push(']');

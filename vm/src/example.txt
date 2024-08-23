@@ -1,8 +1,8 @@
 .section
-    @u_int fib_number 40
+    @u_int fib_number 1
 .code
 main:
-    load_const #fib_number ; Should be made into a constant
+    load_const #fib_number
     call &fib
     print
     hlt
