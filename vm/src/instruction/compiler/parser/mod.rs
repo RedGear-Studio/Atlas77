@@ -564,6 +564,19 @@ impl Parser {
                                     )
                                 }
                             }
+                            "extern_call" => {
+                                if let Some(t) = self.tokens.next() {
+                                    if t.kind() == TokenKind::DollarSign {
+                                        if let Some(t) = self.tokens.next() {
+                                            if let TokenKind::Literal(Literal::Float(f)) = t.kind() {
+                                                block.ins.push(Instruction::ExternCall(f as usize))
+                                            } else {
+                                                panic!("there should be a number here")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             "call" => {
                                 if let Some(t) = self.tokens.next() {
                                     let start = t.start();

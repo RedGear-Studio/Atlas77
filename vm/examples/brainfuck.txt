@@ -121,7 +121,6 @@ main:
             push_i $91
             eq
             jmp_z &default_case
-            pop
             dup         ; duplicate i for future use
             print
             call &l_brace
@@ -198,11 +197,12 @@ dot:
     ret
 
 comma:
-    load_const #state_ptr
     read_i          ; read an i64 from stdin
+    load_const #state_ptr
+    get_struct $0
+    dup
+    get_struct $0
     swap
-    get_struct $0
-    get_struct $0
     set_struct $0
     ret
 

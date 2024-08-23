@@ -1,3 +1,7 @@
+pub mod vm_state;
+
+use vm_state::VMState;
+
 use crate::{
     instruction::Instruction,
     memory::{
@@ -7,9 +11,12 @@ use crate::{
     },
 };
 
+pub type CallBack = fn(vm_state::VMState) -> Result<VMData, ()>;
+
 pub struct VM {
     pub stack: Stack,
     pub object_map: Memory,
+    pub extern_fn: Vec<CallBack>,
     constants: Vec<VMData>,
     call_stack: Vec<usize>,
     #[cfg(debug_assertions)]
@@ -27,12 +34,17 @@ impl VM {
         Self {
             stack: Stack::new(),
             object_map: Memory::new(16),
+            extern_fn: vec![],
             constants: vec![],
             call_stack: vec![],
             #[cfg(debug_assertions)]
             fn_name: vec![],
             pc: usize::default(),
         }
+    }
+    pub fn add_extern_call(&mut self, call: CallBack) -> &mut Self {
+        self.extern_fn.push(call);
+        self
     }
     #[inline(always)]
     pub fn clean(&mut self) {
@@ -191,6 +203,17 @@ impl VM {
                 if val == 0 {
                     self.pc = address.into();
                     return;
+                }
+            }
+            ExternCall(address) => {
+                let vm_state = VMState::new(&mut self.stack, &mut self.object_map, &self.constants);
+                match self.extern_fn[*address](vm_state) {
+                    Ok(val) => {
+                        self.stack.push(val);
+                    }
+                    Err(_) => {
+                        println!("there was an error with extern call");
+                    }
                 }
             }
             Call(address) => {

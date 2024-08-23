@@ -33,6 +33,7 @@ pub enum Instruction {
     Jmp(Address),
     JmpNZ(Address),
     JmpZ(Address),
+    ExternCall(usize),
     Call(Address), //Should it uses the top of the stack value as adress if the Address is `ToDefine`? Or maybe adding another way?
     Ret,
 

@@ -39,6 +39,7 @@ keywords!(
     "jmp_nz",
     "jmp_z",
     "jmp",
+    "extern_call",
     "call",
     "ret",
     "print_char",

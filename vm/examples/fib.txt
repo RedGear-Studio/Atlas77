@@ -1,5 +1,5 @@
 .section
-    @u_int fib_number 1
+    @u_int fib_number 25
 .code
 main:
     load_const #fib_number
