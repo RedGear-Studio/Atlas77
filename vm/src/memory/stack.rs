@@ -8,6 +8,11 @@ pub struct Stack {
     values: [VMData; STACK_SIZE],
     pub top: usize,
 }
+impl Default for Stack {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 // TODO: this implementation should be overhauled a bit cuz it's kinda clunky
 impl Stack {
@@ -19,7 +24,7 @@ impl Stack {
     }
 
     pub fn push(&mut self, val: VMData) {
-        if !(self.top >= STACK_SIZE) {
+        if self.top < STACK_SIZE {
             self.values[self.top] = val;
             self.top += 1;
         } else {
@@ -54,9 +59,9 @@ impl Display for Stack {
             "Stack: {{ values: {}, top: {}}}",
             {
                 let mut s = "[".to_string();
-                self.values.into_iter().for_each(|v| {
-                    s.push_str(&format!("{}, ", &v.to_string()));
-                });
+                for i in 0..self.top - 1 {
+                    s.push_str(&format!("{:?}, ", self.values[i]))
+                }
                 s.push(']');
                 s
             },

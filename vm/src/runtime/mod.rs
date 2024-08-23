@@ -1,27 +1,50 @@
-use std::{thread, time::Duration};
+pub mod vm_state;
+
+use vm_state::VMState;
 
 use crate::{
     instruction::Instruction,
-    memory::{object_map::Memory, stack::Stack, vm_data::VMData},
+    memory::{
+        object_map::{Memory, ObjectIndex, Structure},
+        stack::Stack,
+        vm_data::VMData,
+    },
 };
+
+pub type CallBack = fn(vm_state::VMState) -> Result<VMData, ()>;
 
 pub struct VM {
     pub stack: Stack,
     pub object_map: Memory,
+    pub extern_fn: Vec<CallBack>,
     constants: Vec<VMData>,
     call_stack: Vec<usize>,
+    #[cfg(debug_assertions)]
+    fn_name: Vec<(String, usize)>,
     pc: usize,
 }
 
+impl Default for VM {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl VM {
     pub fn new() -> Self {
         Self {
             stack: Stack::new(),
             object_map: Memory::new(16),
+            extern_fn: vec![],
             constants: vec![],
             call_stack: vec![],
+            #[cfg(debug_assertions)]
+            fn_name: vec![],
             pc: usize::default(),
         }
+    }
+    pub fn add_extern_call(&mut self, call: CallBack) -> &mut Self {
+        self.extern_fn.push(call);
+        self
     }
     #[inline(always)]
     pub fn clean(&mut self) {
@@ -29,22 +52,30 @@ impl VM {
         self.call_stack = vec![];
         self.pc = usize::default();
     }
-    pub fn execute(&mut self, ins: Vec<Instruction>) {
+    #[cfg(debug_assertions)]
+    pub fn set_fn_name(&mut self, fn_name: Vec<(String, usize)>) -> &mut Self {
+        self.fn_name = fn_name;
+        self
+    }
+    pub fn execute(&mut self, ins: Vec<Instruction>, consts: Vec<VMData>) {
+        self.constants = consts;
         while self.pc < ins.len() {
             let ins = &ins[self.pc];
             #[cfg(debug_assertions)]
             println!("{:?}", ins);
+            //#[cfg(debug_assertions)]
+            //println!("Memory: [{:?}, {:?}, {:?}]", self.object_map.get(ObjectIndex::new(0)), self.object_map.get(ObjectIndex::new(1)), self.object_map.get(ObjectIndex::new(2)));
             match ins {
                 Instruction::HLT => break,
                 _ => {
                     self.execute_instruction(ins);
                 }
             }
-            #[cfg(debug_assertions)]
-            println!("{}", self.stack);
+            //#[cfg(debug_assertions)]
+            //println!("{}", self.stack);
 
-            #[cfg(debug_assertions)]
-            thread::sleep(Duration::from_millis(250));
+            //#[cfg(debug_assertions)]
+            //thread::sleep(Duration::from_millis(250));
         }
         self.clean();
     }
@@ -160,28 +191,129 @@ impl VM {
                 self.pc = address.into();
                 return;
             }
-            JumpIfTrue(address) => {
-                let val = self.stack.pop().expect("Stack Underflow").as_bool();
-                if val {
+            JmpNZ(address) => {
+                let val = self.stack.pop().expect("Stack Underflow").as_u64();
+                if val != 0 {
                     self.pc = address.into();
                     return;
                 }
             }
-            JumpIfFalse(address) => {
-                let val = self.stack.pop().expect("Stack Underflow").as_bool();
-                if !val {
+            JmpZ(address) => {
+                let val = self.stack.pop().expect("Stack Underflow").as_u64();
+                if val == 0 {
                     self.pc = address.into();
                     return;
+                }
+            }
+            ExternCall(address) => {
+                let vm_state = VMState::new(&mut self.stack, &mut self.object_map, &self.constants);
+                match self.extern_fn[*address](vm_state) {
+                    Ok(val) => {
+                        self.stack.push(val);
+                    }
+                    Err(_) => {
+                        println!("there was an error with extern call");
+                    }
                 }
             }
             Call(address) => {
                 self.call_stack.push(self.pc + 1);
                 self.pc = address.into();
+                #[cfg(debug_assertions)]
+                {
+                    let name = self.fn_name.iter().find(|f| f.1 == address.into());
+                    match name {
+                        Some(n) => println!("call {}", n.0),
+                        None => panic!("Tf you calling?, {} in {:?}", self.pc, self.fn_name),
+                    }
+                }
                 return;
             }
             Ret => {
                 self.pc = self.call_stack.pop().expect("Call Stack Underflow");
+                //println!("return: {}", self.stack);
                 return;
+            }
+            CastToI => {
+                let val = self.stack.pop().expect("Stack Underflow");
+                let res = match val.tag {
+                    VMData::TAG_CHAR => val.as_char() as i64,
+                    VMData::TAG_I64 => val.as_i64(),
+                    VMData::TAG_FLOAT => val.as_f64() as i64,
+                    VMData::TAG_U64 => val.as_u64() as i64,
+                    VMData::TAG_BOOL => val.as_bool() as i64,
+                    f if f > 256 | VMData::TAG_STR => val.as_object().idx as i64,
+                    _ => {
+                        if val.tag > 256 || val.tag == VMData::TAG_STR {
+                            val.as_object().idx as i64
+                        } else {
+                            unimplemented!("cast_to_int isn't implemented for tag: {}", val.tag)
+                        }
+                    }
+                };
+                self.stack.push(VMData::new_i64(res));
+            }
+            CastToPtr => {
+                let val = self.stack.pop().expect("Stack Underflow");
+                let res = match val.tag {
+                    VMData::TAG_I64 => ObjectIndex::new(val.as_i64() as u64),
+                    VMData::TAG_U64 => ObjectIndex::new(val.as_u64()),
+                    f if f > 256 | VMData::TAG_STR => val.as_object(),
+                    _ => unimplemented!("cast_to_ptr isn't implemented for tag; {}", val.tag),
+                };
+                self.stack.push(VMData::new_object(257, res));
+            }
+            CastToF => {
+                let val = self.stack.pop().expect("Stack Underflow");
+                let res = match val.tag {
+                    VMData::TAG_CHAR => val.as_char() as i64 as f64,
+                    VMData::TAG_I64 => val.as_i64() as f64,
+                    VMData::TAG_FLOAT => val.as_f64(),
+                    VMData::TAG_U64 => val.as_u64() as f64,
+                    VMData::TAG_BOOL => val.as_bool() as i64 as f64,
+                    _ => unimplemented!("cast_to_float isn't implement for tag: {}", val.tag),
+                };
+                self.stack.push(VMData::new_f64(res));
+            }
+            CastToU => {
+                let val = self.stack.pop().expect("Stack Underflow");
+                let res = match val.tag {
+                    VMData::TAG_CHAR => val.as_char() as u64,
+                    VMData::TAG_I64 => val.as_i64() as u64,
+                    VMData::TAG_FLOAT => val.as_f64() as u64,
+                    VMData::TAG_U64 => val.as_u64(),
+                    VMData::TAG_BOOL => val.as_bool() as u64,
+                    _ => unimplemented!("cast_to_uint isn't implement for tag: {}", val.tag),
+                };
+                self.stack.push(VMData::new_u64(res));
+            }
+            CastToChar => {
+                let val = self.stack.pop().expect("Stack Underflow");
+                let res = match val.tag {
+                    VMData::TAG_CHAR => val.as_char(),
+                    VMData::TAG_I64 => val.as_i64() as u8 as char,
+                    VMData::TAG_FLOAT => char::from_u32(val.as_f64() as u32).unwrap(),
+                    VMData::TAG_U64 => char::from_u32(val.as_u64() as u32).unwrap(),
+                    VMData::TAG_BOOL => val.as_bool() as u8 as char,
+                    _ => unimplemented!(
+                        "cast_to_int isn't implement for tag: {} [{}]",
+                        val.tag,
+                        self.pc
+                    ),
+                };
+                self.stack.push(VMData::new_char(res));
+            }
+            CastToBool => {
+                let val = self.stack.pop().expect("Stack Underflow");
+                let res = match val.tag {
+                    VMData::TAG_CHAR => val.as_char() as i64,
+                    VMData::TAG_I64 => val.as_i64(),
+                    VMData::TAG_FLOAT => val.as_f64() as i64,
+                    VMData::TAG_U64 => val.as_u64() as i64,
+                    VMData::TAG_BOOL => val.as_bool() as i64,
+                    _ => unimplemented!("cast_to_int isn't implement for tag: {}", val.tag),
+                };
+                self.stack.push(VMData::new_i64(res));
             }
             Read => {
                 let mut input = String::new();
@@ -194,9 +326,74 @@ impl VM {
                         self.stack.push(VMData::new_string(i));
                     }
                     Err(o) => {
-                        println!("Memory full, can't insert: [{:?}]", o);
+                        panic!("Memory full, can't insert: [{:?}]", o);
                     }
                 }
+            }
+            ReadI => {
+                let mut input = String::new();
+                std::io::stdin()
+                    .read_line(&mut input)
+                    .expect("Failed to read input");
+                let val = match String::from(input.trim()).parse::<i64>() {
+                    Ok(i) => i,
+                    Err(e) => {
+                        panic!("{}", e);
+                    }
+                };
+                self.stack.push(VMData::new_i64(val));
+            }
+            SetStruct(u) => {
+                let ptr = self.stack.pop().expect("Stack underflow").as_object();
+                let val = self.stack.pop().expect("Stack underflow");
+                self.object_map.get_mut(ptr).structure_mut().fields[*u] = val;
+            }
+            GetStruct(u) => {
+                let ptr = self.stack.pop().expect("Stack underflow").as_object();
+                let field = self.object_map.get(ptr).structure().fields[*u];
+                self.stack.push(field);
+            }
+            CreateStruct(u) => {
+                let s = Structure {
+                    fields: vec![VMData::new_unit(); *u],
+                };
+                match self.object_map.put(s.into()) {
+                    Ok(ptr) => {
+                        self.stack.push(VMData::new_object(257, ptr));
+                    }
+                    Err(o) => {
+                        panic!("Can't add :[{:?}] in the memory", o);
+                    }
+                }
+            }
+            CreateString => match self.object_map.put(String::new().into()) {
+                Ok(ptr) => {
+                    self.stack.push(VMData::new_string(ptr));
+                }
+                Err(o) => {
+                    panic!("Can't add :[{:?}] in the memory", o);
+                }
+            },
+            StrLen => {
+                let ptr = self.stack.pop().expect("Stack underflow").as_object();
+                let len = self.object_map.get(ptr).string().len();
+                self.stack.push(VMData::new_i64(len as i64));
+            }
+            WriteCharToString => {
+                let ptr = self.stack.pop().expect("Stack underflow").as_object();
+                let ch = self.stack.pop().expect("Stack underflow").as_char();
+                self.object_map.get_mut(ptr).string_mut().push(ch);
+            }
+            ReadCharFromString => {
+                let ptr = self.stack.pop().expect("Stack underflow").as_object();
+                let i = self.stack.pop().expect("Stack underflow").as_u64();
+                let ch = match self.object_map.get(ptr).string().chars().nth(i as usize) {
+                    Some(c) => c,
+                    None => {
+                        panic!("Index out of bound for string: {}[{}]", ptr, i);
+                    }
+                };
+                self.stack.push(VMData::new_char(ch));
             }
             Instruction::Eq => {
                 let b = self.stack.pop().expect("Stack underflow");
@@ -241,6 +438,10 @@ impl VM {
             Instruction::Not => {
                 let value = self.stack.pop().expect("Stack underflow").as_bool();
                 self.stack.push(VMData::new_bool(!value));
+            }
+            PrintChar => {
+                let value = self.stack.pop().expect("Stack Underflow").as_char();
+                print!("{}", value);
             }
             Nop => {}
             _ => unimplemented!(),

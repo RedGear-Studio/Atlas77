@@ -9,6 +9,7 @@ pub union RawVMData {
     as_u64: u64,
     as_f64: f64,
     as_bool: bool,
+    as_char: char,
     as_object: ObjectIndex,
 }
 
@@ -34,6 +35,7 @@ impl VMData {
     pub const TAG_FLOAT: u64 = 9;
     pub const TAG_BOOL: u64 = 10;
     pub const TAG_STR: u64 = 11;
+    pub const TAG_CHAR: u64 = 12;
 
     pub fn new(tag: u64, data: RawVMData) -> Self {
         Self { tag, data }
@@ -62,6 +64,7 @@ impl VMData {
     def_new_vmdata_func!(new_u64, as_u64, u64, TAG_U64);
     def_new_vmdata_func!(new_f64, as_f64, f64, TAG_FLOAT);
     def_new_vmdata_func!(new_bool, as_bool, bool, TAG_BOOL);
+    def_new_vmdata_func!(new_char, as_char, char, TAG_CHAR);
 }
 
 impl PartialEq for VMData {
@@ -69,12 +72,12 @@ impl PartialEq for VMData {
         if self.tag != other.tag {
             return false;
         }
-
         match self.tag {
             Self::TAG_BOOL => self.as_bool() == other.as_bool(),
             Self::TAG_FLOAT => self.as_f64() == other.as_f64(),
             Self::TAG_I64 => self.as_i64() == other.as_i64(),
             Self::TAG_U64 => self.as_u64() == other.as_u64(),
+            Self::TAG_CHAR => self.as_char() == other.as_char(),
             Self::TAG_UNIT => true,
             _ if self.tag > 256 => self.as_object() == other.as_object(),
             _ => panic!("Illegal comparison"),
@@ -87,11 +90,11 @@ impl PartialOrd for VMData {
         if self.tag != other.tag {
             return None;
         }
-
         match self.tag {
             Self::TAG_FLOAT => self.as_f64().partial_cmp(&other.as_f64()),
             Self::TAG_U64 => self.as_u64().partial_cmp(&other.as_u64()),
             Self::TAG_I64 => self.as_i64().partial_cmp(&other.as_i64()),
+            Self::TAG_CHAR => self.as_char().partial_cmp(&other.as_char()),
             _ => panic!("Illegal comparison"),
         }
     }
@@ -108,6 +111,7 @@ impl Display for VMData {
                 Self::TAG_U64 => self.as_u64().to_string(),
                 Self::TAG_FLOAT => self.as_f64().to_string(),
                 Self::TAG_BOOL => self.as_bool().to_string(),
+                Self::TAG_CHAR => self.as_char().to_string(),
 
                 _ if self.is_object() => self.as_object().to_string(),
                 _ => "reserved".to_string(),
@@ -128,6 +132,7 @@ impl std::fmt::Debug for VMData {
                 Self::TAG_FLOAT => "f64",
                 Self::TAG_I64 => "i64",
                 Self::TAG_U64 => "u64",
+                Self::TAG_CHAR => "char",
                 _ if self.is_object() => "obj",
                 _ => "res",
             },
@@ -137,6 +142,7 @@ impl std::fmt::Debug for VMData {
                 Self::TAG_U64 => self.as_u64().to_string(),
                 Self::TAG_FLOAT => self.as_f64().to_string(),
                 Self::TAG_BOOL => self.as_bool().to_string(),
+                Self::TAG_CHAR => self.as_char().to_string(),
                 _ if self.is_object() => self.as_object().to_string(),
                 _ => "reserved".to_string(),
             }
@@ -165,6 +171,7 @@ impl VMData {
     enum_variant_function!(as_f64, is_f64, TAG_FLOAT, f64);
     enum_variant_function!(as_u64, is_u64, TAG_U64, u64);
     enum_variant_function!(as_bool, is_bool, TAG_BOOL, bool);
+    enum_variant_function!(as_char, is_char, TAG_CHAR, char);
     enum_variant_function!(as_unit, is_unit, TAG_UNIT, ());
 
     #[inline(always)]

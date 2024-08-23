@@ -129,5 +129,5 @@ impl From<String> for Object {
 
 #[derive(Clone, Debug)]
 pub struct Structure {
-    fields: Vec<VMData>,
+    pub fields: Vec<VMData>,
 }

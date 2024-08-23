@@ -1,0 +1,26 @@
+.section
+    @u_int fib_number 25
+.code
+main:
+    load_const #fib_number
+    call &fib
+    print
+    hlt
+fib:
+    dup 
+    push_i $2
+    lt
+    jmp_z &next_
+    ret
+next_:
+    dup
+    push_i $1
+    sub_i
+    call &fib
+
+    swap
+    push_i $2
+    sub_i
+    call &fib
+    add_i
+    ret
