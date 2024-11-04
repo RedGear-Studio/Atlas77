@@ -21,7 +21,7 @@ internment = "0.8.4"
 
 [dev-dependencies]
 criterion = "0.5.1"
-gnuplot = "0.0.43"
+gnuplot = "0.0.44"
 
 [[bench]]
 name = "vm_benchmark"
