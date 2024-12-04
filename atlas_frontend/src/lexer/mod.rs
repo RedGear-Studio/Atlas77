@@ -30,11 +30,17 @@ lexer_builder! {
         '&' => And,
         '|' => Or,
         ':' => Colon,
-        ',' => Comma
+        ',' => Comma,
+        '\\' => BackSlash,
+        '_' => Underscore,
+        ';' => Semicolon,
+        '\'' => Quote,
+        '?' => Interrogation,
+        '!' => Exclamation
     },
     Keyword {
         "function", "if", "else", "class", "struct", "true", "false", "let", "public", "private", "extends", "interface", "import", "return", "enum",
-        "self", "Self", "i8", "i16", "i32", "i64", "i128", "u8", "u16", "u32", "u64", "u128", "f32", "f64", "string", "List", "char", 
+        "self", "Self", "i8", "i16", "i32", "i64", "i128", "u8", "u16", "u32", "u64", "u128", "f32", "f64", "string", "List", "char",
     },
     Number {
         trailing {
