@@ -43,7 +43,7 @@ fn main() {
                         #[cfg(debug_assertions)]
                         vm.set_fn_name(code.fn_name);
                         vm.add_extern_call(fib_extern)
-                        .execute(code.ins, code.constants);
+                            .execute(code.ins, code.constants);
                         println!("Ok Excution: {:?}", tmp.elapsed())
                     }
                     Err(e) => {

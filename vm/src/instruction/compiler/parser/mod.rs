@@ -77,9 +77,7 @@ impl Parser {
                         },
                     })
                 }
-                Err(_e) => {
-                    Err(())
-                }
+                Err(_e) => Err(()),
             }
         } else {
             Err(())
@@ -568,7 +566,8 @@ impl Parser {
                                 if let Some(t) = self.tokens.next() {
                                     if t.kind() == TokenKind::DollarSign {
                                         if let Some(t) = self.tokens.next() {
-                                            if let TokenKind::Literal(Literal::Float(f)) = t.kind() {
+                                            if let TokenKind::Literal(Literal::Float(f)) = t.kind()
+                                            {
                                                 block.ins.push(Instruction::ExternCall(f as usize))
                                             } else {
                                                 panic!("there should be a number here")

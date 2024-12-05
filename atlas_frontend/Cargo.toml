@@ -16,5 +16,6 @@ opt-level = 3
 codegen-units = 1
 
 [dependencies]
-atlas-core = "0.6.1"
+atlas-core = "0.7.0-beta2"
 internment = "0.8.4"
+atlas_memory = { path = "../atlas_memory" }
