@@ -33,20 +33,20 @@ lexer_builder! {
         },
         Either {
             '=' => '=' => OpEq, OpAssign,
-            '!' => '=' => OpNEq, Bang,
-            '.' => '.' => DoubleDot, Dot,
-            ':' => ':' => DoubleColon, Colon,
-            '-' => '>' => RArrow, OpSub,
-            '<' => '=' => OpLessThanEq, OpLessThan,
-            '>' => '=' => OpGreaterThanEq, OpGreaterThan,
-            '&' => '&' => OpAnd, Ampersand,
-            '|' => '|' => OpOr, Pipe,
-            '~' => '>' => FatArrow, Tilde,
+            '!' => '=' =>  OpNEq, Bang,
+            '.' => '.' => DoubleDot, Dot, 
+            ':' => ':' => DoubleColon, Colon, 
+            '-' => '>' => RArrow, OpSub, 
+            '<' => '=' => OpLessThanEq, OpLessThan, 
+            '>' => '=' => OpGreaterThanEq, OpGreaterThan, 
+            '&' => '&' => OpAnd, Ampersand, 
+            '|' => '|' => OpOr, Pipe, 
+            '~' => '>' => FatArrow, Tilde, 
         }
     },
     Keyword {
-        "function", "if", "else", "class", "struct", "true", "false", "let", "public", "private", "extends", "interface", "import", "return", "enum", "List", "then", "end", "do",
-        "self", "Self", "i8", "i16", "i32", "i64", "i128", "u8", "u16", "u32", "u64", "u128", "f32", "f64", "string", "List", "char",
+        "then", "if", "else", "struct", "true", "false", "let", "import", "return", "enum", "List", "end", "do", "match",
+        "i8", "i16", "i32", "int", "i128", "u8", "u16", "u32", "u64", "u128", "f32", "f64", "string", "List", "char",
     },
     Number {
         trailing {

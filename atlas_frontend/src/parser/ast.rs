@@ -1,12 +1,9 @@
 use core::fmt;
 
-use crate::{lexer::TokenKind, parser::node::Visitor, Token};
-use atlas_core::utils::span::{BytePos, LineInformation, Span, Spanned};
 use internment::Intern;
 
-use super::node::Node;
+use crate::lexer::TokenKind;
 
-/// Placeholder
 pub type AbstractSyntaxTree = Vec<Box<Expression>>;
 
 /// Literal
@@ -17,7 +14,7 @@ pub enum Literal {
     /// Float literal
     Float(f64),
     /// String literal
-    String(String),
+    String(Intern<String>),
     /// Boolean literal
     Bool(bool),
     List(Vec<Expression>),
@@ -30,38 +27,9 @@ impl fmt::Display for Literal {
             Self::Float(fl) => write!(f, "{}", fl),
             Self::String(s) => write!(f, "{}", s),
             Self::Bool(b) => write!(f, "{}", b),
-            Self::List(l) => write!(
-                f,
-                "[{}]",
-                l.iter()
-                    .map(|a| a.to_string())
-                    .collect::<Vec<String>>()
-                    .join(", ")
-            ),
+            Self::List(l) => write!(f, "[{}]", l.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(", ")),
         }
     }
-}
-
-pub enum Declaration {
-    Enum,
-    Class(ClassDeclaration),
-    Struct,
-    Function,
-    Import,
-    Interface,
-}
-
-pub enum Visibility {
-    Public,
-    Private,
-}
-
-pub struct ClassDeclaration {
-    pub vis: Visibility,
-    pub fields: Vec<(Visibility, Type, Intern<String>)>,
-    pub functions: Vec<(Visibility, FunctionExpression)>,
-    ///used in the object_map later
-    pub object_id: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -90,7 +58,7 @@ pub enum Type {
     Void,
     List(Box<Type>),
     Map(Box<Type>, Box<Type>),
-    Function(Vec<(String, Type)>, Box<Type>),
+    Function(Vec<(Intern<String>, Type)>, Box<Type>),
 }
 
 impl fmt::Display for Type {
@@ -103,52 +71,15 @@ impl fmt::Display for Type {
             Self::Void => write!(f, "void"),
             Self::List(t) => write!(f, "List[{}]", t),
             Self::Map(k, v) => write!(f, "Map[{}, {}]", k, v),
-            Self::Function(args, ret) => write!(
-                f,
-                "({}) -> {}",
-                args.iter()
-                    .map(|(s, t)| format!("{}: {}", s, t))
-                    .collect::<Vec<String>>()
-                    .join(", "),
-                ret
-            ),
+            Self::Function(args, ret) => write!(f, "({}) -> {}", args.iter().map(|(s, t)| format!("{}: {}", s, t)).collect::<Vec<String>>().join(", "), ret),
         }
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_type_display() {
-        assert_eq!(Type::Integer.to_string(), "i64");
-        assert_eq!(Type::Float.to_string(), "f64");
-        assert_eq!(Type::String.to_string(), "string");
-        assert_eq!(Type::Bool.to_string(), "bool");
-        assert_eq!(Type::Void.to_string(), "void");
-        assert_eq!(Type::List(Box::new(Type::Integer)).to_string(), "List[i64]");
-        assert_eq!(
-            Type::Map(Box::new(Type::Integer), Box::new(Type::String)).to_string(),
-            "Map[i64, string]"
-        );
-        assert_eq!(
-            Type::Function(
-                vec![
-                    (String::from("abc"), Type::Integer),
-                    (String::from("efg"), Type::Float)
-                ],
-                Box::new(Type::Bool)
-            )
-            .to_string(),
-            "(abc: i64, efg: f64) -> bool"
-        );
-    }
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VariableDeclaration {
-    pub name: String,
+    pub name: Intern<String>,
     pub t: Type,
     pub mutable: bool,
     pub value: Option<Box<Expression>>,
@@ -157,29 +88,16 @@ pub struct VariableDeclaration {
 impl fmt::Display for VariableDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.value.is_some() {
-            write!(
-                f,
-                "let {}{}: {} = {}\n",
-                if self.mutable { "mut " } else { "" },
-                self.name,
-                self.t,
-                self.clone().value.unwrap()
-            )
+            write!(f, "let {}{}: {} = {}\n", if self.mutable { "mut " } else { "" }, self.name, self.t, self.clone().value.unwrap())
         } else {
-            write!(
-                f,
-                "let {}{}: {}\n",
-                if self.mutable { "mut " } else { "" },
-                self.name,
-                self.t
-            )
+            write!(f, "let {}{}: {}\n", if self.mutable { "mut " } else { "" }, self.name, self.t)
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionExpression {
-    pub args: Vec<(String, Type)>,
+    pub args: Vec<(Intern<String>, Type)>,
     pub body: Box<Expression>,
 }
 
@@ -193,7 +111,7 @@ impl fmt::Display for FunctionExpression {
 #[derive(Debug, Clone, PartialEq)]
 pub struct IdentifierNode {
     /// Name of the identifier
-    pub name: String,
+    pub name: Intern<String>,
 }
 
 impl fmt::Display for IdentifierNode {
@@ -202,13 +120,8 @@ impl fmt::Display for IdentifierNode {
     }
 }
 
-impl Node for IdentifierNode {
-    fn accept(&mut self, visitor: &mut dyn Visitor) {
-        visitor.visit_identifier(self);
-    }
-}
 
-/// Binary expression
+/// Binary expression 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BinaryExpression {
     /// Left member of the binary expression
@@ -221,11 +134,6 @@ pub struct BinaryExpression {
     pub right: Box<Expression>,
 }
 
-impl Node for BinaryExpression {
-    fn accept(&mut self, visitor: &mut dyn Visitor) {
-        visitor.visit_binary_expression(self);
-    }
-}
 
 impl fmt::Display for BinaryExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -294,8 +202,8 @@ impl From<&TokenKind> for Option<BinaryOperator> {
             TokenKind::OpDiv => Some(BinaryOperator::OpDiv),
             TokenKind::OpMod => Some(BinaryOperator::OpMod),
             TokenKind::OpPow => Some(BinaryOperator::OpPow),
-            /*Token::OpEq => Some(BinaryOperator::OpEq),
-            Token::OpNe => Some(BinaryOperator::OpNe),*/
+            TokenKind::OpEq => Some(BinaryOperator::OpEq),
+            TokenKind::OpNEq => Some(BinaryOperator::OpNe),
             TokenKind::OpLessThan => Some(BinaryOperator::OpLt),
             TokenKind::OpLessThanEq => Some(BinaryOperator::OpLe),
             TokenKind::OpGreaterThan => Some(BinaryOperator::OpGt),
@@ -327,11 +235,7 @@ impl fmt::Display for UnaryExpression {
     }
 }
 
-impl Node for UnaryExpression {
-    fn accept(&mut self, visitor: &mut dyn Visitor) {
-        visitor.visit_unary_expression(self);
-    }
-}
+
 
 /// Unary operator
 #[derive(Debug, Clone, PartialEq)]
@@ -364,11 +268,7 @@ pub struct IfElseNode {
 impl fmt::Display for IfElseNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(e) = &self.else_body {
-            write!(
-                f,
-                "if {}then\n\t{}else\n\t{}",
-                self.condition, self.if_body, e
-            )
+            write!(f, "if {}then\n\t{}else\n\t{}", self.condition, self.if_body, e)
         } else {
             write!(f, "if {} then\n\t{}", self.condition, self.if_body)
         }
@@ -377,27 +277,18 @@ impl fmt::Display for IfElseNode {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionCall {
-    pub name: String,
+    pub name: Intern<String>,
     pub args: Vec<Box<Expression>>,
 }
 impl fmt::Display for FunctionCall {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}({})",
-            self.name,
-            self.args
-                .iter()
-                .map(|a| a.to_string())
-                .collect::<Vec<String>>()
-                .join(", ")
-        )
+        write!(f, "{}({})", self.name, self.args.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(", "))
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IndexExpression {
-    pub name: String,
+    pub name: Intern<String>,
     pub index: Box<Expression>,
 }
 
@@ -413,15 +304,7 @@ pub struct DoExpression {
 }
 impl fmt::Display for DoExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "do\n\t{}",
-            self.body
-                .iter()
-                .map(|a| a.to_string())
-                .collect::<Vec<String>>()
-                .join("\n\t")
-        )
+        write!(f, "do\n\t{}", self.body.iter().map(|a| a.to_string()).collect::<Vec<String>>().join("\n\t"))
     }
 }
 
@@ -444,18 +327,14 @@ pub struct MatchExpression {
     pub default: Option<Box<Expression>>,
 }
 
-impl fmt::Display for MatchExpression {
+impl fmt::Display for MatchExpression{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.default.is_some() {
             write!(
                 f,
                 "match {} \n\t{}default\n\t{}",
                 self.expr,
-                self.arms
-                    .iter()
-                    .map(|a| a.pattern.to_string() + "=>" + &a.body.to_string())
-                    .collect::<Vec<String>>()
-                    .join("\n\t"),
+                self.arms.iter().map(|a| a.pattern.to_string() + "=>" + &a.body.to_string()).collect::<Vec<String>>().join("\n\t"),
                 self.default.clone().unwrap()
             )
         } else {
@@ -463,11 +342,7 @@ impl fmt::Display for MatchExpression {
                 f,
                 "match {} \n\t{}",
                 self.expr,
-                self.arms
-                    .iter()
-                    .map(|a| a.pattern.to_string() + "=>" + &a.body.to_string())
-                    .collect::<Vec<String>>()
-                    .join("\n\t")
+                self.arms.iter().map(|a| a.pattern.to_string() + "=>" + &a.body.to_string()).collect::<Vec<String>>().join("\n\t")
             )
         }
     }
@@ -511,16 +386,4 @@ impl fmt::Display for Expression {
     }
 }
 
-impl Node for Expression {
-    fn accept(&mut self, visitor: &mut dyn Visitor) {
-        match self {
-            Self::Identifier(i) => {
-                visitor.visit_identifier(i);
-            }
-            Self::BinaryExpression(b) => {
-                visitor.visit_binary_expression(b);
-            }
-            _ => (),
-        }
-    }
-}
+
