@@ -23,7 +23,7 @@ impl std::fmt::Display for ObjectIndex {
 }
 
 impl Memory {
-    pub(crate) fn new(space: usize) -> Self {
+    pub fn new(space: usize) -> Self {
         Self {
             free: ObjectIndex::new(0),
             mem: (0..space)
@@ -36,7 +36,7 @@ impl Memory {
 
     // Need to add a way to increase `mem` size if we out of memory
     // And a way to clean it when there's too much memory (basically shrink and grow)
-    pub(crate) fn put(&mut self, object: Object) -> Result<ObjectIndex, Object> {
+    pub fn put(&mut self, object: Object) -> Result<ObjectIndex, Object> {
         let idx = self.free;
         let v = self.get_mut(self.free);
         let repl = std::mem::replace(v, object);
@@ -54,22 +54,22 @@ impl Memory {
     }
 
     #[inline(always)]
-    pub(crate) fn get(&self, index: ObjectIndex) -> &Object {
+    pub fn get(&self, index: ObjectIndex) -> &Object {
         &self.mem[index.idx as usize]
     }
 
     #[inline(always)]
-    pub(crate) fn get_mut(&mut self, index: ObjectIndex) -> &mut Object {
+    pub fn get_mut(&mut self, index: ObjectIndex) -> &mut Object {
         &mut self.mem[index.idx as usize]
     }
 
     #[inline(always)]
-    pub(crate) fn raw(&self) -> &[Object] {
+    pub fn raw(&self) -> &[Object] {
         &self.mem
     }
 
     #[inline(always)]
-    pub(crate) fn raw_mut(&mut self) -> &mut [Object] {
+    pub fn raw_mut(&mut self) -> &mut [Object] {
         &mut self.mem
     }
 }
@@ -78,6 +78,7 @@ impl Memory {
 pub enum Object {
     String(String),
     Structure(Structure),
+    List(List),
     Free { next: ObjectIndex },
 }
 
@@ -113,6 +114,20 @@ impl Object {
             _ => unreachable!(),
         }
     }
+
+    pub fn list(&self) -> &List {
+        match &self {
+            Object::List(l) => l,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn list_mut(&mut self) -> &mut List {
+        match self {
+            Object::List(l) => l,
+            _ => unreachable!(),
+        }
+    }
 }
 
 impl From<Structure> for Object {
@@ -127,7 +142,19 @@ impl From<String> for Object {
     }
 }
 
+impl From<List> for Object {
+    fn from(value: List) -> Self {
+        Object::List(value)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Structure {
     pub fields: Vec<VMData>,
+}
+
+
+#[derive(Clone, Debug)]
+pub struct List {
+    pub data: Vec<VMData>,
 }

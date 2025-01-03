@@ -1,7 +1,6 @@
 [workspace]
 resolver = "1"
 members = [
-    "vm",
     "atlas_frontend",
     "atlas_memory",
     "atlas_runtime"
