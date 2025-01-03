@@ -82,6 +82,17 @@ pub enum Object {
     Free { next: ObjectIndex },
 }
 
+impl std::fmt::Display for Object {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Object::String(s) => write!(f, "{}", s),
+            Object::Structure(s) => write!(f, "{:?}", s),
+            Object::List(l) => write!(f, "{:?}", l),
+            Object::Free { next } => write!(f, "Free: next -> {}", next),
+        }
+    }
+}
+
 impl Object {
     pub fn new(data: impl Into<Object>) -> Self {
         data.into()

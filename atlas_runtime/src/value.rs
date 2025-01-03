@@ -1,4 +1,7 @@
-use std::{collections::HashMap, ops::{Add, Sub, Mul, Div}};
+use std::{
+    collections::HashMap,
+    ops::{Add, Div, Mul, Sub},
+};
 
 use internment::Intern;
 
@@ -29,7 +32,7 @@ impl Value {
             }
         }
     }
-    
+
     pub fn cmp_le(&self, rhs: Self) -> Value {
         match (self.clone(), rhs.clone()) {
             (Value::Integer(a), Value::Integer(b)) => Value::Bool(a <= b),
@@ -65,7 +68,6 @@ impl Value {
             }
         }
     }
-
 }
 
 impl Add for Value {
@@ -76,7 +78,9 @@ impl Add for Value {
             (Value::Integer(a), Value::Float(b)) => Value::Float(a as f64 + b),
             (Value::Float(a), Value::Integer(b)) => Value::Float(a + b as f64),
             (Value::Float(a), Value::Float(b)) => Value::Float(a + b),
-            (Value::String(a), Value::String(b)) => Value::String(Intern::new(a.to_string() + b.as_str())),
+            (Value::String(a), Value::String(b)) => {
+                Value::String(Intern::new(a.to_string() + b.as_str()))
+            }
             (Value::Bool(a), Value::Bool(b)) => Value::Bool(a || b),
             (Value::List(a), Value::List(b)) => {
                 let mut list = a;
@@ -131,14 +135,14 @@ impl Div for Value {
             (Value::Float(a), Value::Float(b)) => Value::Float(a / b),
             _ => {
                 unimplemented!("Unsupported operation: {:?} / {:?}", self, rhs)
-            }            
+            }
         }
     }
 }
 
 impl Value {
     pub fn power(self, rhs: Self) -> Self {
-        match(self.clone(), rhs.clone()) {
+        match (self.clone(), rhs.clone()) {
             (Value::Integer(a), Value::Integer(b)) => Value::Integer(a.pow(b as u32)),
             (Value::Integer(a), Value::Float(b)) => Value::Float((a as f64).powf(b)),
             (Value::Float(a), Value::Integer(b)) => Value::Float(a.powf(b as f64)),
@@ -150,14 +154,14 @@ impl Value {
     }
 
     pub fn modulo(self, rhs: Self) -> Self {
-        match(self.clone(), rhs.clone()) {
+        match (self.clone(), rhs.clone()) {
             (Value::Integer(a), Value::Integer(b)) => Value::Integer(a % b),
             (Value::Integer(a), Value::Float(b)) => Value::Float(a as f64 % b),
             (Value::Float(a), Value::Integer(b)) => Value::Float(a % b as f64),
             (Value::Float(a), Value::Float(b)) => Value::Float(a % b),
             _ => {
                 unimplemented!("Unsupported operation: {:?} % {:?}", self, rhs)
-            } 
+            }
         }
     }
 }

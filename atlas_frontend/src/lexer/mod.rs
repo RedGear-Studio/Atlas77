@@ -34,14 +34,14 @@ lexer_builder! {
         Either {
             '=' => '=' => OpEq, OpAssign,
             '!' => '=' =>  OpNEq, Bang,
-            '.' => '.' => DoubleDot, Dot, 
-            ':' => ':' => DoubleColon, Colon, 
-            '-' => '>' => RArrow, OpSub, 
-            '<' => '=' => OpLessThanEq, OpLessThan, 
-            '>' => '=' => OpGreaterThanEq, OpGreaterThan, 
-            '&' => '&' => OpAnd, Ampersand, 
-            '|' => '|' => OpOr, Pipe, 
-            '~' => '>' => FatArrow, Tilde, 
+            '.' => '.' => DoubleDot, Dot,
+            ':' => ':' => DoubleColon, Colon,
+            '-' => '>' => RArrow, OpSub,
+            '<' => '=' => OpLessThanEq, OpLessThan,
+            '>' => '=' => OpGreaterThanEq, OpGreaterThan,
+            '&' => '&' => OpAnd, Ampersand,
+            '|' => '|' => OpOr, Pipe,
+            '~' => '>' => FatArrow, Tilde,
         }
     },
     Keyword {

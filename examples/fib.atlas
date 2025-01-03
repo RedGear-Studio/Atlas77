@@ -4,14 +4,4 @@ let fib: (a: int) -> int =
     | 1 ~> 1,
     \ _ ~> fib(a - 1) + fib(a - 2)
 
-let main: () -> int = do
-    print([
-        "Hello",
-        "World"
-    ]);
-    let b: List[int] = [1, 2, 3];
-    print(b[0]);
-    print("How many fib numbers do you want?");
-    let a: int = read_int();
-    fib(a);
-end
+let main: () -> int = fib(35)

@@ -1,4 +1,7 @@
-use std::{fmt::Display, ops::{Add, Div, Mul, Rem, Sub}};
+use std::{
+    fmt::Display,
+    ops::{Add, Div, Mul, Rem, Sub},
+};
 
 use super::object_map::ObjectIndex;
 
@@ -12,7 +15,7 @@ pub union RawVMData {
     as_char: char,
     as_object: ObjectIndex,
     //as_fn_ptr: fn(&[VMData]) -> VMData, //This will be added later for the FFI
-    as_fn_ptr: usize
+    as_fn_ptr: usize,
 }
 
 #[derive(Clone, Copy)]

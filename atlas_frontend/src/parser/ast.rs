@@ -1,5 +1,6 @@
 use core::fmt;
 
+use atlas_core::prelude::{Span, Spanned};
 use internment::Intern;
 
 use crate::lexer::TokenKind;
@@ -27,7 +28,14 @@ impl fmt::Display for Literal {
             Self::Float(fl) => write!(f, "{}", fl),
             Self::String(s) => write!(f, "{}", s),
             Self::Bool(b) => write!(f, "{}", b),
-            Self::List(l) => write!(f, "[{}]", l.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(", ")),
+            Self::List(l) => write!(
+                f,
+                "[{}]",
+                l.iter()
+                    .map(|a| a.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
         }
     }
 }
@@ -37,6 +45,16 @@ pub enum Statement {
     VariableDeclaration(VariableDeclaration),
     Expression(Expression),
     Return(Expression),
+}
+
+impl Spanned for Statement {
+    fn span(&self) -> Span {
+        match self {
+            Self::VariableDeclaration(v) => v.span(),
+            Self::Expression(e) => e.span(),
+            Self::Return(e) => e.span(),
+        }
+    }
 }
 
 impl fmt::Display for Statement {
@@ -71,11 +89,18 @@ impl fmt::Display for Type {
             Self::Void => write!(f, "void"),
             Self::List(t) => write!(f, "List[{}]", t),
             Self::Map(k, v) => write!(f, "Map[{}, {}]", k, v),
-            Self::Function(args, ret) => write!(f, "({}) -> {}", args.iter().map(|(s, t)| format!("{}: {}", s, t)).collect::<Vec<String>>().join(", "), ret),
+            Self::Function(args, ret) => write!(
+                f,
+                "({}) -> {}",
+                args.iter()
+                    .map(|(s, t)| format!("{}: {}", s, t))
+                    .collect::<Vec<String>>()
+                    .join(", "),
+                ret
+            ),
         }
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VariableDeclaration {
@@ -83,14 +108,33 @@ pub struct VariableDeclaration {
     pub t: Type,
     pub mutable: bool,
     pub value: Option<Box<Expression>>,
+    pub span: Span,
+}
+impl Spanned for VariableDeclaration {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl fmt::Display for VariableDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.value.is_some() {
-            write!(f, "let {}{}: {} = {}\n", if self.mutable { "mut " } else { "" }, self.name, self.t, self.clone().value.unwrap())
+            write!(
+                f,
+                "let {}{}: {} = {}\n",
+                if self.mutable { "mut " } else { "" },
+                self.name,
+                self.t,
+                self.clone().value.unwrap()
+            )
         } else {
-            write!(f, "let {}{}: {}\n", if self.mutable { "mut " } else { "" }, self.name, self.t)
+            write!(
+                f,
+                "let {}{}: {}\n",
+                if self.mutable { "mut " } else { "" },
+                self.name,
+                self.t
+            )
         }
     }
 }
@@ -99,6 +143,13 @@ impl fmt::Display for VariableDeclaration {
 pub struct FunctionExpression {
     pub args: Vec<(Intern<String>, Type)>,
     pub body: Box<Expression>,
+    pub span: Span,
+}
+
+impl Spanned for FunctionExpression {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl fmt::Display for FunctionExpression {
@@ -112,6 +163,13 @@ impl fmt::Display for FunctionExpression {
 pub struct IdentifierNode {
     /// Name of the identifier
     pub name: Intern<String>,
+    pub span: Span,
+}
+
+impl Spanned for IdentifierNode {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl fmt::Display for IdentifierNode {
@@ -120,20 +178,20 @@ impl fmt::Display for IdentifierNode {
     }
 }
 
-
-/// Binary expression 
+/// Binary expression
 #[derive(Debug, Clone, PartialEq)]
 pub struct BinaryExpression {
-    /// Left member of the binary expression
-    /// Can be any expression, including another binary expression
     pub left: Box<Expression>,
-    /// Operator of the binary expression see `BinaryOperator`
     pub operator: BinaryOperator,
-    /// Right member of the binary expression
-    /// Can be any expression, including another binary expression
     pub right: Box<Expression>,
+    pub span: Span,
 }
 
+impl Spanned for BinaryExpression {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
 
 impl fmt::Display for BinaryExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -141,21 +199,13 @@ impl fmt::Display for BinaryExpression {
     }
 }
 
-/// Binary operator
 #[derive(Debug, Clone, PartialEq)]
 pub enum BinaryOperator {
-    /// Addition (`+`)
     OpAdd,
-    /// Subtraction (`-`)
     OpSub,
-    /// Multiplication (`*`)
     OpMul,
-    /// Division (`/`)
     OpDiv,
-    /// Modulo (`%`)
     OpMod,
-    /// Power (`^`)
-    OpPow,
     OpEq,
     OpNe,
     OpLt,
@@ -164,12 +214,6 @@ pub enum BinaryOperator {
     OpGe,
     OpAnd,
     OpOr,
-    /*OpXor,
-    OpShl,
-    OpShr,
-    OpBitAnd,
-    OpBitOr,
-    OpBitXor,*/
 }
 
 impl fmt::Display for BinaryOperator {
@@ -180,7 +224,6 @@ impl fmt::Display for BinaryOperator {
             Self::OpMul => write!(f, "*"),
             Self::OpDiv => write!(f, "/"),
             Self::OpMod => write!(f, "%"),
-            Self::OpPow => write!(f, "^"),
             Self::OpEq => write!(f, "=="),
             Self::OpNe => write!(f, "!="),
             Self::OpLt => write!(f, "<"),
@@ -201,7 +244,6 @@ impl From<&TokenKind> for Option<BinaryOperator> {
             TokenKind::OpMul => Some(BinaryOperator::OpMul),
             TokenKind::OpDiv => Some(BinaryOperator::OpDiv),
             TokenKind::OpMod => Some(BinaryOperator::OpMod),
-            TokenKind::OpPow => Some(BinaryOperator::OpPow),
             TokenKind::OpEq => Some(BinaryOperator::OpEq),
             TokenKind::OpNEq => Some(BinaryOperator::OpNe),
             TokenKind::OpLessThan => Some(BinaryOperator::OpLt),
@@ -218,11 +260,15 @@ impl From<&TokenKind> for Option<BinaryOperator> {
 /// Unary expression
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnaryExpression {
-    /// Operator of the unary expression, see `UnaryOperator`
     pub operator: Option<UnaryOperator>,
-    /// Expression of the unary expression
-    /// Can be any expression, including another unary expression
     pub expression: Box<Expression>,
+    pub span: Span,
+}
+
+impl Spanned for UnaryExpression {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl fmt::Display for UnaryExpression {
@@ -235,23 +281,15 @@ impl fmt::Display for UnaryExpression {
     }
 }
 
-
-
-/// Unary operator
 #[derive(Debug, Clone, PartialEq)]
 pub enum UnaryOperator {
-    /// Addition (`+`)
-    OpAdd,
-    /// Subtraction (`-`)
     OpSub,
-    /// Not (`!`)
     OpNot,
 }
 
 impl fmt::Display for UnaryOperator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::OpAdd => write!(f, "+"),
             Self::OpSub => write!(f, "-"),
             Self::OpNot => write!(f, "!"),
         }
@@ -263,12 +301,23 @@ pub struct IfElseNode {
     pub condition: Box<Expression>,
     pub if_body: Box<Expression>,
     pub else_body: Option<Box<Expression>>,
+    pub span: Span,
+}
+
+impl Spanned for IfElseNode {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl fmt::Display for IfElseNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(e) = &self.else_body {
-            write!(f, "if {}then\n\t{}else\n\t{}", self.condition, self.if_body, e)
+            write!(
+                f,
+                "if {}then\n\t{}else\n\t{}",
+                self.condition, self.if_body, e
+            )
         } else {
             write!(f, "if {} then\n\t{}", self.condition, self.if_body)
         }
@@ -279,10 +328,27 @@ impl fmt::Display for IfElseNode {
 pub struct FunctionCall {
     pub name: Intern<String>,
     pub args: Vec<Box<Expression>>,
+    pub span: Span,
 }
+
+impl Spanned for FunctionCall {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
 impl fmt::Display for FunctionCall {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}({})", self.name, self.args.iter().map(|a| a.to_string()).collect::<Vec<String>>().join(", "))
+        write!(
+            f,
+            "{}({})",
+            self.name,
+            self.args
+                .iter()
+                .map(|a| a.to_string())
+                .collect::<Vec<String>>()
+                .join(", ")
+        )
     }
 }
 
@@ -290,6 +356,13 @@ impl fmt::Display for FunctionCall {
 pub struct IndexExpression {
     pub name: Intern<String>,
     pub index: Box<Expression>,
+    pub span: Span,
+}
+
+impl Spanned for IndexExpression {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl fmt::Display for IndexExpression {
@@ -301,10 +374,26 @@ impl fmt::Display for IndexExpression {
 #[derive(Debug, Clone, PartialEq)]
 pub struct DoExpression {
     pub body: Vec<Box<Expression>>,
+    pub span: Span,
 }
+
+impl Spanned for DoExpression {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
 impl fmt::Display for DoExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "do\n\t{}", self.body.iter().map(|a| a.to_string()).collect::<Vec<String>>().join("\n\t"))
+        write!(
+            f,
+            "do\n\t{}",
+            self.body
+                .iter()
+                .map(|a| a.to_string())
+                .collect::<Vec<String>>()
+                .join("\n\t")
+        )
     }
 }
 
@@ -312,6 +401,13 @@ impl fmt::Display for DoExpression {
 pub struct MatchArm {
     pub pattern: Box<Expression>,
     pub body: Box<Expression>,
+    pub span: Span,
+}
+
+impl Spanned for MatchArm {
+    fn span(&self) -> Span {
+        self.span
+    }
 }
 
 impl fmt::Display for MatchArm {
@@ -325,16 +421,27 @@ pub struct MatchExpression {
     pub expr: Box<Expression>,
     pub arms: Vec<MatchArm>,
     pub default: Option<Box<Expression>>,
+    pub span: Span,
 }
 
-impl fmt::Display for MatchExpression{
+impl Spanned for MatchExpression {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl fmt::Display for MatchExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.default.is_some() {
             write!(
                 f,
                 "match {} \n\t{}default\n\t{}",
                 self.expr,
-                self.arms.iter().map(|a| a.pattern.to_string() + "=>" + &a.body.to_string()).collect::<Vec<String>>().join("\n\t"),
+                self.arms
+                    .iter()
+                    .map(|a| a.pattern.to_string() + "=>" + &a.body.to_string())
+                    .collect::<Vec<String>>()
+                    .join("\n\t"),
                 self.default.clone().unwrap()
             )
         } else {
@@ -342,22 +449,21 @@ impl fmt::Display for MatchExpression{
                 f,
                 "match {} \n\t{}",
                 self.expr,
-                self.arms.iter().map(|a| a.pattern.to_string() + "=>" + &a.body.to_string()).collect::<Vec<String>>().join("\n\t")
+                self.arms
+                    .iter()
+                    .map(|a| a.pattern.to_string() + "=>" + &a.body.to_string())
+                    .collect::<Vec<String>>()
+                    .join("\n\t")
             )
         }
     }
 }
 
-/// Expression
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
-    /// Contains the `Literal` enum
     Literal(Literal),
-    /// Contains the `IdentifierNode` struct
     Identifier(IdentifierNode),
-    /// Contains the `BinaryExpression` struct
     BinaryExpression(BinaryExpression),
-    /// Contains the `UnaryExpression` struct
     UnaryExpression(UnaryExpression),
     IfElseNode(IfElseNode),
     FunctionExpression(FunctionExpression),
@@ -366,6 +472,24 @@ pub enum Expression {
     DoExpression(DoExpression),
     MatchExpression(MatchExpression),
     IndexExpression(IndexExpression),
+}
+
+impl Spanned for Expression {
+    fn span(&self) -> Span {
+        match self {
+            Self::Identifier(i) => i.span(),
+            Self::BinaryExpression(b) => b.span(),
+            Self::UnaryExpression(u) => u.span(),
+            Self::IfElseNode(i) => i.span(),
+            Self::FunctionExpression(fun) => fun.span(),
+            Self::VariableDeclaration(v) => v.span(),
+            Self::FunctionCall(fun) => fun.span(),
+            Self::DoExpression(d) => d.span(),
+            Self::MatchExpression(m) => m.span(),
+            Self::IndexExpression(l) => l.span(),
+            _ => unreachable!("Literal has no span"),
+        }
+    }
 }
 
 impl fmt::Display for Expression {
@@ -385,5 +509,3 @@ impl fmt::Display for Expression {
         }
     }
 }
-
-

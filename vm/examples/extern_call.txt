@@ -1,9 +1,0 @@
-.section
-    @int fib_n 20
-.code
-
-main:
-    load_const #fib_n
-    extern_call $0
-    print
-    hlt
