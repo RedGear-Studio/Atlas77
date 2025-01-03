@@ -78,7 +78,7 @@ impl Memory {
 pub enum Object {
     String(String),
     Structure(Structure),
-    List(List),
+    List(Vec<VMData>),
     Free { next: ObjectIndex },
 }
 
@@ -115,14 +115,14 @@ impl Object {
         }
     }
 
-    pub fn list(&self) -> &List {
+    pub fn list(&self) -> &Vec<VMData> {
         match &self {
             Object::List(l) => l,
             _ => unreachable!(),
         }
     }
 
-    pub fn list_mut(&mut self) -> &mut List {
+    pub fn list_mut(&mut self) -> &mut Vec<VMData> {
         match self {
             Object::List(l) => l,
             _ => unreachable!(),
@@ -142,8 +142,8 @@ impl From<String> for Object {
     }
 }
 
-impl From<List> for Object {
-    fn from(value: List) -> Self {
+impl From<Vec<VMData>> for Object {
+    fn from(value: Vec<VMData>) -> Self {
         Object::List(value)
     }
 }
@@ -151,10 +151,4 @@ impl From<List> for Object {
 #[derive(Clone, Debug)]
 pub struct Structure {
     pub fields: Vec<VMData>,
-}
-
-
-#[derive(Clone, Debug)]
-pub struct List {
-    pub data: Vec<VMData>,
 }

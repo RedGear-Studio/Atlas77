@@ -63,6 +63,14 @@ impl VMData {
         Self::new(Self::TAG_STR, RawVMData { as_object: val })
     }
 
+    pub fn new_list(tag: u64, val: ObjectIndex) -> Self {
+        assert!(tag > 256, "object typeid is within the reserved area");
+        Self {
+            tag,
+            data: RawVMData { as_object: val },
+        }
+    }
+
     def_new_vmdata_func!(new_i64, as_i64, i64, TAG_I64);
     def_new_vmdata_func!(new_u64, as_u64, u64, TAG_U64);
     def_new_vmdata_func!(new_f64, as_f64, f64, TAG_FLOAT);
