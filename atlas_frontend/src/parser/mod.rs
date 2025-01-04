@@ -3,7 +3,7 @@ pub mod ast;
 use std::path::PathBuf;
 
 use crate::lexer::{Token, TokenKind, TokenKind::*};
-use ast::{AbstractSyntaxTree, BinaryOperator, MatchArm, Type, UnaryOperator};
+use ast::{AbstractSyntaxTree, BinaryOperator, FieldAccessExpression, MatchArm, NewObjectExpression, StructDeclaration, Type, UnaryOperator};
 use ast::{
     BinaryExpression, DoExpression, Expression, FunctionCall, FunctionExpression, IdentifierNode,
     IfElseNode, IndexExpression, MatchExpression, UnaryExpression, VariableDeclaration,
@@ -124,12 +124,18 @@ impl SimpleParserV1 {
                     Ok(Box::new(Type::Map(k, v)))
                 }
                 "int" => return Ok(Box::new(Type::Integer)),
-                "f64" => return Ok(Box::new(Type::Float)),
+                "float" => return Ok(Box::new(Type::Float)),
                 "string" => return Ok(Box::new(Type::String)),
                 "bool" => return Ok(Box::new(Type::Bool)),
-                _ => unreachable!("Unexpected token: {:?}", tok),
+                _ => return Ok(Box::new(Type::NonPrimitive(kw)))
             },
-            _ => unreachable!("Unexpected token: {:?}", tok),
+            TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => {
+                return Ok(Box::new(Type::NonPrimitive(s)))
+            },
+            _ => {
+                eprintln!("Unexpected token: {:?}", tok.kind());
+                unimplemented!()
+            }
         }
     }
 
@@ -140,6 +146,16 @@ impl SimpleParserV1 {
                     self.advance();
                     let var = self.parse_variable_declaration()?;
                     Ok(Box::new(Expression::VariableDeclaration(var)))
+                },
+                "struct" => {
+                    self.advance();
+                    let struct_decl = self.parse_struct_declaration()?;
+                    Ok(Box::new(Expression::StructDeclaration(struct_decl)))
+                },
+                "new" => {
+                    self.advance();
+                    let new_object = self.parse_new_object_expression()?;
+                    Ok(Box::new(Expression::NewObjectExpression(new_object)))
                 }
                 _ => {
                     let expr = self.parse_expr()?;
@@ -151,6 +167,52 @@ impl SimpleParserV1 {
                 Ok(Box::new(*expr))
             }
         }
+    }
+
+    fn parse_new_object_expression(&mut self) -> Result<NewObjectExpression, ParseError> {
+        let start_pos = self.current().span();
+        let name = match self.advance().kind() {
+            TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => s,
+            _ => unreachable!("Unexpected token: {:?}", self.current().kind()),
+        };
+        self.expect(LParen)?;
+        let mut fields = vec![];
+        while self.current().kind() != RParen {
+            let value = *self.parse_expr()?;
+            fields.push(value);
+            if self.current().kind() == Comma {
+                self.advance();
+            }
+        }
+        self.expect(RParen)?;
+        Ok(NewObjectExpression {
+            name,
+            fields,
+            span: start_pos.union_span(self.current().span()),
+        })
+    }
+
+    fn parse_struct_declaration(&mut self) -> Result<StructDeclaration, ParseError> {
+        let start_pos = self.current().span();
+        let name = match self.advance().kind() {
+            TokenKind::Literal(crate::lexer::Literal::Identifier(s)) => s,
+            _ => unreachable!("Unexpected token: {:?}", self.current().kind()),
+        };
+        self.expect(LParen)?;
+        let mut fields = vec![];
+        while self.current().kind() != RParen {
+            let t = *self.parse_type()?;
+            fields.push(t);
+            if self.current().kind() == Comma {
+                self.advance();
+            }
+        }
+        self.expect(RParen)?;
+        Ok(StructDeclaration {
+            name,
+            fields,
+            span: start_pos.union_span(self.current().span()),
+        })
     }
 
     fn parse_variable_declaration(&mut self) -> Result<VariableDeclaration, ParseError> {
@@ -362,6 +424,8 @@ impl SimpleParserV1 {
                     })))
                 }
                 "let" => self.parse_expression(),
+                "struct" => self.parse_expression(),
+                "new" => self.parse_expression(),
                 "if" => {
                     self.expect(TokenKind::Keyword(Intern::new("if".to_string())))?;
                     let condition = self.parse_expr()?;
@@ -441,6 +505,17 @@ impl SimpleParserV1 {
                     Ok(Box::new(Expression::IndexExpression(IndexExpression {
                         name: s,
                         index,
+                        span: start_pos.union_span(self.current().span()),
+                    })))
+                } else if self.current().kind() == Dot {
+                    self.expect(Dot)?;
+                    let field = match self.advance().kind() {
+                        TokenKind::Literal(crate::lexer::Literal::Int(i)) => i,
+                        _ => unreachable!("Unexpected token: {:?}", self.current().kind()),
+                    } as usize;
+                    Ok(Box::new(Expression::FieldAccessExpression(FieldAccessExpression {
+                        name: s,
+                        field,
                         span: start_pos.union_span(self.current().span()),
                     })))
                 } else {

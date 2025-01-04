@@ -45,23 +45,16 @@ lexer_builder! {
         }
     },
     Keyword {
-        "then", "if", "else", "struct", "true", "false", "let", "import", "return", "enum", "List", "end", "do", "match",
-        "i8", "i16", "i32", "int", "i128", "u8", "u16", "u32", "u64", "u128", "f32", "f64", "string", "List", "char",
+        // Keywords
+        "then", "if", "else", "struct", "true", "false", "let", "import", "return", "enum", "List", "end", "do", "match", "new",
+        // Types
+        "int", "uint", "float", "string", "List", "char",
     },
     Number {
         trailing {
-            "_i8"   => i8   => I8,
-            "_i16"  => i16  => I16,
-            "_32"   => i32  => I32,
-            "_i64"  => i64  => I64,
-            "_i128" => i128 => I128,
-            "_u8"   => u8   => U8,
-            "_u16"  => u16  => U16,
-            "_u32"  => u32  => U32,
-            "_u64"  => u64  => U64,
-            "_u128" => u128 => U128,
-            "_f32"  => f32  => F32,
-            "_f64"  => f64  => F64
+            "_int"   => i64  => INT,
+            "_uint"  => u64 => UINT,
+            "_float" => f64  => FLOAT
         },
         float: true,
         u_int: true,

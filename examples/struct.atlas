@@ -1,0 +1,8 @@
+struct Position(int, int, int)
+
+let main: () -> int = do
+    let pos: Position = new Position(1, 2, 3);
+    print(pos);
+    print(pos.0);
+    25;
+end

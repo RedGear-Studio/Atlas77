@@ -77,6 +77,7 @@ pub enum Type {
     List(Box<Type>),
     Map(Box<Type>, Box<Type>),
     Function(Vec<(Intern<String>, Type)>, Box<Type>),
+    NonPrimitive(Intern<String>),
 }
 
 impl fmt::Display for Type {
@@ -98,7 +99,36 @@ impl fmt::Display for Type {
                     .join(", "),
                 ret
             ),
+            Self::NonPrimitive(s) => write!(f, "{}", s),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct StructDeclaration {
+    pub name: Intern<String>,
+    pub fields: Vec<Type>,
+    pub span: Span,
+}
+
+impl Spanned for StructDeclaration {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl fmt::Display for StructDeclaration {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "struct {} ({})",
+            self.name,
+            self.fields
+                .iter()
+                .map(|t| format!("{}", t))
+                .collect::<Vec<String>>()
+                .join(",\n\t")
+        )
     }
 }
 
@@ -460,6 +490,53 @@ impl fmt::Display for MatchExpression {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct NewObjectExpression {
+    pub name: Intern<String>,
+    pub fields: Vec<Expression>,
+    pub span: Span,
+}
+
+impl Spanned for NewObjectExpression {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl fmt::Display for NewObjectExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "new {} {{\n\t{}\n}}",
+            self.name,
+            self.fields
+                .iter()
+                .map(|a| a.to_string())
+                .collect::<Vec<String>>()
+                .join(",\n\t")
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FieldAccessExpression {
+    pub name: Intern<String>,
+    pub field: usize, //currently accessing field is through index (like a tuple)
+    pub span: Span,
+}
+
+impl Spanned for FieldAccessExpression {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl fmt::Display for FieldAccessExpression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}", self.name, self.field)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     Literal(Literal),
     Identifier(IdentifierNode),
@@ -468,10 +545,13 @@ pub enum Expression {
     IfElseNode(IfElseNode),
     FunctionExpression(FunctionExpression),
     VariableDeclaration(VariableDeclaration),
+    StructDeclaration(StructDeclaration),
     FunctionCall(FunctionCall),
     DoExpression(DoExpression),
     MatchExpression(MatchExpression),
     IndexExpression(IndexExpression),
+    FieldAccessExpression(FieldAccessExpression),
+    NewObjectExpression(NewObjectExpression),
 }
 
 impl Spanned for Expression {
@@ -487,6 +567,8 @@ impl Spanned for Expression {
             Self::DoExpression(d) => d.span(),
             Self::MatchExpression(m) => m.span(),
             Self::IndexExpression(l) => l.span(),
+            Self::NewObjectExpression(n) => n.span(),
+            Self::FieldAccessExpression(f) => f.span(),
             _ => unreachable!("Literal has no span"),
         }
     }
@@ -506,6 +588,9 @@ impl fmt::Display for Expression {
             Self::DoExpression(d) => write!(f, "{}", d),
             Self::MatchExpression(m) => write!(f, "{}", m),
             Self::IndexExpression(l) => write!(f, "{}", l),
+            Self::StructDeclaration(s) => write!(f, "{}", s),
+            Self::NewObjectExpression(n) => write!(f, "{}", n),
+            Self::FieldAccessExpression(fa) => write!(f, "{}", fa),
         }
     }
 }

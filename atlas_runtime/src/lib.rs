@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::visitor::{Program, Visitor};
 use atlas_frontend::parser::ast::*;
-use atlas_memory::object_map::{Memory, Object};
+use atlas_memory::object_map::{Memory, Object, Structure};
 use atlas_memory::stack::Stack;
 use atlas_memory::vm_data::VMData;
 use internment::Intern;
@@ -112,6 +112,8 @@ impl Visitor for Runtime {
             Expression::MatchExpression(e) => self.visit_match_expression(e),
             Expression::UnaryExpression(e) => self.visit_unary_expression(e),
             Expression::VariableDeclaration(e) => self.visit_variable_declaration(e),
+            Expression::NewObjectExpression(e) => self.visit_new_object_expression(e),
+            Expression::FieldAccessExpression(e) => self.visit_field_access_expression(e),
             Expression::Literal(e) => match e {
                 Literal::Bool(b) => VMData::new_bool(*b),
                 Literal::Float(f) => VMData::new_f64(*f),
@@ -140,6 +142,7 @@ impl Visitor for Runtime {
                     }
                 }
             },
+            _ => unimplemented!("Expression not implemented"),
         }
     }
     fn visit_binary_expression(&mut self, expression: &BinaryExpression) -> VMData {
@@ -225,9 +228,34 @@ impl Visitor for Runtime {
             }
         }
     }
+
+    fn visit_field_access_expression(&mut self, field_access_expression: &FieldAccessExpression) -> VMData {
+        let obj_ptr = self.find_variable(field_access_expression.name).unwrap();
+        let obj = self.object_map.get(obj_ptr.as_object());
+        match obj {
+            Object::Structure(s) => s.fields[field_access_expression.field],
+            _ => panic!("Not a structure"),
+        }
+    }
+
+    fn visit_new_object_expression(&mut self, new_object_expression: &NewObjectExpression) -> VMData {
+        let mut fields = Vec::new();
+        for expr in &new_object_expression.fields {
+            fields.push(self.visit_expression(expr));
+        }
+        let res = self.object_map.put(Object::new(Structure { fields }));
+        match res {
+            Ok(i) => VMData::new_object(300, i), //TODO: Fix this (TypeID is hardcoded)
+            Err(_) => {
+                panic!("Out of memory for a new object");
+            }
+        }
+    }
+
     fn visit_function_expression(&mut self, function_expression: &FunctionExpression) -> VMData {
         self.visit_expression(&function_expression.body)
     }
+
     fn visit_identifier(&mut self, identifier: &IdentifierNode) -> VMData {
         if let Some(v) = self.find_variable(identifier.name) {
             *v
