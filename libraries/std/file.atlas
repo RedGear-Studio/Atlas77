@@ -56,6 +56,17 @@ namespace std {
             return std::file::open_with_mode(path, std::FILE_MODE::WRITE);
         }
 
+        fun exists(path: *const uint8) -> bool {
+            let result = libc::fopen(path, "rb");
+
+            if result == null {
+                return false;
+            }
+
+            libc::fclose(result);
+            return true;
+        }
+
         //! One-shot convenience function to read an entire file into a std::string.
         fun read_to_string(path: *const uint8) -> std::expected<std::string, std::string> {
             let file_res = std::file::open(path);
