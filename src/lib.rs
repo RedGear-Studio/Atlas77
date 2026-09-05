@@ -1290,7 +1290,9 @@ pub fn build(
     let hir_arena = HirArena::new();
 
     let frontend_res = run_frontend(path.clone(), source, &ast_arena, &hir_arena, true);
-    let hir = if let Some(hir) = frontend_res.hir {
+    let hir = if let Some(hir) = frontend_res.hir
+        && frontend_res.hir_errors.is_empty()
+    {
         hir
     } else {
         if !frontend_res.ast_errors.is_empty() {
