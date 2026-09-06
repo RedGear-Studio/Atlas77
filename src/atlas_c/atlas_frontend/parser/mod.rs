@@ -8,10 +8,11 @@ use miette::NamedSource;
 use crate::atlas_c::{
     atlas_frontend::parser::{
         ast::{
-            AstArg, AstAtomicType, AstConcept, AstEnum, AstEnumVariant, AstExtendBlock, AstFlag,
-            AstGlobalConst, AstInlineArrayType, AstListLiteralWithSize, AstMethodSignature,
-            AstNullLiteral, AstObjLiteralExpr, AstObjLiteralField, AstOperatorOverloadSignature,
-            AstPtrTy, AstStdGenericConstraint, AstUnion, AstVariadicType,
+            AstArg, AstAssociatedType, AstAssociatedTypeProjection, AstAtomicType, AstConcept,
+            AstEnum, AstEnumVariant, AstExtendBlock, AstFlag, AstGlobalConst, AstInlineArrayType,
+            AstListLiteralWithSize, AstMethodSignature, AstNullLiteral, AstObjLiteralExpr,
+            AstObjLiteralField, AstOperatorOverloadSignature, AstPtrTy, AstStdGenericConstraint,
+            AstUnion, AstVariadicType,
         },
         error::{
             ConstTypeNotSupportedYetError, DestructorWithParametersError, FlagDoesntExistError,
@@ -733,10 +734,16 @@ impl<'ast> Parser<'ast> {
         let ty = self.parse_type()?;
         self.expect(TokenKind::Identifier("with".to_string()))?;
         let concept = self.parse_type()?;
+        let where_clause = if self.current().kind() == TokenKind::KwWhere {
+            Some(self.arena.alloc_vec(self.parse_where_clause()?))
+        } else {
+            None
+        };
 
         self.expect(TokenKind::LBrace)?;
         let mut methods = vec![];
         let mut operators = vec![];
+        let mut associated_types = vec![];
         // Empty if there is none
         while self.current().kind() != TokenKind::RBrace {
             match self.current().kind() {
@@ -745,6 +752,10 @@ impl<'ast> Parser<'ast> {
                 }
                 TokenKind::KwFunc => {
                     methods.push(self.parse_method()?);
+                }
+                // Might be worth adding an actual keyword here to avoid confusion
+                TokenKind::Identifier(name) if name == "type" => {
+                    associated_types.push(self.parse_associated_type()?);
                 }
                 _ => {
                     return Err(self.unexpected_token_error(
@@ -762,6 +773,8 @@ impl<'ast> Parser<'ast> {
             concept: self.arena.alloc(concept),
             methods: self.arena.alloc_vec(methods),
             operators: self.arena.alloc_vec(operators),
+            associated_types: self.arena.alloc_vec(associated_types),
+            where_clause,
         };
         Ok(node)
     }
@@ -788,6 +801,7 @@ impl<'ast> Parser<'ast> {
         let mut required_methods = vec![];
         let mut implemented_operators = vec![];
         let mut required_operators = vec![];
+        let mut associated_types = vec![];
 
         let mut pending_method_attributes: Vec<AstMethodAttribute> = vec![];
         let mut curr_vis = self.parse_current_vis(AstVisibility::Private)?;
@@ -806,6 +820,9 @@ impl<'ast> Parser<'ast> {
             }
 
             match self.current().kind() {
+                TokenKind::Identifier(name) if name == "type" => {
+                    associated_types.push(self.parse_associated_type()?);
+                }
                 TokenKind::KwOperator => {
                     if !pending_method_attributes.is_empty() {
                         return Err(self.unexpected_token_error(
@@ -878,11 +895,30 @@ impl<'ast> Parser<'ast> {
             required_methods: self.arena.alloc_vec(required_methods),
             implemented_operators: self.arena.alloc_vec(implemented_operators),
             required_operators: self.arena.alloc_vec(required_operators),
+            associated_types: self.arena.alloc_vec(associated_types),
             vis: AstVisibility::default(),
             docstring: None,
             is_extern: false,
         };
         Ok(node)
+    }
+
+    fn parse_associated_type(&mut self) -> ParseResult<AstAssociatedType<'ast>> {
+        let start = self.expect(TokenKind::Identifier("type".to_string()))?.span;
+        let name = self.parse_identifier()?;
+        let ty: Option<&'ast AstType<'ast>> = if self.current().kind() == TokenKind::OpAssign {
+            let _ = self.advance();
+            Some(self.arena.alloc(self.parse_type()?))
+        } else {
+            None
+        };
+        let end = self.expect(TokenKind::Semicolon)?.span;
+        Ok(AstAssociatedType {
+            span: Span::union_span(&start, &end),
+            name_span: name.span,
+            name: self.arena.alloc(name),
+            ty,
+        })
     }
 
     fn parse_struct(&mut self) -> ParseResult<AstStruct<'ast>> {
@@ -2828,16 +2864,38 @@ impl<'ast> Parser<'ast> {
                     }
                     let _ = self.advance();
                     let end = self.current().span();
-                    AstType::Generic(AstGenericType {
+                    let generic = AstType::Generic(AstGenericType {
                         span: Span::union_span(&start, &end),
                         name: self.arena.alloc(name),
                         inner_types: self.arena.alloc(inner_types),
-                    })
+                    });
+                    if self.current().kind == TokenKind::DoubleColon {
+                        let _ = self.advance();
+                        let projection_name = self.parse_identifier()?;
+                        AstType::Associated(AstAssociatedTypeProjection {
+                            span: Span::union_span(&start, &projection_name.span),
+                            base: self.arena.alloc(generic),
+                            name: self.arena.alloc(projection_name),
+                        })
+                    } else {
+                        generic
+                    }
                 } else {
-                    AstType::Named(AstNamedType {
+                    let named = AstType::Named(AstNamedType {
                         span: Span::union_span(&start, &self.current().span()),
                         name: self.arena.alloc(name),
-                    })
+                    });
+                    if self.current().kind == TokenKind::DoubleColon {
+                        let _ = self.advance();
+                        let projection_name = self.parse_identifier()?;
+                        AstType::Associated(AstAssociatedTypeProjection {
+                            span: Span::union_span(&start, &projection_name.span),
+                            base: self.arena.alloc(named),
+                            name: self.arena.alloc(projection_name),
+                        })
+                    } else {
+                        named
+                    }
                 }
             }
             TokenKind::LBracket => {

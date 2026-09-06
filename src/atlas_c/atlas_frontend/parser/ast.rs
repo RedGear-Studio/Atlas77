@@ -329,6 +329,7 @@ pub struct AstConcept<'ast> {
     pub required_operators: &'ast [&'ast AstOperatorOverloadSignature<'ast>],
     pub implemented_methods: &'ast [&'ast AstMethod<'ast>],
     pub required_methods: &'ast [&'ast AstMethodSignature<'ast>],
+    pub associated_types: &'ast [&'ast AstAssociatedType<'ast>],
     pub docstring: Option<&'ast str>,
     pub is_extern: bool,
 }
@@ -340,6 +341,16 @@ pub struct AstExtendBlock<'ast> {
     pub concept: &'ast AstType<'ast>,
     pub operators: &'ast [&'ast AstOperatorOverload<'ast>],
     pub methods: &'ast [&'ast AstMethod<'ast>],
+    pub associated_types: &'ast [&'ast AstAssociatedType<'ast>],
+    pub where_clause: Option<&'ast [&'ast AstGeneric<'ast>]>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AstAssociatedType<'ast> {
+    pub span: Span,
+    pub name: &'ast AstIdentifier<'ast>,
+    pub name_span: Span,
+    pub ty: Option<&'ast AstType<'ast>>,
 }
 
 #[derive(Debug, Clone)]
@@ -964,6 +975,7 @@ pub enum AstType<'ast> {
     Slice(AstSliceType<'ast>),
     InlineArray(AstInlineArrayType<'ast>),
     Generic(AstGenericType<'ast>),
+    Associated(AstAssociatedTypeProjection<'ast>),
     Variadic(AstVariadicType<'ast>),
     PtrTy(AstPtrTy<'ast>),
     Const(&'ast AstType<'ast>),
@@ -993,6 +1005,7 @@ impl AstType<'_> {
             AstType::Slice(t) => t.span,
             AstType::InlineArray(t) => t.span,
             AstType::Generic(t) => t.span,
+            AstType::Associated(t) => t.span,
             AstType::Variadic(t) => t.span,
             AstType::PtrTy(t) => t.span,
             AstType::Const(c) => c.span(),
@@ -1027,6 +1040,7 @@ impl AstType<'_> {
                     format!("{}<{}>", t.name.name, params)
                 }
             }
+            AstType::Associated(t) => format!("{}::{}", t.base.name(), t.name.name),
             AstType::Variadic(v) => format!("{}...", v.inner),
             AstType::Function(f) => {
                 let args = f
@@ -1081,6 +1095,13 @@ pub struct AstGenericType<'ast> {
     pub span: Span,
     pub name: &'ast AstIdentifier<'ast>,
     pub inner_types: &'ast [AstType<'ast>],
+}
+
+#[derive(Debug, Clone)]
+pub struct AstAssociatedTypeProjection<'ast> {
+    pub span: Span,
+    pub base: &'ast AstType<'ast>,
+    pub name: &'ast AstIdentifier<'ast>,
 }
 
 #[derive(Debug, Clone)]
