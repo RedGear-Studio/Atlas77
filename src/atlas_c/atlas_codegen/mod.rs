@@ -499,7 +499,7 @@ impl CCodeGen {
             LirTy::UInt8 => "uint8_t".to_string(),
             LirTy::Boolean => "bool".to_string(),
             // TODO: Add a separate `c_char` type to represent C's char type for ABI compatibility.
-            LirTy::Char => "char".to_string(),
+            LirTy::Char => "uint32_t".to_string(),
             LirTy::Str => "char *".to_string(),
             LirTy::FnPtr { ret, args } => {
                 let ret_str = self.codegen_type(ret);
