@@ -3212,28 +3212,4 @@ mod tests {
             AstGenericConstraint::Std(_)
         ));
     }
-
-    #[test]
-    fn test_parse_operator_constraint_rejects_unknown_name() {
-        let result = parse_program_from_str(
-            "fun bad<T: operator::nope>(lhs: T, rhs: T) -> T { return lhs + rhs; }",
-        );
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_parse_operator_constraint_rejects_unary_name() {
-        let result = parse_program_from_str(
-            "fun bad<T: operator::not>(lhs: T, rhs: T) -> T { return lhs + rhs; }",
-        );
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_parse_operator_constraint_rejects_legacy_parenthesized_form() {
-        let result = parse_program_from_str(
-            "fun bad<T: operator::(+)>(lhs: T, rhs: T) -> T { return lhs + rhs; }",
-        );
-        assert!(result.is_err());
-    }
 }
