@@ -890,6 +890,15 @@ impl<'hir> HirLoweringPass<'hir> {
                     }
                     Some(HirUnaryOp::AsRef) => {
                         let expr_operand = self.lower_expr(&unary.expr)?;
+                        if expr_operand.is_immediate() {
+                            let dest = self.new_temp();
+                            self.emit(LirInstr::LoadImm {
+                                ty: self.hir_ty_to_lir_ty(unary.expr.ty(), unary.span),
+                                dst: dest.clone(),
+                                value: expr_operand,
+                            })?;
+                            return Ok(LirOperand::AsRef(Box::new(dest)));
+                        }
                         Ok(LirOperand::AsRef(Box::new(expr_operand)))
                     }
                     Some(HirUnaryOp::Neg) => {

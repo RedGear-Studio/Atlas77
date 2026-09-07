@@ -493,6 +493,18 @@ impl LirOperand {
     pub fn is_arg(&self) -> bool {
         matches!(self, LirOperand::Arg(_))
     }
+    pub fn is_immediate(&self) -> bool {
+        matches!(
+            self,
+            LirOperand::ImmBool(_)
+                | LirOperand::ImmChar(_)
+                | LirOperand::ImmInt { .. }
+                | LirOperand::ImmUInt { .. }
+                | LirOperand::ImmFloat { .. }
+                | LirOperand::LiteralArray { .. }
+                | LirOperand::LiteralObj { .. }
+        )
+    }
     pub fn get_temp_id(&self) -> Option<u32> {
         if let LirOperand::Temp(id) = self {
             Some(*id)
