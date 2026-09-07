@@ -583,7 +583,6 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         ast_extend: &'ast AstExtendBlock<'ast>,
     ) -> HirResult<HirExtendBlock<'hir>> {
         let ty = self.visit_ty(ast_extend.ty)?;
-        eprintln!("[DEBUG] AST_SYNTAX_LOWERING_PASS ty={}", ty);
         let concept = self.visit_ty(ast_extend.concept)?;
         let previous_this = self.current_this_ty.replace(ast_extend.ty.clone());
 

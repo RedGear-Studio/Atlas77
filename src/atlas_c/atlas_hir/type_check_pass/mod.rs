@@ -3944,7 +3944,6 @@ impl<'hir> TypeChecker<'hir> {
                 let ty_id = HirTyId::from(a.base);
                 if let Some(extend) = self.module_extends.get(&ty_id) {
                     for e in extend.iter() {
-                        eprintln!("[DEBUG] {}", e.concept);
                         for t in e.associated_types.iter() {
                             if t.name == a.name {
                                 if t.ty.is_none() {

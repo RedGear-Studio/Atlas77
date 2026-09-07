@@ -11,11 +11,71 @@ import "core/libc";
 // TODO: Add back `std::hashable` as contraints
 // I removed it temporarily
 namespace std {
-    // concept hashable {
-    //     fun hash(*const this) -> uint64;
-    // }
+    concept hashable {
+        fun hash(*const this) -> uint64;
+    }
+    extend int8 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend int16 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend int32 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend int64 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend uint8 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend uint16 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend uint32 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend uint64 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend float32 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend float64 with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend bool with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
+    extend char with std::hashable {
+        fun hash(*const this) -> uint64 {
+            return *this as uint64;
+        }
+    }
 
-    private struct map_pair<K: operator::equal, V> {
+    private struct map_pair<K: operator::equal + std::hashable, V> {
       public:
         key: K;
         value: V;
@@ -27,7 +87,7 @@ namespace std {
     }
 
     #[std::trivially_copyable]
-    private struct map_bucket<K: operator::equal, V> {
+    private struct map_bucket<K: operator::equal + std::hashable, V> {
       public:
         occupied: bool;
         hash: uint64;
@@ -35,7 +95,7 @@ namespace std {
         pair: *std::map_pair<K, V>;
     }
 
-    public struct map<K: operator::equal, V> {
+    public struct map<K: operator::equal + std::hashable, V> {
       private:
         buckets: *std::map_bucket<K, V>;
         length: uint64;
