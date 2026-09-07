@@ -52,6 +52,12 @@ declare_error_type! {
         IllegalUnaryOperation(IllegalUnaryOperationError),
         AccessingPrivateFunction(AccessingPrivateFunctionError),
         UnsupportedItem(UnsupportedItemError),
+        ConceptUnknown(ConceptUnknownError),
+        ConceptMissingMember(ConceptMissingMemberError),
+        ConceptSignatureMismatch(ConceptSignatureMismatchError),
+        ConceptOverlap(ConceptOverlapError),
+        ConceptOrphan(ConceptOrphanError),
+        CompetingExtendMember(CompetingExtendMemberError),
         TryingToAccessFieldOnNonObjectType(TryingToAccessFieldOnNonObjectTypeError),
         TryingToAccessAMovedValue(TryingToAccessAMovedValueError),
         TryingToAccessAConsumedValue(TryingToAccessAConsumedValueError),
@@ -503,6 +509,70 @@ pub struct UnsupportedItemError {
     #[label = "unsupported item"]
     pub span: Span,
     pub item: String,
+    #[source_code]
+    #[serde(skip_serializing)]
+    pub src: NamedSource<String>,
+}
+
+#[derive(Error, Diagnostic, Debug, Serialize)]
+#[diagnostic(code(sema::concept_unknown))]
+#[error("unknown concept `{concept}`")]
+pub struct ConceptUnknownError {
+    #[label = "unknown concept"]
+    pub span: Span,
+    pub concept: String,
+    #[source_code]
+    #[serde(skip_serializing)]
+    pub src: NamedSource<String>,
+}
+
+#[derive(Error, Diagnostic, Debug, Serialize)]
+#[diagnostic(code(sema::concept_missing_member))]
+#[error("concept `{concept}` is missing required member `{member}`")]
+pub struct ConceptMissingMemberError {
+    #[label = "required member is missing"]
+    pub span: Span,
+    pub concept: String,
+    pub member: String,
+    #[source_code]
+    #[serde(skip_serializing)]
+    pub src: NamedSource<String>,
+}
+
+#[derive(Error, Diagnostic, Debug, Serialize)]
+#[diagnostic(code(sema::concept_signature_mismatch))]
+#[error("member `{member}` does not match concept `{concept}`")]
+pub struct ConceptSignatureMismatchError {
+    #[label = "signature does not match the requirement"]
+    pub span: Span,
+    pub concept: String,
+    pub member: String,
+    pub expected: String,
+    pub actual: String,
+    #[source_code]
+    #[serde(skip_serializing)]
+    pub src: NamedSource<String>,
+}
+
+#[derive(Error, Diagnostic, Debug, Serialize)]
+#[diagnostic(code(sema::concept_overlap))]
+#[error("overlapping conformances for concept `{concept}`")]
+pub struct ConceptOverlapError {
+    #[label = "overlapping conformance"]
+    pub span: Span,
+    pub concept: String,
+    #[source_code]
+    #[serde(skip_serializing)]
+    pub src: NamedSource<String>,
+}
+
+#[derive(Error, Diagnostic, Debug, Serialize)]
+#[diagnostic(code(sema::concept_orphan))]
+#[error("orphan conformance for concept `{concept}`")]
+pub struct ConceptOrphanError {
+    #[label = "neither the target type nor concept is local"]
+    pub span: Span,
+    pub concept: String,
     #[source_code]
     #[serde(skip_serializing)]
     pub src: NamedSource<String>,
@@ -1481,6 +1551,24 @@ pub struct CannotMoveGlobalConstantsError {
     pub src: NamedSource<String>,
 }
 
+#[derive(Error, Diagnostic, Debug, Serialize)]
+#[diagnostic(
+    code(sema::competing_extend_member),
+    help("rename one of the conflicting members, or merge the two concepts")
+)]
+#[error("`{kind}` `{name}` is declared by more than one concept extending this type")]
+pub struct CompetingExtendMemberError {
+    pub kind: String,
+    pub name: String,
+    #[label = "first declared here"]
+    pub first_span: Span,
+    #[label = "also declared here"]
+    pub second_span: Span,
+    #[source_code]
+    #[serde(skip_serializing)]
+    pub src: NamedSource<String>,
+}
+
 impl From<HirError> for Vec<CompilerError> {
     fn from(e: HirError) -> Vec<CompilerError> {
         match e {
@@ -2096,6 +2184,43 @@ impl From<HirError> for Vec<CompilerError> {
                     kind: CompilerErrorKind::Error,
                 }]
             }
+            HirError::ConceptUnknown(error) => vec![CompilerError {
+                message: error.to_string(),
+                span: error.span,
+                kind: CompilerErrorKind::Error,
+            }],
+            HirError::ConceptMissingMember(error) => vec![CompilerError {
+                message: error.to_string(),
+                span: error.span,
+                kind: CompilerErrorKind::Error,
+            }],
+            HirError::ConceptSignatureMismatch(error) => vec![CompilerError {
+                message: error.to_string(),
+                span: error.span,
+                kind: CompilerErrorKind::Error,
+            }],
+            HirError::ConceptOverlap(error) => vec![CompilerError {
+                message: error.to_string(),
+                span: error.span,
+                kind: CompilerErrorKind::Error,
+            }],
+            HirError::ConceptOrphan(error) => vec![CompilerError {
+                message: error.to_string(),
+                span: error.span,
+                kind: CompilerErrorKind::Error,
+            }],
+            HirError::CompetingExtendMember(error) => vec![
+                CompilerError {
+                    message: error.to_string(),
+                    span: error.first_span,
+                    kind: CompilerErrorKind::Note,
+                },
+                CompilerError {
+                    message: error.to_string(),
+                    span: error.second_span,
+                    kind: CompilerErrorKind::Error,
+                },
+            ],
         }
     }
 }

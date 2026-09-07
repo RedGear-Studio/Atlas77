@@ -2825,9 +2825,20 @@ impl<'ast> Parser<'ast> {
             }
             TokenKind::ThisTy => {
                 let _ = self.advance();
-                AstType::ThisTy(AstThisType {
+                let this_ty = AstType::ThisTy(AstThisType {
                     span: Span::union_span(&start, &self.current().span()),
-                })
+                });
+                if self.current().kind == TokenKind::DoubleColon {
+                    let _ = self.advance();
+                    let projection_name = self.parse_identifier()?;
+                    AstType::Associated(AstAssociatedTypeProjection {
+                        span: Span::union_span(&start, &projection_name.span),
+                        base: self.arena.alloc(this_ty),
+                        name: self.arena.alloc(projection_name),
+                    })
+                } else {
+                    this_ty
+                }
             }
             TokenKind::Star => {
                 let start = self.advance().span;

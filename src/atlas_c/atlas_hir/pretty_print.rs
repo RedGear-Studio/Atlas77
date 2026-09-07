@@ -738,6 +738,7 @@ impl HirPrettyPrinter {
             HirTy::Atomic(a) => {
                 format!("__atomic {}", a.inner)
             }
+            HirTy::Associated(a) => format!("{}::{}", Self::type_str(a.base), a.name),
         }
     }
 

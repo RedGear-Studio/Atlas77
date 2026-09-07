@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::atlas_c::atlas_hir::item::{HirEnum, HirExtendBlock, HirStruct, HirUnion};
+use crate::atlas_c::atlas_hir::item::{HirConcept, HirEnum, HirExtendBlock, HirStruct, HirUnion};
 use item::{HirFunction, HirImport};
 use signature::HirModuleSignature;
 
@@ -42,6 +42,7 @@ pub struct HirModuleBody<'hir> {
     pub functions: BTreeMap<&'hir str, HirFunction<'hir>>,
     pub structs: BTreeMap<&'hir str, HirStruct<'hir>>,
     pub extends: BTreeMap<crate::atlas_c::atlas_hir::ty::HirTyId, Vec<HirExtendBlock<'hir>>>,
+    pub concepts: BTreeMap<&'hir str, HirConcept<'hir>>,
     pub imports: Vec<&'hir HirImport<'hir>>,
     // Not really useful for the current version, but I might add methods to enums later
     pub enums: BTreeMap<&'hir str, HirEnum<'hir>>,

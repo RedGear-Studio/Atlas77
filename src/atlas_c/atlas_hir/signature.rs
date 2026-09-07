@@ -21,12 +21,53 @@ pub struct HirModuleSignature<'hir> {
     //No need for enum signatures for now
     pub enums: BTreeMap<&'hir str, &'hir HirEnum<'hir>>,
     pub unions: BTreeMap<&'hir str, &'hir HirUnionSignature<'hir>>,
+    pub concepts: BTreeMap<&'hir str, &'hir HirConceptSignature<'hir>>,
+    pub conformances: Vec<HirConformanceSignature<'hir>>,
     pub global_consts: BTreeMap<&'hir str, &'hir HirGlobalConst<'hir>>,
     pub docstring: Option<&'hir str>,
     /// Name of the module (e.g.: `package name;`)
     pub module_name: &'hir str,
     /// Imported modules and their signatures
     pub imported_modules: BTreeMap<&'hir str, &'hir HirModuleSignature<'hir>>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirConformanceSignature<'hir> {
+    pub target: &'hir HirTy<'hir>,
+    pub concept: &'hir HirTy<'hir>,
+    pub span: Span,
+    pub where_clause: Option<Vec<&'hir HirGenericConstraint<'hir>>>,
+    pub associated_types: Vec<HirAssociatedTypeAssignment<'hir>>,
+    pub is_local: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirAssociatedTypeAssignment<'hir> {
+    pub span: Span,
+    pub name: &'hir str,
+    pub ty: &'hir HirTy<'hir>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirConceptSignature<'hir> {
+    pub declaration_span: Span,
+    pub vis: HirVisibility,
+    pub name: &'hir str,
+    pub name_span: Span,
+    pub generics: Vec<&'hir HirGenericConstraint<'hir>>,
+    pub associated_types: BTreeMap<&'hir str, HirAssociatedTypeSignature<'hir>>,
+    pub required_methods: Vec<&'hir HirStructMethodSignature<'hir>>,
+    pub required_method_names: Vec<&'hir str>,
+    pub required_operators: BTreeMap<HirOverloadableOperatorKind, HirStructMethodSignature<'hir>>,
+    pub required_operator_names: Vec<&'hir str>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HirAssociatedTypeSignature<'hir> {
+    pub span: Span,
+    pub name: &'hir str,
+    pub name_span: Span,
+    pub ty: Option<&'hir HirTy<'hir>>,
 }
 
 #[derive(Debug, Clone, Serialize)]

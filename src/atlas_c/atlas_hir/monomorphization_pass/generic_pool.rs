@@ -254,17 +254,87 @@ impl<'hir> HirGenericPool<'hir> {
     ) -> bool {
         match kind {
             HirGenericConstraintKind::Std { name, .. } => {
-                let Some(std_constraint) = Self::std_capability_from_name(name) else {
-                    return false;
-                };
-                self.implements_std_capability(module, ty, std_constraint)
+                if let Some(std_constraint) = Self::std_capability_from_name(name) {
+                    self.implements_std_capability(module, ty, std_constraint)
+                } else {
+                    self.implements_concept(module, ty, name)
+                        || self.implements_concept(module, ty, &format!("std::{}", name))
+                }
             }
             HirGenericConstraintKind::Operator { op, .. } => {
                 self.implements_operator_constraint(module, ty, op.kind)
             }
-            // User concepts are parsed/lowered, but not enforced by semantic checks yet.
-            HirGenericConstraintKind::Concept { .. } => true,
+            HirGenericConstraintKind::Concept { name, .. } => {
+                self.implements_concept(module, ty, name)
+            }
         }
+    }
+
+    fn implements_concept(
+        &self,
+        module: &HirModuleSignature<'hir>,
+        ty: &HirTy<'hir>,
+        concept_name: &str,
+    ) -> bool {
+        let Some(_concept) = module.concepts.get(concept_name) else {
+            return false;
+        };
+        module.conformances.iter().any(|conformance| {
+            matches!(conformance.concept, HirTy::Named(name) if name.name == concept_name)
+                && Self::type_pattern_matches(conformance.target, ty)
+        })
+    }
+
+    pub fn type_pattern_matches(pattern: &HirTy<'hir>, actual: &HirTy<'hir>) -> bool {
+        match (pattern, actual) {
+            (HirTy::Generic(g), _) if g.inner.is_empty() => true,
+            (HirTy::Named(left), HirTy::Named(right)) => left.name == right.name,
+            (HirTy::Generic(left), HirTy::Generic(right)) => {
+                left.name == right.name
+                    && left.inner.len() == right.inner.len()
+                    && left
+                        .inner
+                        .iter()
+                        .zip(&right.inner)
+                        .all(|(left, right)| Self::type_pattern_matches(left, right))
+            }
+            _ => pattern.type_key() == actual.type_key(),
+        }
+    }
+
+    pub fn resolve_associated_type(
+        module: &HirModuleSignature<'hir>,
+        ty: &HirTy<'hir>,
+        concept_name: &str,
+        associated_name: &str,
+    ) -> Option<&'hir HirTy<'hir>> {
+        let concept = module.concepts.get(concept_name)?;
+        let conformance = module.conformances.iter().find(|conformance| {
+            matches!(conformance.concept, HirTy::Named(name) if name.name == concept_name)
+                && Self::type_pattern_matches(conformance.target, ty)
+        })?;
+        conformance
+            .associated_types
+            .iter()
+            .find(|assignment| assignment.name == associated_name)
+            .map(|assignment| assignment.ty)
+            .or_else(|| concept.associated_types.get(associated_name)?.ty)
+    }
+
+    pub fn resolve_projection(
+        module: &HirModuleSignature<'hir>,
+        ty: &HirTy<'hir>,
+        associated_name: &str,
+    ) -> Option<&'hir HirTy<'hir>> {
+        module.conformances.iter().find_map(|conformance| {
+            if !Self::type_pattern_matches(conformance.target, ty) {
+                return None;
+            }
+            let HirTy::Named(concept_name) = conformance.concept else {
+                return None;
+            };
+            Self::resolve_associated_type(module, ty, concept_name.name, associated_name)
+        })
     }
 
     fn constraint_span(kind: &HirGenericConstraintKind<'hir>) -> Span {

@@ -15,6 +15,7 @@ use crate::atlas_c::{
         signature::{ConstantValue, HirOverloadableOperatorKind, HirStructMethodModifier},
         stmt::HirStatement,
         ty::{HirGenericTy, HirTy, HirTyId},
+        type_check_pass::primitive_bypass::primitive_type_name,
     },
     atlas_lir::{
         error::{
@@ -45,6 +46,9 @@ pub struct HirLoweringPass<'hir> {
     param_map: HashMap<&'hir str, u8>,
     /// Maps local variable names to their temp ID
     local_map: HashMap<&'hir str, u32>,
+    /// Maps local variable names to their concrete HIR type.
+    local_types: HashMap<&'hir str, &'hir HirTy<'hir>>,
+    current_struct_name: Option<String>,
     hir_arena: &'hir HirArena<'hir>,
 }
 
@@ -57,6 +61,8 @@ impl<'hir> HirLoweringPass<'hir> {
             block_counter: 0,
             param_map: HashMap::new(),
             local_map: HashMap::new(),
+            local_types: HashMap::new(),
+            current_struct_name: None,
             hir_arena,
         }
     }
@@ -152,6 +158,26 @@ impl<'hir> HirLoweringPass<'hir> {
         let mut structs = Vec::new();
         for body in self.hir_module.body.structs.values() {
             structs.push(self.lower_struct(body, &mut functions)?);
+        }
+        for blocks in self.hir_module.body.extends.values() {
+            for block in blocks {
+                if block.where_clause.as_ref().is_some_and(|w| !w.is_empty()) {
+                    continue;
+                }
+                let target_name = match block.ty {
+                    HirTy::Named(n) => n.name,
+                    other => match primitive_type_name(other) {
+                        Some(name) => name,
+                        None => continue,
+                    },
+                };
+                for method in block.methods.iter() {
+                    functions.push(self.lower_method(target_name, method)?);
+                }
+                for operator in block.operators.iter() {
+                    functions.push(self.lower_method(target_name, operator)?);
+                }
+            }
         }
         let mut unions = Vec::new();
         for body in self.hir_module.body.unions.values() {
@@ -325,6 +351,8 @@ impl<'hir> HirLoweringPass<'hir> {
         self.block_counter = 0;
         self.param_map.clear();
         self.local_map.clear();
+        self.local_types.clear();
+        self.current_struct_name = Some(struct_name.to_string());
 
         self.param_map.insert("this", 0);
         let args = vec![LirTy::Ptr {
@@ -366,8 +394,14 @@ impl<'hir> HirLoweringPass<'hir> {
         self.block_counter = 0;
         self.param_map.clear();
         self.local_map.clear();
+        self.local_types.clear();
+        self.current_struct_name = Some(struct_name.to_string());
 
         let mut args = Vec::new();
+
+        let self_lir_ty = Self::primitive_lir_ty(struct_name)
+            .unwrap_or_else(|| LirTy::StructType(struct_name.to_string()));
+
         if matches!(
             method.signature.modifier,
             HirStructMethodModifier::Mutable | HirStructMethodModifier::Const
@@ -376,7 +410,7 @@ impl<'hir> HirLoweringPass<'hir> {
             self.param_map.insert("this", 0);
             args.push(LirTy::Ptr {
                 is_const: method.signature.modifier == HirStructMethodModifier::Const,
-                inner: Box::new(LirTy::StructType(struct_name.to_string())),
+                inner: Box::new(self_lir_ty),
             });
         } else if matches!(
             method.signature.modifier,
@@ -384,7 +418,7 @@ impl<'hir> HirLoweringPass<'hir> {
         ) {
             // Consuming methods take ownership of `this` by value.
             self.param_map.insert("this", 0);
-            args.push(LirTy::StructType(struct_name.to_string()));
+            args.push(self_lir_ty);
         } else {
             // Static method, no "this" parameter
         }
@@ -460,6 +494,7 @@ impl<'hir> HirLoweringPass<'hir> {
         self.block_counter = 0;
         self.param_map.clear();
         self.local_map.clear();
+        self.local_types.clear();
 
         // Build parameter map
         for (idx, param) in func.signature.params.iter().enumerate() {
@@ -605,6 +640,7 @@ impl<'hir> HirLoweringPass<'hir> {
                         panic!("Expected a temp operand");
                     }
                 }
+                self.local_types.insert(const_stmt.name, const_stmt.ty);
             }
             HirStatement::Let(let_stmt) => {
                 let value = self.lower_expr(&let_stmt.value)?;
@@ -625,6 +661,7 @@ impl<'hir> HirLoweringPass<'hir> {
                         panic!("Expected a temp operand");
                     }
                 }
+                self.local_types.insert(let_stmt.name, let_stmt.ty);
             }
             HirStatement::Assign(assign) => {
                 let value = self.lower_expr(&assign.val)?;
@@ -856,6 +893,17 @@ impl<'hir> HirLoweringPass<'hir> {
                     Ok(LirOperand::GlobalFn(function_name))
                 } else if let Some(c) = self.hir_module.signature.global_consts.get(ident.name) {
                     self.lower_expr(c.value)
+                } else if let Some(struct_name) = &self.current_struct_name
+                    && let Some(structure) =
+                        self.hir_module.signature.structs.get(struct_name.as_str())
+                    && let Some(field) = structure.fields.get(ident.name)
+                {
+                    Ok(LirOperand::FieldAccess {
+                        src: Box::new(LirOperand::Arg(0)),
+                        field_name: ident.name.to_string(),
+                        ty: self.hir_ty_to_lir_ty(field.ty, field.span),
+                        is_arrow: true,
+                    })
                 } else {
                     // Unknown identifier - shouldn't happen after type checking
                     panic!("Unknown identifier: {}", ident.name);
@@ -962,7 +1010,19 @@ impl<'hir> HirLoweringPass<'hir> {
                     return Ok(dest);
                 }
 
-                let ty = self.hir_ty_to_lir_ty(binop.ty, binop.span);
+                let ty = if matches!(
+                    binop.op,
+                    HirBinaryOperator::Eq
+                        | HirBinaryOperator::Neq
+                        | HirBinaryOperator::Lt
+                        | HirBinaryOperator::Lte
+                        | HirBinaryOperator::Gt
+                        | HirBinaryOperator::Gte
+                ) {
+                    LirTy::Boolean
+                } else {
+                    self.hir_ty_to_lir_ty(binop.ty, binop.span)
+                };
 
                 let instr = match binop.op {
                     HirBinaryOperator::Add => LirInstr::Add {
@@ -1653,7 +1713,49 @@ impl<'hir> HirLoweringPass<'hir> {
                     inner: Box::new(inner),
                 }
             }
+            HirTy::Associated(a) => {
+                let ty_id = HirTyId::from(a.base);
+                if let Some(extend) = self.hir_module.body.extends.get(&ty_id) {
+                    for e in extend.iter() {
+                        for t in e.associated_types.iter() {
+                            if t.name == a.name {
+                                if t.ty.is_none() {
+                                    break;
+                                }
+                                return self.hir_ty_to_lir_ty(t.ty.unwrap(), a.span);
+                            }
+                        }
+                    }
+                    let report: miette::Report =
+                        (*unknown_type_err(&format!("{}", ty), span)).into();
+                    eprintln!("{:?}", report);
+                    std::process::exit(1);
+                } else {
+                    let report: miette::Report =
+                        (*unknown_type_err(&format!("{}", ty), span)).into();
+                    eprintln!("{:?}", report);
+                    std::process::exit(1);
+                }
+            }
         }
+    }
+
+    fn primitive_lir_ty(name: &str) -> Option<LirTy> {
+        Some(match name {
+            "int8" => LirTy::Int8,
+            "int16" => LirTy::Int16,
+            "int32" => LirTy::Int32,
+            "int64" => LirTy::Int64,
+            "uint8" => LirTy::UInt8,
+            "uint16" => LirTy::UInt16,
+            "uint32" => LirTy::UInt32,
+            "uint64" => LirTy::UInt64,
+            "float32" => LirTy::Float32,
+            "float64" => LirTy::Float64,
+            "char" => LirTy::Char,
+            "bool" => LirTy::Boolean,
+            _ => return None,
+        })
     }
 
     fn lir_type_size_and_align(&self, ty: &LirTy) -> (usize, usize) {

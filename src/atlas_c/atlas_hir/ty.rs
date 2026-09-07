@@ -26,6 +26,7 @@ const NAMED_TY_ID: u8 = 0x60;
 const GENERIC_TY_ID: u8 = 0x70;
 const ATOMIC_TY_ID: u8 = 0x80;
 const POINTER_TY_ID: u8 = 0x90;
+const ASSOCIATED_TY_ID: u8 = 0xA0;
 
 impl HirTyId {
     pub fn compute_int_ty_id(size_in_bits: u8) -> Self {
@@ -158,6 +159,12 @@ impl HirTyId {
         (POINTER_TY_ID, is_const, inner).hash(&mut hasher);
         Self(hasher.finish())
     }
+
+    pub fn compute_associated_ty_id(base: &HirTyId, name: &str) -> Self {
+        let mut hasher = DefaultHasher::new();
+        (ASSOCIATED_TY_ID, base, name).hash(&mut hasher);
+        Self(hasher.finish())
+    }
 }
 
 impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
@@ -197,6 +204,9 @@ impl<'hir> From<&'hir HirTy<'hir>> for HirTyId {
                 HirTyId::compute_function_ty_id(&ret_ty, &parameters)
             }
             HirTy::Atomic(a) => HirTyId::compute_atomic_ty_id(&HirTyId::from(a.inner)),
+            HirTy::Associated(a) => {
+                HirTyId::compute_associated_ty_id(&HirTyId::from(a.base), a.name)
+            }
         }
     }
 }
@@ -222,6 +232,7 @@ pub enum HirTy<'hir> {
     Function(HirFunctionTy<'hir>),
     PtrTy(HirPtrTy<'hir>),
     Atomic(HirAtomicTy<'hir>),
+    Associated(HirAssociatedTypeTy<'hir>),
 }
 
 impl HirTy<'_> {
@@ -382,6 +393,7 @@ impl HirTy<'_> {
             HirTy::Atomic(a) => {
                 format!("_Atomic_{}", a.inner.get_valid_c_string())
             }
+            HirTy::Associated(a) => format!("{}_assoc_{}", a.base.get_valid_c_string(), a.name),
         }
     }
 }
@@ -454,6 +466,7 @@ impl fmt::Display for HirTy<'_> {
             HirTy::Atomic(a) => {
                 write!(f, "__atomic {}", a.inner)
             }
+            HirTy::Associated(a) => write!(f, "{}::{}", a.base, a.name),
         }
     }
 }
@@ -471,6 +484,13 @@ pub struct HirPtrTy<'hir> {
 #[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize)]
 pub struct HirAtomicTy<'hir> {
     pub inner: &'hir HirTy<'hir>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize)]
+pub struct HirAssociatedTypeTy<'hir> {
+    pub base: &'hir HirTy<'hir>,
+    pub name: &'hir str,
     pub span: Span,
 }
 

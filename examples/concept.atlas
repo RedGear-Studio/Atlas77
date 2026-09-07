@@ -1,71 +1,70 @@
-import "std/string";
+import "std/io";
 
 // This file is only there for testing purposes rn
 
 namespace std {
-    concept equal {
+    public concept equal {
         operator equal(*const this, other: *const This) -> This;
     }
     
-    enum ordering {
+    public enum ordering {
         LESS = 0xFFFFFFFFFFFFFFFFu;
         GREATER = 1;
         EQUAL = 0;
     }
     concept compare {
-        fun compare(*const this, other: *const This) -> std::ordering;
-        operator equal(*const this, other: *const This) -> bool {
-            return this->compare(other) == std::ordering::EQUAL; 
-        }
-        operator less(*const this, other: *const This) -> bool {
-            return this->compare(other) == std::ordering::LESS;
-        }
-        operator less_equal(*const this, other: *const This) -> bool {
-            let res = this->compare(other);
-            return res == std::ordering::EQUAL || res == std::ordering::LESS; 
-        }
-        operator greater(*const this, other: *const This) -> bool {
-            return this->compare(other) == std::ordering::GREATER;
-        }
-        operator great_equal(*const this, other: *const This) -> bool {
-            let res = this->compare(other);
-            return res == std::ordering::EQUAL || res == std::ordering::GREATER; 
-        }
+        type Result;
+        fun my_compare(*const this, other: *const This) -> This::Result;
     }
 }
 
-struct test {
+public struct test {
+  public:
     val: int32;
 }
 
 extend test with std::compare {
-    fun compare(*const this, other: *const test) -> std::ordering {
+    type Result = std::ordering;
+    fun my_compare(*const this, other: *const test) -> This::Result {
         // TODO: Make it possible for boolean
-        return ((a > b) as int32 - (a < b) as int32) as uint64;
+        return ((this->val > other->val) as int32 - (this->val < other->val) as int32) as uint64;
     }
 } 
 
-struct test_concept<T: std::compare> {
-    val1: T;
-    val2: T;
-    fun foo(*const this) -> std::ordering {
-        return val1.compare(val2);
+extend int32 with std::compare {
+    type Result = std::ordering;
+    fun my_compare(*const this, other: *const int32) -> This::Result {
+        // TODO: Make it possible for boolean
+        return ((*this > *other) as int32 - (*this < *other) as int32) as uint64;
     }
 }
 
-concept printable {
+concept HEHE {
+    type Result;
+    fun foo(*this) -> This::Result;
+}
+
+extend int32 with HEHE {
+    type Result = float32;
+    fun foo(*this) -> This::Result {
+        return 5;
+    }
+}
+
+
+struct test_concept<T: std::compare> {
   public:
-    // Should this really trigger an allocation?
-    fun display(*const this) -> std::string;
-}
-
-fun print<T: printable>(val: T) {
-    std::printf("%s", val.display().c_str());
-}
-
-extend int32 with printable {
-    fun display(*const this) -> std::string {
-        return std::string::from_chars("5");
+    val1: T;
+    val2: T;
+    fun new(val1: T, val2: T) -> This {
+        return test_concept<T> {
+            .val1 = val1,
+            .val2 = val2
+        };
+    }
+    fun foo(*const this) -> std::ordering {
+        let res = this->val1.my_compare(&this->val2);
+        return res;
     }
 }
 
@@ -73,10 +72,23 @@ fun main() {
     let cpt = test_concept<test>::new(test {.val = 5}, test{.val = 10});
     let cmp = cpt.foo();
     if cmp == std::ordering::LESS {
-        std::printf("LESS");
+        std::println("LESS");
     } else if cmp == std::ordering::GREATER {
-        std::printf("GREATER");
+        std::println("GREATER");
     } else {
-        std::printf("EQUAL");
+        std::println("EQUAL");
     }
+
+    let a: int32 = 5;
+    let b: int32 = 10;
+    cmp = a.my_compare(&b);
+    if cmp == std::ordering::LESS {
+        std::println("LESS");
+    } else if cmp == std::ordering::GREATER {
+        std::println("GREATER");
+    } else {
+        std::println("EQUAL");
+    }
+
+    let hehe: test = a.foo();
 }
