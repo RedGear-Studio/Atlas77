@@ -135,7 +135,11 @@ impl<'hir> MonomorphizationPass<'hir> {
                 .conformances
                 .iter()
                 .filter(|conformance| {
-                    HirGenericPool::type_pattern_matches(conformance.target, owner_ty)
+                    HirGenericPool::type_pattern_matches(
+                        &module.signature,
+                        conformance.target,
+                        owner_ty,
+                    )
                 })
                 .cloned()
                 .collect();
@@ -800,7 +804,11 @@ impl<'hir> MonomorphizationPass<'hir> {
         new_struct.methods.clear();
         let actual_ty = self.arena.intern(HirTy::Generic(actual_type.clone()));
         for conformance in module.signature.conformances.iter() {
-            if !HirGenericPool::type_pattern_matches(conformance.target, actual_ty) {
+            if !HirGenericPool::type_pattern_matches(
+                &module.signature,
+                conformance.target,
+                actual_ty,
+            ) {
                 continue;
             }
             let HirTy::Named(concept_name) = conformance.concept else {
@@ -815,7 +823,9 @@ impl<'hir> MonomorphizationPass<'hir> {
                     .extends
                     .values()
                     .flatten()
-                    .filter(|block| HirGenericPool::type_pattern_matches(block.ty, actual_ty))
+                    .filter(|block| {
+                        HirGenericPool::type_pattern_matches(&module.signature, block.ty, actual_ty)
+                    })
                     .any(|block| {
                         block
                             .methods

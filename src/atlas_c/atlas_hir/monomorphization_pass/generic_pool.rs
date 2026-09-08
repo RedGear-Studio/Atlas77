@@ -281,22 +281,38 @@ impl<'hir> HirGenericPool<'hir> {
         };
         module.conformances.iter().any(|conformance| {
             matches!(conformance.concept, HirTy::Named(name) if name.name == concept_name)
-                && Self::type_pattern_matches(conformance.target, ty)
+                && Self::type_pattern_matches(module, conformance.target, ty)
         })
     }
 
-    pub fn type_pattern_matches(pattern: &HirTy<'hir>, actual: &HirTy<'hir>) -> bool {
+    pub fn type_pattern_matches(
+        module: &HirModuleSignature<'hir>,
+        pattern: &HirTy<'hir>,
+        actual: &HirTy<'hir>,
+    ) -> bool {
         match (pattern, actual) {
             (HirTy::Generic(g), _) if g.inner.is_empty() => true,
             (HirTy::Named(left), HirTy::Named(right)) => left.name == right.name,
             (HirTy::Generic(left), HirTy::Generic(right)) => {
-                left.name == right.name
-                    && left.inner.len() == right.inner.len()
-                    && left
-                        .inner
-                        .iter()
-                        .zip(&right.inner)
-                        .all(|(left, right)| Self::type_pattern_matches(left, right))
+                if left.name != right.name || left.inner.len() != right.inner.len() {
+                    return false;
+                }
+                let struct_generics = module
+                    .structs
+                    .get(left.name)
+                    .map(|s| s.generics.as_slice())
+                    .unwrap_or(&[]);
+                left.inner
+                    .iter()
+                    .enumerate()
+                    .zip(&right.inner)
+                    .all(|((i, l), r)| {
+                        let is_placeholder = struct_generics
+                            .get(i)
+                            .map(|g| matches!(l, HirTy::Named(n) if n.name == g.generic_name))
+                            .unwrap_or(false);
+                        is_placeholder || Self::type_pattern_matches(module, l, r)
+                    })
             }
             _ => pattern.type_key() == actual.type_key(),
         }
@@ -311,7 +327,7 @@ impl<'hir> HirGenericPool<'hir> {
         let concept = module.concepts.get(concept_name)?;
         let conformance = module.conformances.iter().find(|conformance| {
             matches!(conformance.concept, HirTy::Named(name) if name.name == concept_name)
-                && Self::type_pattern_matches(conformance.target, ty)
+                && Self::type_pattern_matches(module, conformance.target, ty)
         })?;
         conformance
             .associated_types
@@ -327,7 +343,7 @@ impl<'hir> HirGenericPool<'hir> {
         associated_name: &str,
     ) -> Option<&'hir HirTy<'hir>> {
         module.conformances.iter().find_map(|conformance| {
-            if !Self::type_pattern_matches(conformance.target, ty) {
+            if !Self::type_pattern_matches(module, conformance.target, ty) {
                 return None;
             }
             let HirTy::Named(concept_name) = conformance.concept else {
@@ -522,10 +538,29 @@ impl<'hir> HirGenericPool<'hir> {
                     }
                     _ => continue,
                 },
+                HirTy::Associated(a) => {
+                    if !self.is_ty_concrete(a.base, module) {
+                        is_instantiated = false;
+                    }
+                }
                 _ => continue,
             }
         }
         is_instantiated
+    }
+
+    fn is_ty_concrete(&mut self, ty: &HirTy<'hir>, module: &HirModuleSignature<'hir>) -> bool {
+        match ty {
+            HirTy::Named(n) => {
+                n.name.len() != 1
+                    || module.structs.contains_key(n.name)
+                    || module.unions.contains_key(n.name)
+            }
+            HirTy::Generic(g) => self.is_generic_instantiated(g, module),
+            HirTy::Associated(a) => self.is_ty_concrete(a.base, module),
+            HirTy::PtrTy(p) => self.is_ty_concrete(p.inner, module),
+            _ => true,
+        }
     }
 
     pub fn check_constraint_satisfaction(
