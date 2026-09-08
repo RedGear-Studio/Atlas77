@@ -1,4 +1,5 @@
 import "std/io";
+import "std/map";
 
 // This file is only there for testing purposes rn
 
@@ -40,14 +41,12 @@ extend int32 with std::compare {
 }
 
 concept HEHE {
-    type Result;
-    fun foo(*this) -> This::Result;
+    fun foo(*this) -> test;
 }
 
 extend int32 with HEHE {
-    type Result = float32;
-    fun foo(*this) -> This::Result {
-        return 5;
+    fun foo(*this) -> test {
+        return test {.val = 5};
     }
 }
 
@@ -68,9 +67,16 @@ struct test_concept<T: std::compare> {
     }
 }
 
+extend test_concept<T> with std::hashable where T: std::hashable {
+    fun hash(*const this) -> uint64 {
+        return this->val1.hash() + this->val2.hash();
+    }
+}
+
 fun main() {
     let cpt = test_concept<test>::new(test {.val = 5}, test{.val = 10});
     let cmp = cpt.foo();
+    let hashed = cpt.hash();
     if cmp == std::ordering::LESS {
         std::println("LESS");
     } else if cmp == std::ordering::GREATER {

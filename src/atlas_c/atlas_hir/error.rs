@@ -80,7 +80,6 @@ declare_error_type! {
         UnknownField(UnknownFieldError),
         UnknownMethod(UnknownMethodError),
         StructCannotHaveAFieldOfItsOwnType(StructCannotHaveAFieldOfItsOwnTypeError),
-        UnionVariantDefinedMultipleTimes(UnionVariantDefinedMultipleTimesError),
         LifetimeDependencyViolation(LifetimeDependencyViolationError),
         ReturningValueWithLocalLifetimeDependency(ReturningValueWithLocalLifetimeDependencyError),
         MethodConstraintNotSatisfied(MethodConstraintNotSatisfiedError),
@@ -1241,26 +1240,6 @@ pub struct StructCannotHaveAFieldOfItsOwnTypeError {
 
 #[derive(Error, Diagnostic, Debug, Serialize)]
 #[diagnostic(
-    code(sema::union_variant_defined_multiple_times),
-    help(
-        "Each variant in a union must have a unique name. Rename one of the variants to resolve the conflict."
-    )
-)]
-#[error("union `{union_name}` has a variant of type `{variant_ty}` defined multiple times")]
-pub struct UnionVariantDefinedMultipleTimesError {
-    pub union_name: String,
-    pub variant_ty: String,
-    #[label = "first definition of variant of type `{variant_ty}`"]
-    pub first_span: Span,
-    #[label = "second definition of variant of type `{variant_ty}`"]
-    pub second_span: Span,
-    #[source_code]
-    #[serde(skip_serializing)]
-    pub src: NamedSource<String>,
-}
-
-#[derive(Error, Diagnostic, Debug, Serialize)]
-#[diagnostic(
     code(sema::lifetime_dependency_violation),
     help(
         "The value `{value_name}` depends on `{origin_name}` which has been deleted or moved. \
@@ -2001,20 +1980,6 @@ impl From<HirError> for Vec<CompilerError> {
                     errors.push(err);
                 }
                 errors
-            }
-            HirError::UnionVariantDefinedMultipleTimes(error) => {
-                vec![
-                    CompilerError {
-                        message: error.to_string(),
-                        span: error.first_span,
-                        kind: CompilerErrorKind::Note,
-                    },
-                    CompilerError {
-                        message: error.to_string(),
-                        span: error.second_span,
-                        kind: CompilerErrorKind::Error,
-                    },
-                ]
             }
             HirError::LifetimeDependencyViolation(error) => {
                 vec![
