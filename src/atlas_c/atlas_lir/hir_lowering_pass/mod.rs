@@ -1142,9 +1142,13 @@ impl<'hir> HirLoweringPass<'hir> {
             // === ObjLiteral ===
             HirExpr::ObjLiteral(obj_lit) => {
                 let mut field_values = BTreeMap::new();
-                for field_value in &obj_lit.fields {
-                    let value_operand = self.lower_expr(&field_value.value)?;
-                    field_values.insert(field_value.name.to_string(), value_operand);
+                if obj_lit.fields.is_empty() {
+                    field_values.insert(String::from("_dummy"), LirOperand::ImmChar('A'));
+                } else {
+                    for field_value in &obj_lit.fields {
+                        let value_operand = self.lower_expr(&field_value.value)?;
+                        field_values.insert(field_value.name.to_string(), value_operand);
+                    }
                 }
                 Ok(LirOperand::LiteralObj {
                     field_values,
