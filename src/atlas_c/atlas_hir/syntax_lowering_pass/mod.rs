@@ -356,10 +356,12 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
                     src: source,
                 },
             ))
-        } else if item.starts_with("overlapping") {
+        } else if let Some(concept_name) =
+            item.strip_prefix("overlapping concept conformances for ")
+        {
             Err(HirError::ConceptOverlap(ConceptOverlapError {
                 span,
-                concept: item,
+                concept: concept_name.to_string(),
                 src: source,
             }))
         } else if item.starts_with("orphan") {
@@ -1481,10 +1483,13 @@ impl<'ast, 'hir> AstSyntaxLoweringPass<'ast, 'hir> {
         &mut self,
         node: &'ast AstImport<'ast>,
     ) -> HirResult<(&'hir HirModule<'hir>, HirGenericPool<'hir>)> {
+        let dedup_key = utils::resolve_import_path(node.path);
+        let canonical_key: &'hir str = self.arena.intern(dedup_key);
+
         //TODO: Handle errors properly
-        if !self.already_imported.contains_key(node.path) {
+        if !self.already_imported.contains_key(canonical_key) {
             self.already_imported
-                .insert(self.arena.intern(node.path.to_owned()), ());
+                .insert(self.arena.intern(canonical_key.to_owned()), ());
             let src = match crate::atlas_c::utils::get_file_content(node.path) {
                 Ok(src) => src,
                 Err(_) => {

@@ -36,6 +36,41 @@ impl From<LabeledSpan> for Span {
     }
 }
 
+pub fn resolve_import_path(path: &str) -> String {
+    let normalized = if path.ends_with(".atlas") {
+        path.to_string()
+    } else {
+        format!("{}.atlas", path)
+    };
+
+    if normalized.starts_with("std/") || normalized.starts_with("core/") {
+        return normalized;
+    }
+
+    let direct = std::path::Path::new(&normalized);
+    let candidate = if direct.exists() {
+        direct.to_path_buf()
+    } else {
+        std::path::Path::new(&format!("src/{}", normalized)).to_path_buf()
+    };
+
+    let canonical = std::fs::canonicalize(&candidate)
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|_| normalized.replace('\\', "/"));
+
+    logical_lib_path(&canonical, "libraries/std", "std")
+        .or_else(|| logical_lib_path(&canonical, "libraries/core", "core"))
+        .unwrap_or(canonical)
+}
+
+fn logical_lib_path(canonical: &str, lib_dir: &str, prefix: &str) -> Option<String> {
+    let marker = format!("/{}/", lib_dir);
+    let idx = canonical.find(&marker)?;
+    let rest = &canonical[idx + marker.len()..];
+    let rest = rest.strip_suffix(".atlas").unwrap_or(rest);
+    Some(format!("{}/{}", prefix, rest))
+}
+
 /// Reads the content of a file given its path. If the path starts with "std/", it
 /// attempts to read the file from the embedded standard library directory.
 /// Otherwise, it reads the file from the filesystem.
