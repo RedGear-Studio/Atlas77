@@ -490,6 +490,13 @@ impl<'hir> HirGenericPool<'hir> {
         );
     }
 
+    fn is_placeholder_name(name: &str, module: &HirModuleSignature<'hir>) -> bool {
+        if name == "This" {
+            return true;
+        }
+        name.len() == 1 && !module.structs.contains_key(name) && !module.unions.contains_key(name)
+    }
+
     fn is_generic_instantiated(
         &mut self,
         generic: &HirGenericTy<'hir>,
@@ -501,10 +508,7 @@ impl<'hir> HirGenericPool<'hir> {
                 HirTy::Named(n) => {
                     // Check if this is actually a defined struct/union in the module
                     // If it's only 1 letter AND not defined as a struct/union, it's a generic type parameter
-                    if n.name.len() == 1
-                        && !module.structs.contains_key(n.name)
-                        && !module.unions.contains_key(n.name)
-                    {
+                    if Self::is_placeholder_name(n.name, module) {
                         is_instantiated = false;
                     }
                 }
@@ -551,11 +555,7 @@ impl<'hir> HirGenericPool<'hir> {
 
     fn is_ty_concrete(&mut self, ty: &HirTy<'hir>, module: &HirModuleSignature<'hir>) -> bool {
         match ty {
-            HirTy::Named(n) => {
-                n.name.len() != 1
-                    || module.structs.contains_key(n.name)
-                    || module.unions.contains_key(n.name)
-            }
+            HirTy::Named(n) => !Self::is_placeholder_name(n.name, module),
             HirTy::Generic(g) => self.is_generic_instantiated(g, module),
             HirTy::Associated(a) => self.is_ty_concrete(a.base, module),
             HirTy::PtrTy(p) => self.is_ty_concrete(p.inner, module),

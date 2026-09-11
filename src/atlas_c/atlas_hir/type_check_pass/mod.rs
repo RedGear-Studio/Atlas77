@@ -141,6 +141,16 @@ impl<'hir> TypeChecker<'hir> {
             });
     }
 
+    fn contains_unresolved_this(ty: &HirTy) -> bool {
+        match ty {
+            HirTy::Named(n) => n.name == "This",
+            HirTy::Generic(g) => g.inner.iter().any(Self::contains_unresolved_this),
+            HirTy::Associated(a) => Self::contains_unresolved_this(a.base),
+            HirTy::PtrTy(p) => Self::contains_unresolved_this(p.inner),
+            _ => false,
+        }
+    }
+
     /// Checks if the method exists and is instantiated. If not, enqueues a monomorphization request and returns true.
     fn maybe_enqueue_deferred_method_materialization(
         &mut self,
@@ -153,6 +163,17 @@ impl<'hir> TypeChecker<'hir> {
             Some(sig) => *sig,
             None => return false,
         };
+
+        if owner_sig
+            .fields
+            .values()
+            .any(|f| Self::contains_unresolved_this(f.ty))
+            || generic_args
+                .iter()
+                .any(|ty| Self::contains_unresolved_this(ty))
+        {
+            return false;
+        }
 
         let template_owner_name = owner_sig
             .pre_mangled_ty
@@ -3911,6 +3932,9 @@ impl<'hir> TypeChecker<'hir> {
     ) -> HirResult<()> {
         match (expected_ty, found_ty) {
             (_, HirTy::Associated(a)) => {
+                if Self::is_unresolved_this(a.base) {
+                    return Ok(());
+                }
                 let ty_id = HirTyId::from(a.base);
                 if let Some(extend) = self.module_extends.get(&ty_id) {
                     for e in extend.iter() {
@@ -3934,6 +3958,9 @@ impl<'hir> TypeChecker<'hir> {
                 }
             }
             (HirTy::Associated(a), _) => {
+                if Self::is_unresolved_this(a.base) {
+                    return Ok(());
+                }
                 let ty_id = HirTyId::from(a.base);
                 if let Some(extend) = self.module_extends.get(&ty_id) {
                     for e in extend.iter() {
@@ -4162,6 +4189,10 @@ impl<'hir> TypeChecker<'hir> {
                 }
             }
         }
+    }
+
+    fn is_unresolved_this(ty: &HirTy) -> bool {
+        matches!(ty, HirTy::Named(n) if n.name == "This")
     }
 
     fn atomic_type_mismatch_err(
