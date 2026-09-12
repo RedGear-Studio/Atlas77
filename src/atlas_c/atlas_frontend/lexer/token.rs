@@ -1,8 +1,12 @@
 use logos::Logos;
+use miette::NamedSource;
 use std::num::{ParseFloatError, ParseIntError};
 use std::str::ParseBoolError;
 
-use crate::atlas_c::utils::Span;
+use crate::atlas_c::atlas_frontend::parser::error::{
+    InvalidBoolError, InvalidFloatError, InvalidIntegerError, InvalidUnsignedIntegerError, NonAsciiCharError, SyntaxError,
+};
+use crate::atlas_c::utils::{self, Span};
 
 fn parse_string_literal(lex: &mut logos::Lexer<'_, TokenKind>) -> String {
     let raw = &lex.slice()[1..lex.slice().len() - 1];
@@ -173,6 +177,57 @@ impl From<ParseFloatError> for LexingError {
 impl From<ParseBoolError> for LexingError {
     fn from(e: ParseBoolError) -> Self {
         LexingError::InvalidBool(e.to_string())
+    }
+}
+
+impl Into<SyntaxError> for (LexingError, Span) {
+    fn into(self) -> SyntaxError {
+        match self {
+            (LexingError::InvalidBool(b), s) => {
+                let path = s.path;
+                let src = utils::get_file_content(path).expect("Stuff");
+                SyntaxError::InvalidBool(InvalidBoolError {
+                    text: b,
+                    span: s,
+                    src: NamedSource::new(path, src),
+                })
+            }
+            (LexingError::InvalidInteger(i), s) => {
+                let path = s.path;
+                let src = utils::get_file_content(path).expect("Stuff");
+                SyntaxError::InvalidInteger(InvalidIntegerError {
+                    text: i,
+                    span: s,
+                    src: NamedSource::new(path, src),
+                })
+            }
+            (LexingError::InvalidUnsignedInteger(u), s) => {
+                let path = s.path;
+                let src = utils::get_file_content(path).expect("Stuff");
+                SyntaxError::InvalidUnsignedInteger(InvalidUnsignedIntegerError {
+                    text: u,
+                    span: s,
+                    src: NamedSource::new(path, src),
+                })
+            }
+            (LexingError::InvalidFloat(f), s) => {
+                let path = s.path;
+                let src = utils::get_file_content(path).expect("Stuff");
+                SyntaxError::InvalidFloat(InvalidFloatError {
+                    text: f,
+                    span: s,
+                    src: NamedSource::new(path, src),
+                })
+            }
+            (LexingError::NonAsciiChar, s) => {
+                let path = s.path;
+                let src = utils::get_file_content(path).expect("Stuff");
+                SyntaxError::NonAsciiChar(NonAsciiCharError {
+                    span: s,
+                    src: NamedSource::new(path, src),
+                })
+            }
+        }
     }
 }
 
