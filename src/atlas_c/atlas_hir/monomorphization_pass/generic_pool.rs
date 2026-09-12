@@ -504,50 +504,13 @@ impl<'hir> HirGenericPool<'hir> {
     ) -> bool {
         let mut is_instantiated = true;
         for ty in generic.inner.iter() {
-            match ty {
-                HirTy::Named(n) => {
-                    // Check if this is actually a defined struct/union in the module
-                    // If it's only 1 letter AND not defined as a struct/union, it's a generic type parameter
-                    if Self::is_placeholder_name(n.name, module) {
-                        is_instantiated = false;
-                    }
+            if !self.is_ty_concrete(ty, module) {
+                is_instantiated = false;
+            }
+            if let HirTy::Generic(g) = ty {
+                if self.is_generic_instantiated(g, module) {
+                    self.register_struct_instance(g.clone(), module);
                 }
-                HirTy::Generic(g) => {
-                    //We register nested generics as well (e.g. MyStruct<Vector<uint64>>)
-                    //This ensures that they are also monomorphized if it's the only instance
-                    //But because the check is called in register_struct_instance it won't register generic definitions
-                    //Check if the nested generic is itself instantiated
-                    if !self.is_generic_instantiated(g, module) {
-                        is_instantiated = false;
-                    } else {
-                        self.register_struct_instance(g.clone(), module);
-                    }
-                }
-                HirTy::PtrTy(p) => match p.inner {
-                    HirTy::Named(n) => {
-                        // Check if this is actually a defined struct/union in the module
-                        if n.name.len() == 1
-                            && !module.structs.contains_key(n.name)
-                            && !module.unions.contains_key(n.name)
-                        {
-                            is_instantiated = false;
-                        }
-                    }
-                    HirTy::Generic(g) => {
-                        if !self.is_generic_instantiated(g, module) {
-                            is_instantiated = false;
-                        } else {
-                            self.register_struct_instance(g.clone(), module);
-                        }
-                    }
-                    _ => continue,
-                },
-                HirTy::Associated(a) => {
-                    if !self.is_ty_concrete(a.base, module) {
-                        is_instantiated = false;
-                    }
-                }
-                _ => continue,
             }
         }
         is_instantiated

@@ -35,7 +35,7 @@ use crate::atlas_c::atlas_hir::{
         HirBinaryOperator, HirDeleteExpr, HirExpr, HirFieldAccessExpr, HirIdentExpr,
         HirThisLiteral, HirUnaryOp, HirUnsignedIntegerLiteralExpr,
     },
-    item::{HirConcept, HirExtendBlock, HirStruct, HirStructDestructor, HirStructMethod, HirUnion},
+    item::{HirConcept, HirExtendBlock, HirStruct, HirStructDestructor, HirStructMethod},
     monomorphization_pass::{
         MethodMonomorphizationRequest, MonomorphizationPass, generic_pool::HirGenericPool,
     },
@@ -85,6 +85,7 @@ pub struct TypeChecker<'hir> {
     >,
     pending_method_monomorphization: Vec<MethodMonomorphizationRequest<'hir>>,
     errors: Vec<HirError>,
+    materialization_allowed: bool,
 }
 
 impl<'hir> TypeChecker<'hir> {
@@ -103,6 +104,7 @@ impl<'hir> TypeChecker<'hir> {
             extern_monomorphized: HashMap::new(),
             pending_method_monomorphization: Vec::new(),
             errors: Vec::new(),
+            materialization_allowed: true,
         }
     }
 
